@@ -1,0 +1,229 @@
+@import "tailwindcss";
+
+* {
+  border-color: var(--border);
+  outline-color: var(--ring);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground)
+}
+
+// ios26 safari fix for https://base-ui.com/react/overview/quick-start#ios-26-safari
+body {
+  position: relative;
+}
+
+// Supports portals
+.root {
+  isolation: isolate;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+--font-sans: var(--font-sans);
+--font-mono: var(--font-mono);
+--color-background: var(--background);
+--color-foreground: var(--foreground);
+--color-card: var(--card);
+--color-card-foreground: var(--card-foreground);
+--color-popover: var(--popover);
+--color-popover-foreground: var(--popover-foreground);
+--color-primary: var(--primary);
+--color-primary-foreground: var(--primary-foreground);
+--color-secondary: var(--secondary);
+--color-secondary-foreground: var(--secondary-foreground);
+--color-muted: var(--muted);
+--color-muted-foreground: var(--muted-foreground);
+--color-accent: var(--accent);
+--color-accent-foreground: var(--accent-foreground);
+--color-destructive: var(--destructive);
+--color-destructive-foreground: var(--destructive-foreground);
+--color-border: var(--border);
+--color-input: var(--input);
+--color-ring: var(--ring);
+--color-chart-1: var(--chart-1);
+--color-chart-2: var(--chart-2);
+--color-chart-3: var(--chart-3);
+--color-chart-4: var(--chart-4);
+--color-chart-5: var(--chart-5);
+--color-sidebar: var(--sidebar);
+--color-sidebar-foreground: var(--sidebar-foreground);
+--color-sidebar-primary: var(--sidebar-primary);
+--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+--color-sidebar-accent: var(--sidebar-accent);
+--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+--color-sidebar-border: var(--sidebar-border);
+--color-sidebar-ring: var(--sidebar-ring);
+--radius-sm: calc(var(--radius) - 4px);
+--radius-md: calc(var(--radius) - 2px);
+--radius-lg: var(--radius);
+--radius-xl: calc(var(--radius) + 4px);
+--radius-2xl: calc(var(--radius) + 8px);
+--radius-3xl: calc(var(--radius) + 12px);
+--radius-4xl: calc(var(--radius) + 16px);
+}
+
+:root {
+  --radius: .625rem;
+  --designer-zoom: 1;
+  --background: #fff;
+  --foreground: #0a0a0a;
+  --card: #fff;
+  --card-foreground: #0a0a0a;
+  --popover: #fff;
+  --popover-foreground: #0a0a0a;
+  --primary: #171717;
+  --primary-foreground: #fafafa;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --accent: #f5f5f5;
+  --accent-foreground: #171717;
+  --destructive: #e40014;
+  --border: #e5e5e5;
+  --input: #f5f5f5;
+  --ring: #a1a1a1;
+  --sidebar: #fff;
+  --sidebar-foreground: #0a0a0a;
+  --sidebar-primary: #171717;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #f5f5f5;
+  --sidebar-accent-foreground: #171717;
+  --sidebar-border: #e5e5e5;
+  --sidebar-ring: #a1a1a1;
+  --surface: #f8f8f8;
+  --surface-foreground: var(--foreground);
+  --code: #161616;
+  --code-foreground: #a1a1a1;
+  --code-highlight: #404040;
+  --code-number: #a4a4a4;
+  --selection: #0a0a0a;
+  --selection-foreground: #fff;
+}
+
+@supports (color:lab(0% 0 0)) {
+  :root {
+      --background: lab(100% 0 0);
+      --foreground: lab(2.75381% 0 0);
+      --card: lab(100% 0 0);
+      --card-foreground: lab(2.75381% 0 0);
+      --popover: lab(100% 0 0);
+      --popover-foreground: lab(2.75381% 0 0);
+      --primary: lab(7.78201% -.0000149012 0);
+      --primary-foreground: lab(98.26% 0 0);
+      --secondary: lab(96.52% -.0000298023 .0000119209);
+      --secondary-foreground: lab(7.78201% -.0000149012 0);
+      --muted: lab(96.52% -.0000298023 .0000119209);
+      --muted-foreground: lab(48.496% 0 0);
+      --accent: lab(96.52% -.0000298023 .0000119209);
+      --accent-foreground: lab(7.78201% -.0000149012 0);
+      --destructive: lab(48.4493% 77.4328 61.5452);
+      --border: lab(90.952% 0 -.0000119209);
+      --input: lab(96.52% -.0000298023 .0000119209);
+      --ring: lab(66.128% -.0000298023 .0000119209);
+      --sidebar: lab(100% 0 0);
+      --sidebar-foreground: lab(2.75381% 0 0);
+      --sidebar-primary: lab(7.78201% -.0000149012 0);
+      --sidebar-primary-foreground: lab(98.26% 0 0);
+      --sidebar-accent: lab(96.52% -.0000298023 .0000119209);
+      --sidebar-accent-foreground: lab(7.78201% -.0000149012 0);
+      --sidebar-border: lab(90.952% 0 -.0000119209);
+      --sidebar-ring: lab(66.128% -.0000298023 .0000119209);
+      --surface: lab(97.68% -.0000298023 .0000119209);
+      --code: lab(7.22637% -.0000149012 0);
+      --code-foreground: lab(66.128% -.0000298023 .0000119209);
+      --code-highlight: lab(26.92% 0 0);
+      --code-number: lab(67.52% -.0000298023 0);
+      --selection: lab(2.75381% 0 0);
+      --selection-foreground: lab(100% 0 0);
+  }
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #171717;
+  --card-foreground: #fafafa;
+  --popover: #262626;
+  --popover-foreground: #fafafa;
+  --primary: #e5e5e5;
+  --primary-foreground: #171717;
+  --secondary: #262626;
+  --secondary-foreground: #fafafa;
+  --muted: #262626;
+  --muted-foreground: #a1a1a1;
+  --accent: #404040;
+  --accent-foreground: #fafafa;
+  --destructive: #ff6568;
+  --border: #ffffff1a;
+  --input: #ffffff26;
+  --ring: #737373;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #1447e6;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #262626;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #ffffff1a;
+  --sidebar-ring: #737373;
+  --surface: #161616;
+  --surface-foreground: #a1a1a1;
+  --code: #161616;
+  --code-foreground: #a1a1a1;
+  --code-highlight: #262626;
+  --code-number: #a4a4a4;
+  --selection: #e5e5e5;
+  --selection-foreground: #171717;
+}
+
+@supports (color:lab(0% 0 0)) {
+  .dark {
+      --background: lab(2.75381% 0 0);
+      --foreground: lab(98.26% 0 0);
+      --card: lab(7.78201% -.0000149012 0);
+      --card-foreground: lab(98.26% 0 0);
+      --popover: lab(15.204% 0 -.00000596046);
+      --popover-foreground: lab(98.26% 0 0);
+      --primary: lab(90.952% 0 -.0000119209);
+      --primary-foreground: lab(7.78201% -.0000149012 0);
+      --secondary: lab(15.204% 0 -.00000596046);
+      --secondary-foreground: lab(98.26% 0 0);
+      --muted: lab(15.204% 0 -.00000596046);
+      --muted-foreground: lab(66.128% -.0000298023 .0000119209);
+      --accent: lab(27.036% 0 0);
+      --accent-foreground: lab(98.26% 0 0);
+      --destructive: lab(63.7053% 60.745 31.3109);
+      --border: lab(100% 0 0 / .1);
+      --input: lab(100% 0 0 / .15);
+      --ring: lab(48.496% 0 0);
+      --sidebar: lab(2.75381% 0 0);
+      --sidebar-foreground: lab(98.26% 0 0);
+      --sidebar-primary: lab(36.9089% 35.0961 -85.6872);
+      --sidebar-primary-foreground: lab(98.26% 0 0);
+      --sidebar-accent: lab(15.204% 0 -.00000596046);
+      --sidebar-accent-foreground: lab(98.26% 0 0);
+      --sidebar-border: lab(100% 0 0 / .1);
+      --sidebar-ring: lab(48.496% 0 0);
+      --surface: lab(7.22637% -.0000149012 0);
+      --surface-foreground: lab(66.128% -.0000298023 .0000119209);
+      --code: lab(7.22637% -.0000149012 0);
+      --code-foreground: lab(66.128% -.0000298023 .0000119209);
+      --code-highlight: lab(15.32% 0 0);
+      --code-number: lab(67.52% -.0000298023 0);
+      --selection: lab(90.952% 0 -.0000119209);
+      --selection-foreground: lab(7.78201% -.0000149012 0);
+  }
+}
+
+.designer-canvas {
+  touch-action: none;
+  position: relative;
+  overscroll-behavior: none;
+}
+
+/* Moveable control scaling is handled via JavaScript in DesignerCanvas.tsx */
+/* This ensures we can combine our scale transform with Moveable's positioning transforms */
