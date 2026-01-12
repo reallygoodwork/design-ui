@@ -12,9 +12,13 @@ export const useKeybindings = () => {
           dispatch({
             type: "ADD_LAYER",
             payload: {
-              id: Date.now().toString(),
-              type: layerType.type,
-              ...layerType.defaultValues,
+              layer: {
+                id: Date.now().toString(),
+                type: layerType.type,
+                ...layerType.defaultValues,
+              },
+              targetLayerId: state.layers[state.layers.length - 1]?.id ?? "",
+              position: "after",
             },
           });
         }
@@ -25,5 +29,5 @@ export const useKeybindings = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [state.layerTypes, dispatch]);
+  }, [state.layerTypes, state.layers, dispatch]);
 };
