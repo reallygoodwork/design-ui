@@ -8,7 +8,7 @@ export const InputGroup = ({
   onChange,
   type,
 }: {
-  addon: ReactNode;
+  addon?: ReactNode;
   value: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   type?: string;

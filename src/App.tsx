@@ -1,6 +1,8 @@
-import { IconPalette } from "@tabler/icons-react";
 import { ActionBackgroundColor } from "./components/actions/ActionBackgroundColor";
+import { ActionBorder } from "./components/actions/ActionBorder";
 import { ActionColor } from "./components/actions/ActionColor";
+import { ActionFontSize } from "./components/actions/ActionFontSize";
+import { ActionPadding } from "./components/actions/ActionPadding";
 import { ActionPosition } from "./components/actions/ActionPosition";
 import { ActionSize } from "./components/actions/ActionSize";
 import { Designer } from "./components/Designer";
@@ -87,6 +89,7 @@ function App() {
 							<DesignerPane title="Layer">
 								<ActionPosition />
 								<ActionSize />
+								<ActionPadding />
 							</DesignerPane>
 							<DesignerPane title="Position">
 								<ActionPosition />
@@ -95,6 +98,10 @@ function App() {
 							<DesignerPane title="Color">
 								<ActionBackgroundColor />
 								<ActionColor />
+								<ActionBorder />
+							</DesignerPane>
+							<DesignerPane title="Typography" showForLayerTypes={["text"]}>
+								<ActionFontSize />
 							</DesignerPane>
 						</DesignPanel>
 
