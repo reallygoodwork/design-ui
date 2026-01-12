@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AddLayerDialog } from "./AddLayerDialog";
+import { FontLoader } from "./FontLoader";
 import { DesignerProvider } from "../context/DesignerContext";
 import { useKeybindings } from "../hooks/useKeybindings";
 import { frameLayerType } from "../lib/layers/frame";
@@ -64,6 +65,7 @@ export const Designer = ({
 			frameSize={frameSize}
 			defaultLayerTypes={allLayerTypes}
 		>
+			<FontLoader />
 			<div
 				data-slot="designer"
 				className="ds group/ds relative flex h-full min-h-32 w-full flex-col"

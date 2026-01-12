@@ -5,6 +5,7 @@ import { DesignerToolbar } from "./DesignerToolbar";
 import { DesignerToolbarButton } from "./DesignerToolbarButton";
 import { DesignerToolbarGroup } from "./DesignerToolbarGroup";
 import { DesignerToolbarSeparator } from "./DesignerToolbarSeparator";
+import { ZoomControl } from "./ZoomControl";
 
 
 export const DesignToolbarContainer = () => {
@@ -33,18 +34,12 @@ export const DesignToolbarContainer = () => {
 					<IconArrowForwardUp />
 				</DesignerToolbarButton>
 			</DesignerToolbarGroup>
-      <DesignerToolbarSeparator
-      />
-  <DesignerToolbarGroup>
-    <DesignerToolbarButton
-      hint="Background"
-      onClick={() => {
-        console.log("Background");
-      }}
-    >
-      <IconPalette />
-    </DesignerToolbarButton>
-  </DesignerToolbarGroup>
+
+
+			<DesignerToolbarSeparator />
+			<DesignerToolbarGroup>
+				<ZoomControl />
+			</DesignerToolbarGroup>
 		</DesignerToolbar>
 	);
 };

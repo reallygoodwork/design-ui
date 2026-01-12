@@ -108,6 +108,17 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
     )
   );
 
+  // Sync zoom changes from keyboard/controls to InfiniteViewer
+  useEffect(() => {
+    console.log('Zoom state changed to:', state.zoom);
+    if (viewerRef.current) {
+      console.log('Calling setZoom on InfiniteViewer:', state.zoom);
+      viewerRef.current.setZoom(state.zoom);
+    } else {
+      console.log('viewerRef.current is null');
+    }
+  }, [state.zoom]);
+
   // Center the frame when it mounts, frame size changes, or zoom changes
   useEffect(() => {
     if (viewerRef.current && state.frameSize) {
@@ -171,22 +182,19 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
     }
   }, [state.zoom]);
 
-  // Track selected layers' dimensions for dependency tracking
-  const selectedLayersDimensions = useMemo(() => {
+  // Track selected layers' CSS vars for dependency tracking
+  // Include all properties that could affect element dimensions
+  const selectedLayersCSSVars = useMemo(() => {
     if (selectedLayers.length === 0) return "";
     return selectedLayers
-      .map((layer) => ({
-        width: layer.cssVars?.["--width"] ?? "",
-        height: layer.cssVars?.["--height"] ?? "",
-      }))
-      .map((dims) => `${dims.width},${dims.height}`)
+      .map((layer) => JSON.stringify(layer.cssVars ?? {}))
       .join("|");
   }, [selectedLayers]);
 
-  // Update Moveable when selected layers' dimensions change
-  // This ensures the control box resizes immediately when width/height CSS vars are updated
+  // Update Moveable when selected layers' CSS vars change
+  // This ensures the control box updates immediately when any dimension-affecting CSS is updated
   useEffect(() => {
-    if (moveableRef.current && selectedLayersDimensions) {
+    if (moveableRef.current && selectedLayersCSSVars) {
       // Wait for DOM to update before recalculating rect
       requestAnimationFrame(() => {
         if (moveableRef.current) {
@@ -194,7 +202,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
         }
       });
     }
-  }, [selectedLayersDimensions]);
+  }, [selectedLayersCSSVars]);
 
   // Handle keyboard shortcuts: Delete/Backspace for deletion, Cmd/Ctrl+Z for undo, Cmd/Ctrl+Y for redo
   useEffect(() => {
@@ -250,13 +258,74 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
         }
         return;
       }
+
+      // Handle zoom shortcuts
+      if (e.metaKey || e.ctrlKey) {
+        // Zoom In: Cmd/Ctrl + (or Cmd/Ctrl =)
+        if (e.key === '+' || e.key === '=') {
+          console.log('DesignerCanvas: Zoom in triggered');
+          e.preventDefault();
+          const newZoom = Math.min(10, state.zoom + 0.1);
+          designerAction({ type: "SET_ZOOM", payload: newZoom });
+          return;
+        }
+
+        // Zoom Out: Cmd/Ctrl -
+        if (e.key === '-' || e.key === '_') {
+          console.log('DesignerCanvas: Zoom out triggered');
+          e.preventDefault();
+          const newZoom = Math.max(0.1, state.zoom - 0.1);
+          designerAction({ type: "SET_ZOOM", payload: newZoom });
+          return;
+        }
+
+        // Reset Zoom: Cmd/Ctrl 0
+        if (e.key === '0') {
+          console.log('DesignerCanvas: Reset zoom triggered');
+          e.preventDefault();
+          designerAction({ type: "SET_ZOOM", payload: 1 });
+          designerAction({ type: "SET_PAN", payload: { x: 0, y: 0 } });
+          return;
+        }
+
+        // Zoom to Fit: Cmd/Ctrl 1
+        if (e.key === '1') {
+          console.log('DesignerCanvas: Zoom to fit triggered');
+          e.preventDefault();
+          if (state.frameSize) {
+            const containerWidth = window.innerWidth;
+            const containerHeight = window.innerHeight;
+            const frameWidth = state.frameSize.width;
+            const frameHeight = state.frameSize.height;
+
+            const padding = 200;
+            const availableWidth = containerWidth - padding;
+            const availableHeight = containerHeight - padding;
+
+            const zoomX = availableWidth / frameWidth;
+            const zoomY = availableHeight / frameHeight;
+            const newZoom = Math.min(zoomX, zoomY, 10);
+
+            designerAction({ type: "SET_ZOOM", payload: newZoom });
+          }
+          return;
+        }
+
+        // Zoom to 100%: Cmd/Ctrl 2
+        if (e.key === '2') {
+          console.log('DesignerCanvas: Zoom to 100% triggered');
+          e.preventDefault();
+          designerAction({ type: "SET_ZOOM", payload: 1 });
+          return;
+        }
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [state.selectedLayers, designerAction]);
+  }, [state.selectedLayers, state.zoom, state.frameSize, designerAction]);
 
   return (
     <div
@@ -314,7 +383,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
         usePinch={true}
         // useMouseDrag={true}
         useAutoZoom={false}
-        zoomRange={[0.1, 2]}
+        zoomRange={[0.1, 10]}
         onPinch={handlePinch}
         onScroll={handleScroll}
       >

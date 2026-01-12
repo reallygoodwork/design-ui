@@ -3,19 +3,19 @@ import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { ActionPopover } from "./ActionPopover";
 import { NumericActionControl } from "./NumericActionControl";
 
-export const ActionPadding = () => {
+export const ActionMargin = () => {
   const selectedLayers = useSelectedLayers();
   const selectedLayer = selectedLayers[0];
 
   // Get all padding values
-  const paddingTop = selectedLayer?.cssVars?.["--padding-block-start"];
-  const paddingRight = selectedLayer?.cssVars?.["--padding-inline-end"];
-  const paddingBottom = selectedLayer?.cssVars?.["--padding-block-end"];
-  const paddingLeft = selectedLayer?.cssVars?.["--padding-inline-start"];
+  const marginTop = selectedLayer?.cssVars?.["--margin-block-start"];
+  const marginRight = selectedLayer?.cssVars?.["--margin-inline-start"];
+  const marginBottom = selectedLayer?.cssVars?.["--margin-block-end"];
+  const marginLeft = selectedLayer?.cssVars?.["--margin-inline-end"];
 
   // Create display value for trigger
   const triggerDisplayValue = useMemo(() => {
-    const values = [paddingTop, paddingRight, paddingBottom, paddingLeft];
+    const values = [marginTop, marginRight, marginBottom, marginLeft];
     const hasAnyValue = values.some((v) => v);
 
     if (!hasAnyValue) return "";
@@ -28,43 +28,43 @@ export const ActionPadding = () => {
 
     // Show abbreviated format: top right bottom left
     return values.map((v) => v || "0").join(" ");
-  }, [paddingTop, paddingRight, paddingBottom, paddingLeft]);
+  }, [marginTop, marginRight, marginBottom, marginLeft]);
 
   return (
     <ActionPopover
       cssProperty={[
-        "--padding-block-start",
-        "--padding-inline-end",
-        "--padding-block-end",
-        "--padding-inline-start",
+        "--margin-top",
+        "--margin-right",
+        "--margin-bottom",
+        "--margin-left",
       ]}
-      label="Padding"
-      popoverTitle="Padding"
+      label="Margin"
+      popoverTitle="Margin"
       triggerDisplayValue={triggerDisplayValue ?? ""}
     >
       <NumericActionControl
-        cssProperty="--padding-block-start"
+        cssProperty="--margin-top"
         label="Top"
         defaultValue={0}
         showSteppers={false}
         orientation="horizontal"
       />
       <NumericActionControl
-        cssProperty="--padding-inline-end"
+        cssProperty="--margin-right"
         label="Right"
         defaultValue={0}
         showSteppers={false}
         orientation="horizontal"
       />
       <NumericActionControl
-        cssProperty="--padding-block-end"
+        cssProperty="--margin-bottom"
         label="Bottom"
         defaultValue={0}
         showSteppers={false}
         orientation="horizontal"
       />
       <NumericActionControl
-        cssProperty="--padding-inline-start"
+        cssProperty="--margin-left"
         label="Left"
         defaultValue={0}
         showSteppers={false}

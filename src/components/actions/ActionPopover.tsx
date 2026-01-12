@@ -2,6 +2,7 @@ import { Button } from "@base-ui/react/button";
 import { Popover } from "@base-ui/react/popover";
 import { IconX } from "@tabler/icons-react";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { DesignAction } from "../DesignAction";
@@ -14,6 +15,7 @@ interface ActionPopoverProps {
 	showSwatch?: boolean;
 	swatchColor?: string;
 	children: ReactNode;
+	onOpenChange?: (open: boolean) => void;
 }
 
 export const ActionPopover = ({
@@ -24,6 +26,7 @@ export const ActionPopover = ({
 	showSwatch = false,
 	swatchColor,
 	children,
+	onOpenChange,
 }: ActionPopoverProps) => {
 	const selectedLayers = useSelectedLayers();
 	const designerAction = useDesignerAction();
@@ -59,9 +62,9 @@ export const ActionPopover = ({
 
 	return (
 		<DesignAction label={label}>
-			<Popover.Root>
+			<Popover.Root onOpenChange={onOpenChange}>
 				<Popover.Trigger
-					className="inline-flex items-center gap-1 whitespace-nowrap rounded-md font-medium text-xs leading-none transition-all focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[4px] focus-visible:ring-ring/50 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-3.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 justify-start bg-input text-input-foreground hover:bg-input/80 h-7 px-2 py-1 has-[>svg]:px-2 lowercase data-[empty=true]:text-muted-foreground tabular-nums max-w-32 w-fit flex-1 truncate"
+					className="inline-flex items-center gap-1 whitespace-nowrap rounded-md font-medium text-xs leading-none transition-all focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[4px] focus-visible:ring-ring/50 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-3.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 justify-start bg-input text-input-foreground hover:bg-input/80 h-7 px-2 py-1 has-[>svg]:px-2 data-[empty=true]:text-muted-foreground tabular-nums max-w-32 w-fit flex-1 truncate"
 					data-empty={!hasValue}
 				>
 					<span

@@ -1,6 +1,4 @@
-import { Input } from "@base-ui/react/input";
-import { Select } from "@base-ui/react/select";
-import { IconCheck, IconChevronDown } from "@tabler/icons-react";
+
 import { useMemo, useState } from "react";
 import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";

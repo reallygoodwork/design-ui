@@ -7,6 +7,8 @@ export const ActionFontSize = () => {
       label="Font Size"
       defaultValue={16}
       units={["px", "rem", "em"]}
+      showSteppers={false}
+      orientation="horizontal"
     />
   );
 };

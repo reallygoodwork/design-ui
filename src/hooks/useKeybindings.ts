@@ -7,6 +7,7 @@ export const useKeybindings = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Layer type shortcuts
       state.layerTypes.forEach((layerType) => {
         if (layerType.keybinding && e.key === layerType.keybinding.key) {
           dispatch({

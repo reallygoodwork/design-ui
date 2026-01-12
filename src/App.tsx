@@ -1,7 +1,11 @@
 import { ActionBackgroundColor } from "./components/actions/ActionBackgroundColor";
 import { ActionBorder } from "./components/actions/ActionBorder";
 import { ActionColor } from "./components/actions/ActionColor";
+import { ActionFontFamily } from "./components/actions/ActionFontFamily";
 import { ActionFontSize } from "./components/actions/ActionFontSize";
+import { ActionLetterSpacing } from "./components/actions/ActionLetterSpacing";
+import { ActionLineHeight } from "./components/actions/ActionLineHeight";
+import { ActionMargin } from "./components/actions/ActionMargin";
 import { ActionPadding } from "./components/actions/ActionPadding";
 import { ActionPosition } from "./components/actions/ActionPosition";
 import { ActionSize } from "./components/actions/ActionSize";
@@ -90,10 +94,7 @@ function App() {
 								<ActionPosition />
 								<ActionSize />
 								<ActionPadding />
-							</DesignerPane>
-							<DesignerPane title="Position">
-								<ActionPosition />
-								<ActionSize />
+								<ActionMargin />
 							</DesignerPane>
 							<DesignerPane title="Color">
 								<ActionBackgroundColor />
@@ -101,7 +102,10 @@ function App() {
 								<ActionBorder />
 							</DesignerPane>
 							<DesignerPane title="Typography" showForLayerTypes={["text"]}>
+								<ActionFontFamily />
 								<ActionFontSize />
+								<ActionLineHeight />
+								<ActionLetterSpacing />
 							</DesignerPane>
 						</DesignPanel>
 
