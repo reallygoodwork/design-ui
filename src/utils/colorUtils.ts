@@ -17,7 +17,7 @@ export type ColorFormat = (typeof colorFormats)[number]["value"];
 export const convertColorToFormat = (
   color: string | undefined,
   format: ColorFormat,
-  fallback: string = "#ffffff"
+  fallback: string = ""
 ): string => {
   if (!color) return fallback;
 

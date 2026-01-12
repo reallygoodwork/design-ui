@@ -127,7 +127,7 @@ export const ColorActionPopover = ({
 			popoverTitle={popoverTitle}
 			triggerDisplayValue={displayValue}
 			showSwatch={true}
-			swatchColor={hasValue ? rawColorValue : "#ffffff"}
+			swatchColor={hasValue ? rawColorValue : "transparent"}
 		>
 			<div className="[&_div.react-colorful]:w-full!">
 				{colorFormat === "hsla" ? (
@@ -149,7 +149,7 @@ export const ColorActionPopover = ({
 					onChange={(e) => handleInputChange(e.target.value)}
 					placeholder={
 						colorFormat === "hex"
-							? "#ffffff"
+							? ""
 							: colorFormat === "rgba"
 								? "rgba(255, 255, 255, 1)"
 								: "hsla(0, 0%, 100%, 1)"

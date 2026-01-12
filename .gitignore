@@ -27,3 +27,8 @@ dist-ssr
 storybook-static
 
 todo.md
+CLAUDE.md
+
+.env
+.env.local
+.playwright-mcp

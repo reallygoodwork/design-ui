@@ -143,6 +143,27 @@ const deleteLayer = (layers: Layer[], layerId: string): Layer[] => {
     });
 };
 
+// Helper function to recursively update a layer by ID at any nesting level
+const updateLayerById = (
+  layers: Layer[],
+  layerId: string,
+  updater: (layer: Layer) => Layer
+): Layer[] => {
+  return layers.map((layer) => {
+    if (layer.id === layerId) {
+      return updater(layer);
+    }
+    // Recursively update children if they exist
+    if (layer.children && layer.children.length > 0) {
+      return {
+        ...layer,
+        children: updateLayerById(layer.children, layerId, updater),
+      };
+    }
+    return layer;
+  });
+};
+
 // Helper function to insert a layer at a specific position
 const insertLayer = (
   layers: Layer[],
@@ -248,6 +269,15 @@ const reducer = (state: State, action: Action): State => {
     }
     case "SELECT_LAYER": {
       const { layerId, shiftKey } = action.payload;
+
+      // Find the layer to check if it's locked
+      const targetLayer = findLayer(state.layers, layerId);
+
+      // Don't select locked layers
+      if (targetLayer?.layer.isLocked) {
+        return state;
+      }
+
       if (shiftKey) {
         if (state.selectedLayers.includes(layerId)) {
           return {
@@ -294,11 +324,10 @@ const reducer = (state: State, action: Action): State => {
     case "UPDATE_LAYER_NAME": {
       const newState = {
         ...state,
-        layers: state.layers.map((layer) =>
-          layer.id === action.payload.layerId
-            ? { ...layer, name: action.payload.name }
-            : layer
-        ),
+        layers: updateLayerById(state.layers, action.payload.layerId, (layer) => ({
+          ...layer,
+          name: action.payload.name,
+        })),
       };
       const newHistory = [
         ...state.history.slice(0, state.historyIndex + 1),
@@ -313,11 +342,10 @@ const reducer = (state: State, action: Action): State => {
     case "UPDATE_LAYER_LOCK": {
       const newState = {
         ...state,
-        layers: state.layers.map((layer) =>
-          layer.id === action.payload.layerId
-            ? { ...layer, isLocked: action.payload.isLocked }
-            : layer
-        ),
+        layers: updateLayerById(state.layers, action.payload.layerId, (layer) => ({
+          ...layer,
+          isLocked: action.payload.isLocked,
+        })),
       };
       const newHistory = [
         ...state.history.slice(0, state.historyIndex + 1),
@@ -332,11 +360,7 @@ const reducer = (state: State, action: Action): State => {
     case "UPDATE_LAYER_CSS": {
       const newState = {
         ...state,
-        layers: state.layers.map((layer) => {
-          if (layer.id !== action.payload.id) {
-            return layer;
-          }
-
+        layers: updateLayerById(state.layers, action.payload.id, (layer) => {
           // Merge CSS vars, removing any that are set to empty string or undefined
           const updatedCssVars = { ...layer.cssVars };
           Object.entries(action.payload.css).forEach(([key, value]) => {
@@ -366,14 +390,10 @@ const reducer = (state: State, action: Action): State => {
     case "UPDATE_LAYER_VALUE": {
       const newState = {
         ...state,
-        layers: state.layers.map((layer) =>
-          layer.id === action.payload.id
-            ? {
-                ...layer,
-                value: action.payload.value,
-              }
-            : layer
-        ),
+        layers: updateLayerById(state.layers, action.payload.id, (layer) => ({
+          ...layer,
+          value: action.payload.value,
+        })),
       };
       const newHistory = [
         ...state.history.slice(0, state.historyIndex + 1),

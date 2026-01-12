@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useRef } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import InfiniteViewer, {
   type OnPinch,
   type OnScroll,
@@ -12,6 +12,39 @@ import { useSelectedLayers } from "../hooks/useSelectedLayers";
 import { DimensionAble } from "./ables/DimensionAble";
 import { StructureAble } from "./ables/StructureAble";
 
+// Helper to get all layers at a specific point, ordered from shallowest (parent) to deepest (nested child)
+// This enables Figma-style selection: first click selects parent, subsequent clicks drill down
+const getLayersAtPoint = (x: number, y: number, state: ReturnType<typeof useDesignerContext>["state"]): string[] => {
+  // Get all elements at this point (document.elementsFromPoint returns front-to-back, i.e. deepest first)
+  const elements = document.elementsFromPoint(x, y);
+
+  // Filter to only designer layers and extract layer IDs
+  const layerIds = elements
+    .filter((el) => el.classList.contains("designer-layer") && el.hasAttribute("data-layer-id"))
+    .map((el) => el.getAttribute("data-layer-id"))
+    .filter((id): id is string => id !== null);
+
+  // Helper to find a layer by ID recursively
+  const findLayer = (layers: typeof state.layers, id: string): typeof state.layers[0] | null => {
+    for (const layer of layers) {
+      if (layer.id === id) return layer;
+      if (layer.children) {
+        const found = findLayer(layer.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  // Filter out locked layers, then reverse so shallowest (parent) is first
+  return layerIds
+    .filter((id) => {
+      const layer = findLayer(state.layers, id);
+      return layer && !layer.isLocked;
+    })
+    .reverse();
+};
+
 export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
   const { state } = useDesignerContext();
   const selectedLayers = useSelectedLayers();
@@ -19,6 +52,15 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
   const viewerRef = useRef<InfiniteViewer>(null);
   const selectoRef = useRef<Selecto>(null);
   const moveableRef = useRef<Moveable>(null);
+
+  // Track click state for drill-down selection
+  const [clickState, setClickState] = useState<{
+    x: number;
+    y: number;
+    timestamp: number;
+    layerIdsAtPoint: string[];
+    currentIndex: number;
+  } | null>(null);
 
   const handlePinch = (e: OnPinch) => {
     // Update zoom state when user pinches/zooms
@@ -76,30 +118,69 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
     return false;
   };
 
-  const handleSelect: React.ComponentProps<typeof Selecto>["onSelect"] = (
-    e
-  ) => {
-    const addedLayerIds = e.added.map((el) => el.dataset.layerId);
+  // Helper to process click selection with drill-down logic
+  const processClickSelection = (clickX: number, clickY: number, shiftKey: boolean) => {
+    const currentTime = Date.now();
 
-    // If a new layer was added, select it
-    if (addedLayerIds[0]) {
+    // Get all layers at this point (ordered shallowest/parent first)
+    const layersAtPoint = getLayersAtPoint(clickX, clickY, state);
+
+    // If clicking outside any layer, deselect
+    if (layersAtPoint.length === 0) {
       designerAction({
-        type: "SELECT_LAYER",
-        payload: { layerId: addedLayerIds[0], shiftKey: false },
+        type: "DESELECT_ALL",
+      });
+      setClickState(null);
+      return;
+    }
+
+    // Check if this is a drill-down click (same position within 500ms)
+    const isSamePosition =
+      clickState &&
+      Math.abs(clickState.x - clickX) < 5 &&
+      Math.abs(clickState.y - clickY) < 5 &&
+      currentTime - clickState.timestamp < 500;
+
+    let layerToSelect: string;
+
+    if (isSamePosition && clickState.layerIdsAtPoint.length > 1) {
+      // Drill down: cycle to next layer in the stack (parent -> child -> deeper child -> back to parent)
+      const nextIndex = (clickState.currentIndex + 1) % clickState.layerIdsAtPoint.length;
+      layerToSelect = clickState.layerIdsAtPoint[nextIndex];
+
+      // Update click state with new index
+      setClickState({
+        x: clickX,
+        y: clickY,
+        timestamp: currentTime,
+        layerIdsAtPoint: clickState.layerIdsAtPoint,
+        currentIndex: nextIndex,
+      });
+    } else {
+      // New click position or timeout: select the shallowest/parent (first) layer
+      layerToSelect = layersAtPoint[0];
+
+      // Initialize click state
+      setClickState({
+        x: clickX,
+        y: clickY,
+        timestamp: currentTime,
+        layerIdsAtPoint: layersAtPoint,
+        currentIndex: 0,
       });
     }
-    // If clicking outside (nothing added but something was removed), deselect all
-    // This happens when clicking outside any selectable layer
-    // BUT: don't deselect if clicking on Moveable control elements
-    else if (e.added.length === 0 && e.removed.length > 0) {
-      // Check if the click target is a Moveable control element
-      const clickTarget = e.inputEvent?.target as Element | null;
-      if (!isMoveableControlElement(clickTarget)) {
-        designerAction({
-          type: "DESELECT_ALL",
-        });
-      }
-    }
+
+    // Select the layer (handle shift key for multi-select)
+    designerAction({
+      type: "SELECT_LAYER",
+      payload: { layerId: layerToSelect, shiftKey },
+    });
+  };
+
+  // We don't use onSelect for click handling - we use onSelectEnd instead
+  // This avoids issues with Selecto's event timing
+  const handleSelect: React.ComponentProps<typeof Selecto>["onSelect"] = () => {
+    // Intentionally empty - all selection logic is handled in onSelectEnd
   };
 
   const selectedLayerElements = selectedLayers.map((layer) =>
@@ -203,6 +284,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
       });
     }
   }, [selectedLayersCSSVars]);
+
 
   // Handle keyboard shortcuts: Delete/Backspace for deletion, Cmd/Ctrl+Z for undo, Cmd/Ctrl+Y for redo
   useEffect(() => {
@@ -334,22 +416,31 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
     >
       <Selecto
         ref={selectoRef}
-        dragContainer={".designer-canvas"}
+        dragContainer={"[data-slot='designer-canvas']"}
         selectableTargets={[".designer-frame .designer-layer"]}
         hitRate={0}
         selectByClick={true}
-        selectFromInside={false}
+        selectFromInside={true}
         toggleContinueSelect={["shift"]}
         onSelect={handleSelect}
         onSelectEnd={(e) => {
-          // Also handle deselection on selectEnd if nothing is selected after a click
-          // This catches edge cases where select event might not fire correctly
-          // BUT: don't deselect if clicking on Moveable control elements
-          if (e.isClick && e.selected.length === 0 && state.selectedLayers.length > 0) {
-            const clickTarget = e.inputEvent?.target as Element | null;
-            if (!isMoveableControlElement(clickTarget)) {
+          const inputEvent = e.inputEvent as MouseEvent | undefined;
+          if (!inputEvent) return;
+
+          // Check if clicking on Moveable controls - if so, ignore
+          const clickTarget = inputEvent.target as Element | null;
+          if (isMoveableControlElement(clickTarget)) return;
+
+          if (e.isClick) {
+            // Handle click selection with our custom drill-down logic
+            processClickSelection(inputEvent.clientX, inputEvent.clientY, inputEvent.shiftKey);
+          } else if (e.selected.length > 0) {
+            // Handle drag selections - select based on what Selecto found
+            const selectedLayerId = (e.selected[0] as HTMLElement)?.dataset?.layerId;
+            if (selectedLayerId) {
               designerAction({
-                type: "DESELECT_ALL",
+                type: "SELECT_LAYER",
+                payload: { layerId: selectedLayerId, shiftKey: false },
               });
             }
           }
