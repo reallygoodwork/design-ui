@@ -1,11 +1,16 @@
+import { ActionAlignItems } from "./components/actions/ActionAlignItems";
 import { ActionBackgroundColor } from "./components/actions/ActionBackgroundColor";
 import { ActionBorder } from "./components/actions/ActionBorder";
 import { ActionBorderRadius } from "./components/actions/ActionBorderRadius";
 import { ActionColor } from "./components/actions/ActionColor";
 import { ActionDisplay } from "./components/actions/ActionDisplay";
+import { ActionFlexDirection } from "./components/actions/ActionFlexDirection";
+import { ActionFlexWrap } from "./components/actions/ActionFlexWrap";
 import { ActionFontFamily } from "./components/actions/ActionFontFamily";
 import { ActionFontSize } from "./components/actions/ActionFontSize";
-import { ActionLayout } from "./components/actions/ActionLayout";
+import { ActionGap } from "./components/actions/ActionGap";
+import { ActionGridLayout } from "./components/actions/ActionGridLayout";
+import { ActionJustifyContent } from "./components/actions/ActionJustifyContent";
 import { ActionLetterSpacing } from "./components/actions/ActionLetterSpacing";
 import { ActionLineHeight } from "./components/actions/ActionLineHeight";
 import { ActionMargin } from "./components/actions/ActionMargin";
@@ -102,12 +107,19 @@ function App() {
 							<DesignerPane title="Layer">
 								<ActionPosition />
 								<ActionSize />
-								<ActionPadding />
-								<ActionMargin />
 								<ActionOpacity />
 								<ActionBorderRadius />
+							</DesignerPane>
+							<DesignerPane title="Layout">
 								<ActionDisplay />
-								<ActionLayout />
+								<ActionGridLayout />
+								<ActionJustifyContent />
+								<ActionAlignItems />
+								<ActionFlexDirection />
+								<ActionFlexWrap />
+								<ActionGap />
+								<ActionPadding />
+								<ActionMargin />
 							</DesignerPane>
 							<DesignerPane title="Color">
 								<ActionBackgroundColor />

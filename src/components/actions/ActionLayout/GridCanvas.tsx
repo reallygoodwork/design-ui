@@ -1,5 +1,5 @@
-import { Button } from "@base-ui/react/button";
 import { useMemo, useState } from "react";
+import { NumberFieldActionControl } from "../NumberFieldActionControl";
 
 interface GridCanvasProps {
 	columns: string;
@@ -30,14 +30,14 @@ export const GridCanvas = ({ columns, rows, onChange }: GridCanvasProps) => {
 		return cells;
 	}, [colCount, rowCount]);
 
-	const handleColChange = (newCount: number) => {
-		const clampedCount = Math.max(1, Math.min(12, newCount));
+	const handleColChange = (newCount: number | null) => {
+		const clampedCount = Math.max(1, Math.min(12, newCount ?? 1));
 		setColCount(clampedCount);
 		onChange(`repeat(${clampedCount}, 1fr)`, rows);
 	};
 
-	const handleRowChange = (newCount: number) => {
-		const clampedCount = Math.max(1, Math.min(12, newCount));
+	const handleRowChange = (newCount: number | null) => {
+		const clampedCount = Math.max(1, Math.min(12, newCount ?? 1));
 		setRowCount(clampedCount);
 		onChange(columns, `repeat(${clampedCount}, 1fr)`);
 	};
@@ -46,59 +46,31 @@ export const GridCanvas = ({ columns, rows, onChange }: GridCanvasProps) => {
 		<div className="flex flex-col gap-3">
 			{/* Grid Structure Controls */}
 			<div className="flex flex-col gap-2">
-				<div className="flex items-center justify-between gap-2">
-					<label className="text-xs text-muted-foreground">Columns</label>
-					<div className="flex items-center gap-1">
-						<Button
-							onClick={() => handleColChange(colCount - 1)}
-							disabled={colCount <= 1}
-							className="flex h-6 w-6 items-center justify-center rounded-sm bg-input text-xs hover:bg-input/80 disabled:opacity-30"
-							aria-label="Decrease columns"
-						>
-							−
-						</Button>
-						<span className="w-8 text-center text-xs tabular-nums">
-							{colCount}
-						</span>
-						<Button
-							onClick={() => handleColChange(colCount + 1)}
-							disabled={colCount >= 12}
-							className="flex h-6 w-6 items-center justify-center rounded-sm bg-input text-xs hover:bg-input/80 disabled:opacity-30"
-							aria-label="Increase columns"
-						>
-							+
-						</Button>
-					</div>
-				</div>
+				<NumberFieldActionControl
+					label="Columns"
+					value={colCount}
+					onValueChange={handleColChange}
+					min={1}
+					max={12}
+					step={1}
+					orientation="horizontal"
+					hasValue={true}
+				/>
 
-				<div className="flex items-center justify-between gap-2">
-					<label className="text-xs text-muted-foreground">Rows</label>
-					<div className="flex items-center gap-1">
-						<Button
-							onClick={() => handleRowChange(rowCount - 1)}
-							disabled={rowCount <= 1}
-							className="flex h-6 w-6 items-center justify-center rounded-sm bg-input text-xs hover:bg-input/80 disabled:opacity-30"
-							aria-label="Decrease rows"
-						>
-							−
-						</Button>
-						<span className="w-8 text-center text-xs tabular-nums">
-							{rowCount}
-						</span>
-						<Button
-							onClick={() => handleRowChange(rowCount + 1)}
-							disabled={rowCount >= 12}
-							className="flex h-6 w-6 items-center justify-center rounded-sm bg-input text-xs hover:bg-input/80 disabled:opacity-30"
-							aria-label="Increase rows"
-						>
-							+
-						</Button>
-					</div>
-				</div>
+				<NumberFieldActionControl
+					label="Rows"
+					value={rowCount}
+					onValueChange={handleRowChange}
+					min={1}
+					max={12}
+					step={1}
+					orientation="horizontal"
+					hasValue={true}
+				/>
 			</div>
 
 			{/* Visual Grid Preview */}
-			<div className="rounded-md border border-border/50 bg-background p-2">
+			<div className="rounded-md border border-border/50 bg-input p-2">
 				<div
 					className="grid gap-1"
 					style={{
@@ -109,7 +81,7 @@ export const GridCanvas = ({ columns, rows, onChange }: GridCanvasProps) => {
 					{gridCells.map((index) => (
 						<div
 							key={index}
-							className="aspect-square rounded-sm border border-border/30 bg-input/30"
+							className="aspect-square rounded-xs border border-border/30 bg-input min-w-2 min-h-4 w-full h-full max-h-6"
 							aria-hidden="true"
 						/>
 					))}

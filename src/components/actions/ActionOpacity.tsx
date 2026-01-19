@@ -6,10 +6,10 @@ export const ActionOpacity = () => {
 			orientation="horizontal"
 			cssProperty="--opacity"
 			label="Opacity"
-			defaultValue={1}
+			defaultValue={100}
 			min={0}
-			max={1}
-			step={0.01}
+			max={100}
+			step={1}
 		/>
 	);
 };

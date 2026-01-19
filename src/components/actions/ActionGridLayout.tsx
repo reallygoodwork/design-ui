@@ -1,29 +1,21 @@
 import { useMemo } from "react";
-import { useDesignerAction } from "../../../hooks/useDesignerAction";
-import type { Layer } from "../../../lib/Types";
-import { ActionPopover } from "../ActionPopover";
-import { NumericActionControl } from "../NumericActionControl";
-import { GridCanvas } from "./GridCanvas";
+import { useDesignerAction } from "../../hooks/useDesignerAction";
+import { useSelectedLayers } from "../../hooks/useSelectedLayers";
+import { GridCanvas } from "./ActionLayout/GridCanvas";
+import { ActionPopover } from "./ActionPopover";
 
-interface GridBuilderPopoverProps {
-	selectedLayer: Layer | undefined;
-	hasValue: boolean;
-	onClear: () => void;
-}
-
-export const GridBuilderPopover = ({
-	selectedLayer,
-	hasValue,
-	onClear,
-}: GridBuilderPopoverProps) => {
+export const ActionGridLayout = () => {
+	const selectedLayers = useSelectedLayers();
 	const designerAction = useDesignerAction();
+	const selectedLayer = selectedLayers[0];
+
+
 
 	// Get current grid values
 	const gridColumns =
 		selectedLayer?.cssVars?.["--grid-template-columns"] || "repeat(3, 1fr)";
 	const gridRows =
 		selectedLayer?.cssVars?.["--grid-template-rows"] || "repeat(3, 1fr)";
-	const gridGap = selectedLayer?.cssVars?.["--gap"] || "0px";
 
 	// Parse grid structure to show in trigger
 	const triggerDisplayValue = useMemo(() => {
@@ -53,31 +45,48 @@ export const GridBuilderPopover = ({
 		}
 	};
 
+	const handleClear = () => {
+		if (selectedLayer) {
+			designerAction({
+				type: "UPDATE_LAYER_CSS",
+				payload: {
+					id: selectedLayer.id,
+					css: {
+						"--grid-template-columns": "",
+						"--grid-template-rows": "",
+					},
+				},
+			});
+		}
+	};
+
+	const hasValue = Boolean(
+		selectedLayer?.cssVars?.["--grid-template-columns"] ||
+			selectedLayer?.cssVars?.["--grid-template-rows"]
+	);
+
+		// Only show for grid display modes
+		if (
+			!selectedLayer ||
+			(selectedLayer.cssVars?.["--display"] !== "grid" &&
+				selectedLayer.cssVars?.["--display"] !== "inline-grid")
+		) {
+			return null;
+		}
+
 	return (
 		<ActionPopover
-			label="Layout"
+			label="Grid Layout"
 			popoverTitle="Grid Layout"
 			triggerDisplayValue={triggerDisplayValue}
 			hasValue={hasValue}
-			onClear={onClear}
+			onClear={handleClear}
 		>
-			<div className="flex flex-col gap-4">
-				{/* Visual Grid Builder Canvas */}
-				<GridCanvas
-					columns={gridColumns}
-					rows={gridRows}
-					onChange={handleGridChange}
-				/>
-
-				{/* Grid Gap Control */}
-				<NumericActionControl
-					cssProperty="--gap"
-					label="Gap"
-					defaultValue={0}
-					showSteppers={false}
-					orientation="horizontal"
-				/>
-			</div>
+			<GridCanvas
+				columns={gridColumns}
+				rows={gridRows}
+				onChange={handleGridChange}
+			/>
 		</ActionPopover>
 	);
 };

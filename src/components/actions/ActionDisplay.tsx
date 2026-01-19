@@ -1,38 +1,29 @@
-import {
-	IconArrowAutofitContentFilled,
-	IconLayout2Filled,
-	IconLayoutGrid,
-	IconViewportNarrow,
-	IconViewportWide,
-} from "@tabler/icons-react";
-import { ToggleGroupControl } from "./ToggleGroupControl";
+import { SelectActionControl } from "./SelectActionControl";
 
 export const ActionDisplay = () => {
 	return (
-		<ToggleGroupControl
+		<SelectActionControl
 			cssProperty="--display"
 			label="Display"
+			defaultValue="block"
 			options={[
 				{
 					label: "Block",
 					value: "block",
-					icon: <IconArrowAutofitContentFilled />,
 				},
-				{ label: "Inline", value: "inline", icon: <IconViewportNarrow /> },
+				{ label: "Inline", value: "inline" },
 				{
 					label: "Inline-Block",
 					value: "inline-block",
-					icon: <IconViewportWide />,
 				},
-				{ label: "Flex", value: "flex", icon: <IconLayout2Filled /> },
+				{ label: "Flex", value: "flex" },
 				{
 					label: "Inline Flex",
 					value: "inline-flex",
-					icon: <IconLayout2Filled />,
 				},
-				{ label: "Grid", value: "grid", icon: <IconLayoutGrid /> },
+				{ label: "Grid", value: "grid" },
 			]}
-			orientation="vertical"
+			orientation="horizontal"
 		/>
 	);
 };

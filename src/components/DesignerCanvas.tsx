@@ -100,38 +100,26 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		if (!element || !moveableRef.current) return false;
 
 		// Check if element or any parent has data-moveable-control attribute (our custom buttons)
-		if (element.closest("[data-moveable-control='true']")) {
-			return true;
-		}
+		if (element.closest("[data-moveable-control='true']")) return true;
 
 		// Check if element is a Moveable control element
 		const moveable = moveableRef.current as {
 			isMoveableElement?: (target: Element) => boolean;
 		};
-		if (moveable.isMoveableElement?.(element)) {
-			return true;
-		}
+		if (moveable.isMoveableElement?.(element)) return true;
 
 		// Check if element is within Moveable's control box
 		// @ts-expect-error - getElement exists at runtime but not in types
 		const moveableElement = moveableRef.current?.getElement?.();
-		if (moveableElement) {
-			// Check if element is within the moveable control box or is a descendant
-			const controlBox = moveableElement.querySelector(".moveable-control-box");
-			if (
-				controlBox &&
-				(controlBox === element || controlBox.contains(element))
-			) {
-				return true;
-			}
+		if (!moveableElement) return false;
 
-			// Check if element has moveable- prefix class (custom ables)
-			if (element.closest("[class*='moveable-']")) {
-				return true;
-			}
+		const controlBox = moveableElement.querySelector(".moveable-control-box");
+		if (controlBox && (controlBox === element || controlBox.contains(element))) {
+			return true;
 		}
 
-		return false;
+		// Check if element has moveable- prefix class (custom ables)
+		return Boolean(element.closest("[class*='moveable-']"));
 	};
 
 	// Helper to process click selection with drill-down logic
@@ -307,118 +295,112 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 
 	// Handle keyboard shortcuts: Delete/Backspace for deletion, Cmd/Ctrl+Z for undo, Cmd/Ctrl+Y for redo
 	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			const target = e.target as HTMLElement;
-			const isInputField =
-				target.tagName === "INPUT" ||
-				target.tagName === "TEXTAREA" ||
-				target.isContentEditable;
+		const isInputField = (target: HTMLElement): boolean =>
+			target.tagName === "INPUT" ||
+			target.tagName === "TEXTAREA" ||
+			target.isContentEditable;
 
-			// Handle Delete/Backspace for layer deletion
+		const handleDelete = (e: KeyboardEvent, target: HTMLElement): boolean => {
 			if (
 				(e.key === "Delete" || e.key === "Backspace") &&
-				state.selectedLayers.length > 0
+				state.selectedLayers.length > 0 &&
+				!isInputField(target)
 			) {
-				// Don't delete if user is typing in an input field
-				if (isInputField) {
-					return;
-				}
-
 				e.preventDefault();
-				// Delete all selected layers (and their children)
 				state.selectedLayers.forEach((layerId) => {
 					designerAction({
 						type: "DELETE_LAYER",
 						payload: { layerId },
 					});
 				});
-				return;
+				return true;
 			}
+			return false;
+		};
 
-			// Handle Cmd/Ctrl+Z for undo
-			if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
-				// Allow undo in input fields (normal browser behavior)
-				// But also handle our undo if not in an input field
-				if (!isInputField) {
-					e.preventDefault();
-					designerAction({ type: "UNDO" });
-				}
-				return;
+		const handleUndo = (e: KeyboardEvent, target: HTMLElement): boolean => {
+			if (
+				(e.metaKey || e.ctrlKey) &&
+				e.key === "z" &&
+				!e.shiftKey &&
+				!isInputField(target)
+			) {
+				e.preventDefault();
+				designerAction({ type: "UNDO" });
+				return true;
 			}
+			return false;
+		};
 
-			// Handle Cmd/Ctrl+Shift+Z or Cmd/Ctrl+Y for redo
+		const handleRedo = (e: KeyboardEvent, target: HTMLElement): boolean => {
 			if (
 				((e.metaKey || e.ctrlKey) && e.key === "z" && e.shiftKey) ||
 				((e.metaKey || e.ctrlKey) && e.key === "y")
 			) {
-				// Allow redo in input fields (normal browser behavior)
-				// But also handle our redo if not in an input field
-				if (!isInputField) {
+				if (!isInputField(target)) {
 					e.preventDefault();
 					designerAction({ type: "REDO" });
+					return true;
 				}
-				return;
 			}
+			return false;
+		};
 
-			// Handle zoom shortcuts
-			if (e.metaKey || e.ctrlKey) {
-				// Zoom In: Cmd/Ctrl + (or Cmd/Ctrl =)
-				if (e.key === "+" || e.key === "=") {
-					console.log("DesignerCanvas: Zoom in triggered");
+		const handleZoom = (e: KeyboardEvent): boolean => {
+			if (!(e.metaKey || e.ctrlKey)) return false;
+
+			switch (e.key) {
+				case "+":
+				case "=":
 					e.preventDefault();
-					const newZoom = Math.min(10, state.zoom + 0.1);
-					designerAction({ type: "SET_ZOOM", payload: newZoom });
-					return;
-				}
-
-				// Zoom Out: Cmd/Ctrl -
-				if (e.key === "-" || e.key === "_") {
-					console.log("DesignerCanvas: Zoom out triggered");
+					designerAction({
+						type: "SET_ZOOM",
+						payload: Math.min(10, state.zoom + 0.1),
+					});
+					return true;
+				case "-":
+				case "_":
 					e.preventDefault();
-					const newZoom = Math.max(0.1, state.zoom - 0.1);
-					designerAction({ type: "SET_ZOOM", payload: newZoom });
-					return;
-				}
-
-				// Reset Zoom: Cmd/Ctrl 0
-				if (e.key === "0") {
-					console.log("DesignerCanvas: Reset zoom triggered");
+					designerAction({
+						type: "SET_ZOOM",
+						payload: Math.max(0.1, state.zoom - 0.1),
+					});
+					return true;
+				case "0":
 					e.preventDefault();
 					designerAction({ type: "SET_ZOOM", payload: 1 });
 					designerAction({ type: "SET_PAN", payload: { x: 0, y: 0 } });
-					return;
-				}
-
-				// Zoom to Fit: Cmd/Ctrl 1
-				if (e.key === "1") {
-					console.log("DesignerCanvas: Zoom to fit triggered");
-					e.preventDefault();
+					return true;
+				case "1":
 					if (state.frameSize) {
-						const containerWidth = window.innerWidth;
-						const containerHeight = window.innerHeight;
-						const frameWidth = state.frameSize.width;
-						const frameHeight = state.frameSize.height;
-
+						e.preventDefault();
 						const padding = 200;
-						const availableWidth = containerWidth - padding;
-						const availableHeight = containerHeight - padding;
-
-						const zoomX = availableWidth / frameWidth;
-						const zoomY = availableHeight / frameHeight;
+						const availableWidth = window.innerWidth - padding;
+						const availableHeight = window.innerHeight - padding;
+						const zoomX = availableWidth / state.frameSize.width;
+						const zoomY = availableHeight / state.frameSize.height;
 						const newZoom = Math.min(zoomX, zoomY, 10);
-
 						designerAction({ type: "SET_ZOOM", payload: newZoom });
 					}
-					return;
-				}
-
-				// Zoom to 100%: Cmd/Ctrl 2
-				if (e.key === "2") {
-					console.log("DesignerCanvas: Zoom to 100% triggered");
+					return true;
+				case "2":
 					e.preventDefault();
 					designerAction({ type: "SET_ZOOM", payload: 1 });
-					return;
-				}
+					return true;
+				default:
+					return false;
+			}
+		};
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement;
+			if (
+				handleDelete(e, target) ||
+				handleUndo(e, target) ||
+				handleRedo(e, target) ||
+				handleZoom(e)
+			) {
+				return;
 			}
 		};
 

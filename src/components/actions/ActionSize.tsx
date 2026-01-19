@@ -1,61 +1,131 @@
+import { useMemo } from "react";
 import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
-import { InputGroup } from "../common/InputGroup";
-import { DesignAction } from "../DesignAction";
+import { ActionPopover } from "./ActionPopover";
+import { NumericActionControl } from "./NumericActionControl";
 
 export const ActionSize = () => {
 	const selectedLayers = useSelectedLayers();
 	const designerAction = useDesignerAction();
 	const selectedLayer = selectedLayers[0];
 
-	const handleXChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	// Width values
+	const widthValue = selectedLayer?.cssVars?.["--width"];
+	const minWidthValue = selectedLayer?.cssVars?.["--min-width"];
+	const maxWidthValue = selectedLayer?.cssVars?.["--max-width"];
+
+	// Height values
+	const heightValue = selectedLayer?.cssVars?.["--height"];
+	const minHeightValue = selectedLayer?.cssVars?.["--min-height"];
+	const maxHeightValue = selectedLayer?.cssVars?.["--max-height"];
+
+	// Display values for triggers
+	const widthDisplay = useMemo(() => {
+		if (!widthValue) return "Width";
+		return widthValue;
+	}, [widthValue]);
+
+	const heightDisplay = useMemo(() => {
+		if (!heightValue) return "Height";
+		return heightValue;
+	}, [heightValue]);
+
+	const hasWidthValue = Boolean(widthValue || minWidthValue || maxWidthValue);
+	const hasHeightValue = Boolean(heightValue || minHeightValue || maxHeightValue);
+
+	const handleClearWidth = () => {
 		if (selectedLayer) {
-			const value = e.target.value.trim();
 			designerAction({
 				type: "UPDATE_LAYER_CSS",
 				payload: {
 					id: selectedLayer.id,
-					css: { "--width": value ? `${value}px` : "" },
+					css: {
+						"--width": "",
+						"--min-width": "",
+						"--max-width": "",
+					},
 				},
 			});
 		}
 	};
 
-	const handleYChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleClearHeight = () => {
 		if (selectedLayer) {
-			const value = e.target.value.trim();
 			designerAction({
 				type: "UPDATE_LAYER_CSS",
 				payload: {
 					id: selectedLayer.id,
-					css: { "--height": value ? `${value}px` : "" },
+					css: {
+						"--height": "",
+						"--min-height": "",
+						"--max-height": "",
+					},
 				},
 			});
 		}
-	};
-
-	// Extract numeric value from CSS var (removes "px" suffix)
-	// Always return a string to keep the component controlled
-	const getNumericValue = (cssVar: string | undefined): string => {
-		if (!cssVar) return "";
-		const num = parseInt(cssVar.replace("px", ""), 10);
-		return Number.isNaN(num) ? "" : num.toString();
 	};
 
 	return (
-		<DesignAction label="Size">
-			<InputGroup
-				addon="W"
-				type="number"
-				value={getNumericValue(selectedLayer?.cssVars?.["--width"])}
-				onChange={handleXChange}
-			/>
-			<InputGroup
-				addon="H"
-				type="number"
-				value={getNumericValue(selectedLayer?.cssVars?.["--height"])}
-				onChange={handleYChange}
-			/>
-		</DesignAction>
+		<>
+			<ActionPopover
+				label="Width"
+				popoverTitle="Width"
+				triggerDisplayValue={widthDisplay}
+				hasValue={hasWidthValue}
+				onClear={handleClearWidth}
+			>
+				<NumericActionControl
+					cssProperty="--width"
+					label="Width"
+					defaultValue={0}
+					showSteppers={false}
+					orientation="horizontal"
+				/>
+				<NumericActionControl
+					cssProperty="--min-width"
+					label="Min Width"
+					defaultValue={0}
+					showSteppers={false}
+					orientation="horizontal"
+				/>
+				<NumericActionControl
+					cssProperty="--max-width"
+					label="Max Width"
+					defaultValue={0}
+					showSteppers={false}
+					orientation="horizontal"
+				/>
+			</ActionPopover>
+
+			<ActionPopover
+				label="Height"
+				popoverTitle="Height"
+				triggerDisplayValue={heightDisplay}
+				hasValue={hasHeightValue}
+				onClear={handleClearHeight}
+			>
+				<NumericActionControl
+					cssProperty="--height"
+					label="Height"
+					defaultValue={0}
+					showSteppers={false}
+					orientation="horizontal"
+				/>
+				<NumericActionControl
+					cssProperty="--min-height"
+					label="Min Height"
+					defaultValue={0}
+					showSteppers={false}
+					orientation="horizontal"
+				/>
+				<NumericActionControl
+					cssProperty="--max-height"
+					label="Max Height"
+					defaultValue={0}
+					showSteppers={false}
+					orientation="horizontal"
+				/>
+			</ActionPopover>
+		</>
 	);
 };

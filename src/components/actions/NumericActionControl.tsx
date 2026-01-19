@@ -1,8 +1,9 @@
 import { Button } from "@base-ui/react/button";
-import { IconMinus, IconPlus, IconX } from "@tabler/icons-react";
+import { IconMinus, IconPlus } from "@tabler/icons-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
+import { formatCSSValue, parseCSSValue } from "../../lib/cssValueHelpers";
 import { ClearButton } from "../common/ClearButton";
 import { InputGroup } from "../common/InputGroup";
 import { Select } from "../common/Select";
@@ -21,29 +22,6 @@ interface NumericActionControlProps {
 	orientation?: "horizontal" | "vertical";
 	addon?: ReactNode;
 }
-
-/**
- * Parses a CSS value string into numeric value and unit
- * e.g., "16px" -> { value: 16, unit: "px" }
- */
-const parseCSSValue = (
-	cssValue: string | undefined,
-	defaultUnit: string
-): { value: number; unit: string } => {
-	if (!cssValue) return { value: 0, unit: defaultUnit };
-
-	// Match number (including decimals) and unit
-	const match = cssValue.match(/^(-?\d+\.?\d*)(.*)$/);
-	if (!match) return { value: 0, unit: defaultUnit };
-
-	const value = parseFloat(match[1]);
-	const unit = match[2].trim() || defaultUnit;
-
-	return {
-		value: Number.isNaN(value) ? 0 : value,
-		unit: unit || defaultUnit,
-	};
-};
 
 export const NumericActionControl = ({
 	cssProperty,
@@ -73,7 +51,7 @@ export const NumericActionControl = ({
 	// Update CSS property with new value
 	const updateCSSValue = (value: number | string, unit: string) => {
 		if (selectedLayer) {
-			const cssValue = value === "" ? "" : `${value}${unit}`;
+			const cssValue = formatCSSValue(value, unit);
 			designerAction({
 				type: "UPDATE_LAYER_CSS",
 				payload: {

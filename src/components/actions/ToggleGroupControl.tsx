@@ -1,7 +1,6 @@
-import { Button } from "@base-ui/react/button";
 import { Toggle } from "@base-ui/react/toggle";
 import { ToggleGroup } from "@base-ui/react/toggle-group";
-import { IconX } from "@tabler/icons-react";
+import { Tooltip } from "@base-ui/react/tooltip";
 import type { ReactNode } from "react";
 import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
@@ -67,14 +66,38 @@ export const ToggleGroupControl = ({
 				className="flex h-7 flex-1 items-center gap-1 rounded-md bg-input p-1"
 			>
 				{options.map((option) => (
-					<Toggle
-						key={option.value}
-						value={option.value}
-						aria-label={option.label}
-						className="flex h-full flex-1 shrink-0 items-center justify-center rounded-sm text-xs hover:bg-white/40 data-[pressed]:bg-white data-[pressed]:text-black [&_svg:not([class*='size-'])]:size-3.5"
-					>
-						{option.icon ? option.icon : option.label}
-					</Toggle>
+					<Tooltip.Root key={option.value}>
+						<Tooltip.Trigger
+							render={(props) => (
+								<Toggle
+									{...props}
+									value={option.value}
+									aria-label={option.label}
+									className="flex h-full flex-1 shrink-0 items-center justify-center rounded-sm text-xs hover:bg-white/40 data-pressed:bg-white data-pressed:text-black [&_svg:not([class*='size-'])]:size-3.5"
+								>
+									{option.icon ? option.icon : option.label}
+								</Toggle>
+							)}
+						/>
+						<Tooltip.Portal>
+							<Tooltip.Positioner>
+								<Tooltip.Popup className="rounded-md bg-black px-2 py-1 text-xs text-white shadow-lg">
+									{option.label}
+									<Tooltip.Arrow className="data-[side=bottom]:top-[-4px] data-[side=left]:right-[-4px] data-[side=right]:left-[-4px] data-[side=top]:bottom-[-4px]">
+										<svg
+											width="10"
+											height="5"
+											viewBox="0 0 30 10"
+											preserveAspectRatio="none"
+											className="fill-black"
+										>
+											<polygon points="0,0 30,0 15,10" />
+										</svg>
+									</Tooltip.Arrow>
+								</Tooltip.Popup>
+							</Tooltip.Positioner>
+						</Tooltip.Portal>
+					</Tooltip.Root>
 				))}
 			</ToggleGroup>
 			<ClearButton hasValue={hasValue} handleClear={handleClear} />
