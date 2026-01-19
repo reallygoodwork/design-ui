@@ -93,7 +93,7 @@ export const ZoomControl = () => {
 								</span>
 							</BaseMenu.Item>
 						</fieldset>
-						<div className="-mx-1 my-1 h-px bg-border" role="separator"></div>
+						<div className="-mx-1 my-1 h-px bg-border" role="separator" />
 						<fieldset>
 							<BaseMenu.Item
 								className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-hidden focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 justify-between"
@@ -130,7 +130,7 @@ export const ZoomControl = () => {
 								</span>
 							</BaseMenu.Item>
 						</fieldset>
-						<div className="-mx-1 my-1 h-px bg-border" role="separator"></div>
+						<div className="-mx-1 my-1 h-px bg-border" role="separator" />
 						<BaseMenu.Item
 							className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-hidden focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 justify-between"
 							onClick={handleResetZoom}

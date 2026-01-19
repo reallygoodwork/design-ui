@@ -2,8 +2,10 @@ import { ActionBackgroundColor } from "./components/actions/ActionBackgroundColo
 import { ActionBorder } from "./components/actions/ActionBorder";
 import { ActionBorderRadius } from "./components/actions/ActionBorderRadius";
 import { ActionColor } from "./components/actions/ActionColor";
+import { ActionDisplay } from "./components/actions/ActionDisplay";
 import { ActionFontFamily } from "./components/actions/ActionFontFamily";
 import { ActionFontSize } from "./components/actions/ActionFontSize";
+import { ActionLayout } from "./components/actions/ActionLayout";
 import { ActionLetterSpacing } from "./components/actions/ActionLetterSpacing";
 import { ActionLineHeight } from "./components/actions/ActionLineHeight";
 import { ActionMargin } from "./components/actions/ActionMargin";
@@ -84,7 +86,7 @@ function App() {
 					layers={initialLayers}
 					frameSize={{ width: 600, height: 600 }}
 				>
-					<DesignerHeader></DesignerHeader>
+					<DesignerHeader />
 					<DesignerContent>
 						<DesignPanel>
 							<DesignerPane>
@@ -104,6 +106,8 @@ function App() {
 								<ActionMargin />
 								<ActionOpacity />
 								<ActionBorderRadius />
+								<ActionDisplay />
+								<ActionLayout />
 							</DesignerPane>
 							<DesignerPane title="Color">
 								<ActionBackgroundColor />

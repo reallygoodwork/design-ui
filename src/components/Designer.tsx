@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
-import { AddLayerDialog } from "./AddLayerDialog";
-import { FontLoader } from "./FontLoader";
 import { DesignerProvider } from "../context/DesignerContext";
 import { useKeybindings } from "../hooks/useKeybindings";
 import { frameLayerType } from "../lib/layers/frame";
 import { imageLayerType } from "../lib/layers/image";
 import { textLayerType } from "../lib/layers/text";
 import type { Layer, LayerType } from "../lib/Types";
+import { AddLayerDialog } from "./AddLayerDialog";
+import { FontLoader } from "./FontLoader";
 
 /**
  * Props for the `Designer` component.

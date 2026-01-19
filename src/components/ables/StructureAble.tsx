@@ -17,7 +17,7 @@ export const StructureAble = {
 	events: [],
 	render(
 		moveable: MoveableManagerInterface<StructureAbleProps, unknown>,
-		_React: Renderer,
+		_React: Renderer
 	) {
 		const supportsChildren = moveable.props.supportsChildren ?? false;
 		const rect = moveable.getRect();
@@ -28,9 +28,10 @@ export const StructureAble = {
 		// Get the layer ID from the target element
 		const targets = moveable.getTargets();
 		const target = targets[0];
-		const layerId = target instanceof HTMLElement
-			? target.closest("[data-layer-id]")?.getAttribute("data-layer-id") || ""
-			: "";
+		const layerId =
+			target instanceof HTMLElement
+				? target.closest("[data-layer-id]")?.getAttribute("data-layer-id") || ""
+				: "";
 
 		// Add key (required)
 		// Add class prefix moveable-(required)
@@ -47,7 +48,7 @@ export const StructureAble = {
             z-index: 1000;
             pointer-events: none;
         }
-            `,
+            `
 		);
 
 		// Helper function to call callback prop to open dialog

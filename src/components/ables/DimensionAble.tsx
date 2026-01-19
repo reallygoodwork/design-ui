@@ -14,7 +14,7 @@ export const DimensionAble = {
 	events: [],
 	render(
 		moveable: MoveableManagerInterface<DimensionAbleProps, unknown>,
-		_React: Renderer,
+		_React: Renderer
 	) {
 		const rect = moveable.getRect();
 		const isLocked = moveable.props.isLocked ?? false;
@@ -38,12 +38,15 @@ export const DimensionAble = {
 				}
 				style={style}
 			>
-
 				<span className="whitespace-nowrap font-medium tabular-nums leading-none">
 					{Math.round(rect.offsetWidth)} x {Math.round(rect.offsetHeight)}
 				</span>
 				{isLocked && (
-					<IconLock className="size-2.5 shrink-0" aria-hidden="true" strokeWidth={3} />
+					<IconLock
+						className="size-2.5 shrink-0"
+						aria-hidden="true"
+						strokeWidth={3}
+					/>
 				)}
 			</div>
 		);

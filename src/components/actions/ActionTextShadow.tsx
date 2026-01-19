@@ -24,7 +24,11 @@ const TEXT_DECORATION_STYLE_OPTIONS = [
 	{ label: "Solid", value: "solid", icon: <MinusIcon /> },
 	{ label: "Dashed", value: "dashed", icon: <IconLineDashed /> },
 	{ label: "Dotted", value: "dotted", icon: <IconLineDotted /> },
-	{ label: "Double", value: "double", icon: <Tally2Icon className="-rotate-90" /> },
+	{
+		label: "Double",
+		value: "double",
+		icon: <Tally2Icon className="-rotate-90" />,
+	},
 	{ label: "Wavy", value: "wavy", icon: <IconWaveSine /> },
 ];
 
@@ -40,9 +44,8 @@ export const ActionTextShadow = () => {
 			label="Shadow"
 			popoverTitle="Text Shadow"
 			triggerDisplayValue={currentValue}
-
 		>
-      <NumericActionControl
+			<NumericActionControl
 				cssProperty="--text-shadow-blur-radius"
 				label="Blur"
 				defaultValue={1}

@@ -49,7 +49,7 @@ export const ActionPopover = ({
 							style={{
 								backgroundColor: swatchColor || "#ffffff",
 							}}
-						></span>
+						/>
 					)}
 				</Popover.Trigger>
 				<Popover.Portal>
@@ -60,7 +60,7 @@ export const ActionPopover = ({
 									{popoverTitle}
 								</Popover.Title>
 							</div>
-							<div className="shrink-0 bg-border h-px -mx-4 my-4 w-auto"></div>
+							<div className="shrink-0 bg-border h-px -mx-4 my-4 w-auto" />
 							<div className="flex w-full flex-col gap-2">{children}</div>
 						</Popover.Popup>
 					</Popover.Positioner>

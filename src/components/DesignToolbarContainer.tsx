@@ -1,4 +1,8 @@
-import { IconArrowBackUp, IconArrowForwardUp, IconPalette } from "@tabler/icons-react";
+import {
+	IconArrowBackUp,
+	IconArrowForwardUp,
+	IconPalette,
+} from "@tabler/icons-react";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useHistory } from "../hooks/useHistory";
 import { DesignerToolbar } from "./DesignerToolbar";
@@ -6,7 +10,6 @@ import { DesignerToolbarButton } from "./DesignerToolbarButton";
 import { DesignerToolbarGroup } from "./DesignerToolbarGroup";
 import { DesignerToolbarSeparator } from "./DesignerToolbarSeparator";
 import { ZoomControl } from "./ZoomControl";
-
 
 export const DesignToolbarContainer = () => {
 	const designerAction = useDesignerAction();
@@ -24,7 +27,7 @@ export const DesignToolbarContainer = () => {
 				>
 					<IconArrowBackUp />
 				</DesignerToolbarButton>
-        <DesignerToolbarButton
+				<DesignerToolbarButton
 					hint="Redo"
 					isDisabled={!canRedo}
 					onClick={() => {
@@ -34,7 +37,6 @@ export const DesignToolbarContainer = () => {
 					<IconArrowForwardUp />
 				</DesignerToolbarButton>
 			</DesignerToolbarGroup>
-
 
 			<DesignerToolbarSeparator />
 			<DesignerToolbarGroup>

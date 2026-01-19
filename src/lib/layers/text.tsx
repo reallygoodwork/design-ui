@@ -20,7 +20,7 @@ export const textLayerType = {
 		"--text-shadow",
 		"--color",
 		"--opacity",
-    "--background-color",
+		"--background-color",
 	],
 	defaultValues: {
 		name: "Text",

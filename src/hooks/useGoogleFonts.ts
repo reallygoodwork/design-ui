@@ -14,7 +14,8 @@ interface UseGoogleFontsOptions {
 export const useGoogleFonts = () => {
 	const loadFont = useCallback(
 		(fontFamily: string, options?: UseGoogleFontsOptions) => {
-			const { weights = [400, 500, 600, 700], display = "swap" } = options || {};
+			const { weights = [400, 500, 600, 700], display = "swap" } =
+				options || {};
 
 			// Already loaded
 			if (loadedFonts.has(fontFamily)) {
@@ -25,7 +26,8 @@ export const useGoogleFonts = () => {
 			const formattedFamily = fontFamily.replace(/\s+/g, "+");
 
 			// Build weights string
-			const weightsString = weights.length > 0 ? `:wght@${weights.join(";")}` : "";
+			const weightsString =
+				weights.length > 0 ? `:wght@${weights.join(";")}` : "";
 
 			// Create Google Fonts URL
 			const fontUrl = `https://fonts.googleapis.com/css2?family=${formattedFamily}${weightsString}&display=${display}`;

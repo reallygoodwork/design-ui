@@ -19,30 +19,32 @@ export type LayerWithStyles = Layer & {
 	contentStyle: CSSProperties;
 };
 
-
 export type LayerType = {
-  type: string
-  name: string
-  defaultValues: Omit<Layer, "id" | "type" | "children">
-  render: (layer: LayerWithStyles, children?: React.ReactNode) => React.ReactNode
-  icon?: ReactNode
-  keybinding?: Keybinding
-  supportsChildren?: boolean
-  supportedCssProperties?: SupportedCssProperty[]
-}
+	type: string;
+	name: string;
+	defaultValues: Omit<Layer, "id" | "type" | "children">;
+	render: (
+		layer: LayerWithStyles,
+		children?: React.ReactNode
+	) => React.ReactNode;
+	icon?: ReactNode;
+	keybinding?: Keybinding;
+	supportsChildren?: boolean;
+	supportedCssProperties?: SupportedCssProperty[];
+};
 
 export type Keybinding = {
-  key: string
-  label: string
-  labelMac: string
-  description: string
-  group: string
-}
+	key: string;
+	label: string;
+	labelMac: string;
+	description: string;
+	group: string;
+};
 
 export type FrameSize = {
-  width: number
-  height: number
-  unit?: Unit
-}
+	width: number;
+	height: number;
+	unit?: Unit;
+};
 
-type Unit = "px" | "mm" | "in" | "cm" | "pt"
+type Unit = "px" | "mm" | "in" | "cm" | "pt";

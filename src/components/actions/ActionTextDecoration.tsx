@@ -24,7 +24,11 @@ const TEXT_DECORATION_STYLE_OPTIONS = [
 	{ label: "Solid", value: "solid", icon: <MinusIcon /> },
 	{ label: "Dashed", value: "dashed", icon: <IconLineDashed /> },
 	{ label: "Dotted", value: "dotted", icon: <IconLineDotted /> },
-	{ label: "Double", value: "double", icon: <Tally2Icon className="-rotate-90" /> },
+	{
+		label: "Double",
+		value: "double",
+		icon: <Tally2Icon className="-rotate-90" />,
+	},
 	{ label: "Wavy", value: "wavy", icon: <IconWaveSine /> },
 ];
 
@@ -40,14 +44,13 @@ export const ActionTextDecoration = () => {
 			label="Decoration"
 			popoverTitle="Text Decoration"
 			triggerDisplayValue={currentValue}
-
 		>
 			<ToggleGroupControl
 				cssProperty="--text-decoration-line"
 				label="Line"
 				options={TEXT_DECORATION_OPTIONS}
 				defaultValue="none"
-        orientation="horizontal"
+				orientation="horizontal"
 			/>
 			<NumericActionControl
 				cssProperty="--text-decoration-thickness"

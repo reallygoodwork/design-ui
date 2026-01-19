@@ -8,11 +8,11 @@ import { ActionPopover } from "./ActionPopover";
 
 interface GoogleFont {
 	family: string;
-  category: string;
-  kind: string;
-  subsets: string[];
-  variants: string[];
-  files: Record<string, string>;
+	category: string;
+	kind: string;
+	subsets: string[];
+	variants: string[];
+	files: Record<string, string>;
 }
 
 let cachedFonts: GoogleFont[] | null = null;
@@ -47,10 +47,29 @@ export const ActionFontFamily = () => {
 				.then((response) => response.json())
 				.then((data) => {
 					cachedFonts = data.items.slice(0, 100);
-					setFonts(cachedFonts || fallbackFonts.map((family) => ({ family, category: "sans-serif", kind: "normal", subsets: ["latin"], variants: ["400"], files: {} })));
+					setFonts(
+						cachedFonts ||
+							fallbackFonts.map((family) => ({
+								family,
+								category: "sans-serif",
+								kind: "normal",
+								subsets: ["latin"],
+								variants: ["400"],
+								files: {},
+							}))
+					);
 				})
 				.catch(() => {
-					setFonts(fallbackFonts.map((family) => ({ family, category: "sans-serif", kind: "normal", subsets: ["latin"], variants: ["400"], files: {} })));
+					setFonts(
+						fallbackFonts.map((family) => ({
+							family,
+							category: "sans-serif",
+							kind: "normal",
+							subsets: ["latin"],
+							variants: ["400"],
+							files: {},
+						}))
+					);
 				})
 				.finally(() => setIsLoading(false));
 		}
