@@ -4,20 +4,18 @@ import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { ActionPopover } from "./ActionPopover";
 import { NumericActionControl } from "./NumericActionControl";
 
-export const ActionMargin = () => {
+export const ActionBorderRadius = () => {
   const selectedLayers = useSelectedLayers();
-  const designerAction = useDesignerAction();
   const selectedLayer = selectedLayers[0];
+  const designerAction = useDesignerAction();
 
-  // Get all padding values
-  const marginTop = selectedLayer?.cssVars?.["--margin-block-start"];
-  const marginRight = selectedLayer?.cssVars?.["--margin-inline-start"];
-  const marginBottom = selectedLayer?.cssVars?.["--margin-block-end"];
-  const marginLeft = selectedLayer?.cssVars?.["--margin-inline-end"];
+  const borderTopLeftRadius = selectedLayer?.cssVars?.["--border-top-left-radius"];
+  const borderTopRightRadius = selectedLayer?.cssVars?.["--border-top-right-radius"];
+  const borderBottomRightRadius = selectedLayer?.cssVars?.["--border-bottom-right-radius"];
+  const borderBottomLeftRadius = selectedLayer?.cssVars?.["--border-bottom-left-radius"];
 
-  // Create display value for trigger
   const triggerDisplayValue = useMemo(() => {
-    const values = [marginTop, marginRight, marginBottom, marginLeft];
+    const values = [borderTopLeftRadius, borderTopRightRadius, borderBottomRightRadius, borderBottomLeftRadius];
     const hasAnyValue = values.some((v) => v);
 
     if (!hasAnyValue) return "";
@@ -28,13 +26,13 @@ export const ActionMargin = () => {
       return uniqueValues[0];
     }
 
-    // Show abbreviated format: top right bottom left
+    // Show abbreviated format: tl tr br bl
     return values.map((v) => v || "0").join(" ");
-  }, [marginTop, marginRight, marginBottom, marginLeft]);
+  }, [borderTopLeftRadius, borderTopRightRadius, borderBottomRightRadius, borderBottomLeftRadius]);
 
   const hasValue = useMemo(() => {
-    return Boolean(marginTop || marginRight || marginBottom || marginLeft);
-  }, [marginTop, marginRight, marginBottom, marginLeft]);
+    return Boolean(borderTopLeftRadius || borderTopRightRadius || borderBottomRightRadius || borderBottomLeftRadius);
+  }, [borderTopLeftRadius, borderTopRightRadius, borderBottomRightRadius, borderBottomLeftRadius]);
 
   const handleClear = () => {
     if (selectedLayer) {
@@ -43,10 +41,10 @@ export const ActionMargin = () => {
         payload: {
           id: selectedLayer.id,
           css: {
-            "--margin-top": "",
-            "--margin-right": "",
-            "--margin-bottom": "",
-            "--margin-left": "",
+            "--border-top-left-radius": "",
+            "--border-top-right-radius": "",
+            "--border-bottom-right-radius": "",
+            "--border-bottom-left-radius": "",
           },
         },
       });
@@ -55,39 +53,43 @@ export const ActionMargin = () => {
 
   return (
     <ActionPopover
-      label="Margin"
-      popoverTitle="Margin"
+      label="Radius"
+      popoverTitle="Border Radius"
       triggerDisplayValue={triggerDisplayValue ?? ""}
       hasValue={hasValue}
       onClear={handleClear}
     >
       <NumericActionControl
-        cssProperty="--margin-top"
-        label="Top"
+        cssProperty="--border-top-left-radius"
+        label="Top Left"
         defaultValue={0}
         showSteppers={false}
         orientation="horizontal"
+        units={["px", "%", "rem"]}
       />
       <NumericActionControl
-        cssProperty="--margin-right"
-        label="Right"
+        cssProperty="--border-top-right-radius"
+        label="Top Right"
         defaultValue={0}
         showSteppers={false}
         orientation="horizontal"
+        units={["px", "%", "rem"]}
       />
       <NumericActionControl
-        cssProperty="--margin-bottom"
-        label="Bottom"
+        cssProperty="--border-bottom-right-radius"
+        label="Bottom Right"
         defaultValue={0}
         showSteppers={false}
         orientation="horizontal"
+        units={["px", "%", "rem"]}
       />
       <NumericActionControl
-        cssProperty="--margin-left"
-        label="Left"
+        cssProperty="--border-bottom-left-radius"
+        label="Bottom Left"
         defaultValue={0}
         showSteppers={false}
         orientation="horizontal"
+        units={["px", "%", "rem"]}
       />
     </ActionPopover>
   );

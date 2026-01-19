@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { ActionPopover } from "./ActionPopover";
 import { NumericActionControl } from "./NumericActionControl";
@@ -21,6 +22,7 @@ const EDGE_PROPERTIES = ["top", "right", "bottom", "left"] as const;
 
 export const ActionPosition = () => {
   const selectedLayers = useSelectedLayers();
+  const designerAction = useDesignerAction();
   const selectedLayer = selectedLayers[0];
 
   const currentPosition = selectedLayer?.cssVars?.position || "static";
@@ -40,12 +42,38 @@ export const ActionPosition = () => {
     return `${currentPosition} (${appliedValues.join(", ")})`;
   }, [currentPosition, selectedLayer?.cssVars]);
 
+  const hasValue = useMemo(() => {
+    return Boolean(
+      selectedLayer?.cssVars?.position ||
+      EDGE_PROPERTIES.some((prop) => selectedLayer?.cssVars?.[prop])
+    );
+  }, [selectedLayer?.cssVars]);
+
+  const handleClear = () => {
+    if (selectedLayer) {
+      designerAction({
+        type: "UPDATE_LAYER_CSS",
+        payload: {
+          id: selectedLayer.id,
+          css: {
+            position: "",
+            top: "",
+            right: "",
+            bottom: "",
+            left: "",
+          },
+        },
+      });
+    }
+  };
+
   return (
     <ActionPopover
-      cssProperty={["position", ...EDGE_PROPERTIES]}
       label="Position"
       popoverTitle="Position"
       triggerDisplayValue={displayValue}
+      hasValue={hasValue}
+      onClear={handleClear}
     >
       <div className="flex flex-col gap-2">
         <SelectActionControl

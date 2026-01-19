@@ -20,6 +20,11 @@ body {
   isolation: isolate;
 }
 
+.react-colorful__pointer {
+  width: 20px !important;
+  height: 20px !important;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -224,6 +229,3 @@ body {
   position: relative;
   overscroll-behavior: none;
 }
-
-/* Moveable control scaling is handled via JavaScript in DesignerCanvas.tsx */
-/* This ensures we can combine our scale transform with Moveable's positioning transforms */

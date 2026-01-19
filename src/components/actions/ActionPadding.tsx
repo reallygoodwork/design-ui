@@ -1,10 +1,12 @@
 import { useMemo } from "react";
+import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { ActionPopover } from "./ActionPopover";
 import { NumericActionControl } from "./NumericActionControl";
 
 export const ActionPadding = () => {
   const selectedLayers = useSelectedLayers();
+  const designerAction = useDesignerAction();
   const selectedLayer = selectedLayers[0];
 
   // Get all padding values
@@ -30,17 +32,34 @@ export const ActionPadding = () => {
     return values.map((v) => v || "0").join(" ");
   }, [paddingTop, paddingRight, paddingBottom, paddingLeft]);
 
+  const hasValue = useMemo(() => {
+    return Boolean(paddingTop || paddingRight || paddingBottom || paddingLeft);
+  }, [paddingTop, paddingRight, paddingBottom, paddingLeft]);
+
+  const handleClear = () => {
+    if (selectedLayer) {
+      designerAction({
+        type: "UPDATE_LAYER_CSS",
+        payload: {
+          id: selectedLayer.id,
+          css: {
+            "--padding-block-start": "",
+            "--padding-inline-end": "",
+            "--padding-block-end": "",
+            "--padding-inline-start": "",
+          },
+        },
+      });
+    }
+  };
+
   return (
     <ActionPopover
-      cssProperty={[
-        "--padding-block-start",
-        "--padding-inline-end",
-        "--padding-block-end",
-        "--padding-inline-start",
-      ]}
       label="Padding"
       popoverTitle="Padding"
       triggerDisplayValue={triggerDisplayValue ?? ""}
+      hasValue={hasValue}
+      onClear={handleClear}
     >
       <NumericActionControl
         cssProperty="--padding-block-start"

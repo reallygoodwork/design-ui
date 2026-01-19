@@ -1,11 +1,22 @@
 import { IconPhoto } from "@tabler/icons-react";
 import type { LayerType, LayerWithStyles } from "../Types";
+import { applyCssVars } from "../cssPropertyMapping";
 
 export const imageLayerType = {
   type: "image",
   name: "Image",
   icon: <IconPhoto />,
   supportsChildren: false,
+  supportedCssProperties: [
+    "--width",
+    "--height",
+    "--max-width",
+    "--max-height",
+    "--min-width",
+    "--min-height",
+    "--border-radius",
+    "--opacity",
+  ],
   defaultValues: {
     name: "Image",
     value: "https://placehold.co/150",
@@ -19,9 +30,8 @@ export const imageLayerType = {
       src={layer.value}
       alt={layer.name}
       style={{
-        width: layer.style.width,
-        height: layer.style.height,
         display: "block",
+        ...applyCssVars(layer.cssVars, imageLayerType.supportedCssProperties),
       }}
     />
   ),

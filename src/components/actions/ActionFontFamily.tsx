@@ -79,12 +79,29 @@ export const ActionFontFamily = () => {
 		preloadFont(fontFamily);
 	};
 
+	const hasValue = useMemo(() => {
+		return Boolean(selectedLayer?.cssVars?.["--font-family"]);
+	}, [selectedLayer?.cssVars]);
+
+	const handleClear = () => {
+		if (selectedLayer) {
+			designerAction({
+				type: "UPDATE_LAYER_CSS",
+				payload: {
+					id: selectedLayer.id,
+					css: { "--font-family": "" },
+				},
+			});
+		}
+	};
+
 	return (
 		<ActionPopover
-			cssProperty={["--font-family"]}
-			label="Font Family"
+			label="Family"
 			popoverTitle="Font Family"
 			triggerDisplayValue={triggerDisplayValue ?? ""}
+			hasValue={hasValue}
+			onClear={handleClear}
 		>
 			<Command label="Font Family">
 				<div

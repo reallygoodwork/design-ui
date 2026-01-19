@@ -1,14 +1,21 @@
 import { ActionBackgroundColor } from "./components/actions/ActionBackgroundColor";
 import { ActionBorder } from "./components/actions/ActionBorder";
+import { ActionBorderRadius } from "./components/actions/ActionBorderRadius";
 import { ActionColor } from "./components/actions/ActionColor";
 import { ActionFontFamily } from "./components/actions/ActionFontFamily";
 import { ActionFontSize } from "./components/actions/ActionFontSize";
 import { ActionLetterSpacing } from "./components/actions/ActionLetterSpacing";
 import { ActionLineHeight } from "./components/actions/ActionLineHeight";
 import { ActionMargin } from "./components/actions/ActionMargin";
+import { ActionOpacity } from "./components/actions/ActionOpacity";
 import { ActionPadding } from "./components/actions/ActionPadding";
 import { ActionPosition } from "./components/actions/ActionPosition";
 import { ActionSize } from "./components/actions/ActionSize";
+import { ActionTextAlign } from "./components/actions/ActionTextAlign";
+import { ActionTextDecoration } from "./components/actions/ActionTextDecoration";
+import { ActionTextShadow } from "./components/actions/ActionTextShadow";
+import { ActionTextStyle } from "./components/actions/ActionTextStyle";
+import { ActionTextTransform } from "./components/actions/ActionTextTransform";
 import { Designer } from "./components/Designer";
 import { DesignerCanvas } from "./components/DesignerCanvas";
 import { DesignerContent } from "./components/DesignerContent";
@@ -72,7 +79,7 @@ const initialLayers: Layer[] = [
 function App() {
 	return (
 		<DesignerProvider>
-			<div className="flex h-screen w-screen isolate">
+			<div className="flex h-screen w-screen isolate ds">
 				<Designer
 					layers={initialLayers}
 					frameSize={{ width: 600, height: 600 }}
@@ -95,6 +102,8 @@ function App() {
 								<ActionSize />
 								<ActionPadding />
 								<ActionMargin />
+								<ActionOpacity />
+								<ActionBorderRadius />
 							</DesignerPane>
 							<DesignerPane title="Color">
 								<ActionBackgroundColor />
@@ -106,6 +115,11 @@ function App() {
 								<ActionFontSize />
 								<ActionLineHeight />
 								<ActionLetterSpacing />
+								<ActionTextAlign />
+								<ActionTextStyle />
+								<ActionTextDecoration />
+								<ActionTextTransform />
+								<ActionTextShadow />
 							</DesignerPane>
 						</DesignPanel>
 

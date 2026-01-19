@@ -120,16 +120,29 @@ export const ColorActionPopover = ({
 
 	const displayValue = triggerDisplayValue ?? formattedColor;
 
+	const handleClear = () => {
+		if (selectedLayer) {
+			designerAction({
+				type: "UPDATE_LAYER_CSS",
+				payload: {
+					id: selectedLayer.id,
+					css: { [cssProperty]: "" },
+				},
+			});
+		}
+	};
+
 	return (
 		<ActionPopover
-			cssProperty={cssProperty}
 			label={label}
 			popoverTitle={popoverTitle}
 			triggerDisplayValue={displayValue}
+			hasValue={hasValue}
+			onClear={handleClear}
 			showSwatch={true}
 			swatchColor={hasValue ? rawColorValue : "transparent"}
 		>
-			<div className="[&_div.react-colorful]:w-full!">
+			<div className="[&_div.react-colorful]:w-full! ">
 				{colorFormat === "hsla" ? (
 					<HslaStringColorPicker
 						color={pickerColor}

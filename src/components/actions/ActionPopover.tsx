@@ -2,16 +2,15 @@ import { Button } from "@base-ui/react/button";
 import { Popover } from "@base-ui/react/popover";
 import { IconX } from "@tabler/icons-react";
 import type { ReactNode } from "react";
-import { useState } from "react";
-import { useDesignerAction } from "../../hooks/useDesignerAction";
-import { useSelectedLayers } from "../../hooks/useSelectedLayers";
+import { ClearButton } from "../common/ClearButton";
 import { DesignAction } from "../DesignAction";
 
 interface ActionPopoverProps {
-	cssProperty: string | string[];
 	label: string;
 	popoverTitle: string;
 	triggerDisplayValue: string;
+	hasValue?: boolean;
+	onClear?: () => void;
 	showSwatch?: boolean;
 	swatchColor?: string;
 	children: ReactNode;
@@ -19,52 +18,21 @@ interface ActionPopoverProps {
 }
 
 export const ActionPopover = ({
-	cssProperty,
 	label,
 	popoverTitle,
 	triggerDisplayValue,
+	hasValue = false,
+	onClear,
 	showSwatch = false,
 	swatchColor,
 	children,
 	onOpenChange,
 }: ActionPopoverProps) => {
-	const selectedLayers = useSelectedLayers();
-	const designerAction = useDesignerAction();
-	const selectedLayer = selectedLayers[0];
-
-	// Determine if there's a value based on cssProperty
-	const hasValue = (() => {
-		if (Array.isArray(cssProperty)) {
-			return cssProperty.some((prop) =>
-				Boolean(selectedLayer?.cssVars?.[prop]),
-			);
-		}
-		return Boolean(selectedLayer?.cssVars?.[cssProperty]);
-	})();
-
-	const handleClear = () => {
-		if (selectedLayer) {
-			const cssProps = Array.isArray(cssProperty) ? cssProperty : [cssProperty];
-			const css = cssProps.reduce(
-				(acc, prop) => {
-					acc[prop] = "";
-					return acc;
-				},
-				{} as Record<string, string>,
-			);
-
-			designerAction({
-				type: "UPDATE_LAYER_CSS",
-				payload: { id: selectedLayer.id, css },
-			});
-		}
-	};
-
 	return (
 		<DesignAction label={label}>
 			<Popover.Root onOpenChange={onOpenChange}>
 				<Popover.Trigger
-					className="inline-flex items-center gap-1 whitespace-nowrap rounded-md font-medium text-xs leading-none transition-all focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[4px] focus-visible:ring-ring/50 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-3.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 justify-start bg-input text-input-foreground hover:bg-input/80 h-7 px-2 py-1 has-[>svg]:px-2 data-[empty=true]:text-muted-foreground tabular-nums max-w-32 w-fit flex-1 truncate"
+					className="inline-flex items-center gap-1 whitespace-nowrap rounded-md font-medium text-xs leading-none transition-all focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[4px] focus-visible:ring-ring/50 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-3.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 justify-start bg-input text-input-foreground hover:bg-input/80 h-7 px-2 py-1 has-[>svg]:px-2 data-[empty=true]:text-muted-foreground tabular-nums max-w-32 w-fit flex-1 truncate border border-input"
 					data-empty={!hasValue}
 				>
 					<span
@@ -98,13 +66,9 @@ export const ActionPopover = ({
 					</Popover.Positioner>
 				</Popover.Portal>
 			</Popover.Root>
-			<Button
-				onClick={handleClear}
-				disabled={!hasValue}
-				className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md font-medium text-xs leading-none transition-all focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[4px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-input text-input-foreground hover:bg-input/80 size-7 justify-center p-0 active:scale-95 [&_svg:not([class*='size-'])]:size-3.5"
-			>
-				<IconX />
-			</Button>
+			{onClear && (
+				<ClearButton hasValue={Boolean(hasValue)} handleClear={onClear} />
+			)}
 		</DesignAction>
 	);
 };

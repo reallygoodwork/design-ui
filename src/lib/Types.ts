@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import type { SupportedCssProperty } from "./cssPropertyMapping";
 
 export type CSSVars = Record<string, string>;
 
@@ -27,6 +28,7 @@ export type LayerType = {
   icon?: ReactNode
   keybinding?: Keybinding
   supportsChildren?: boolean
+  supportedCssProperties?: SupportedCssProperty[]
 }
 
 export type Keybinding = {
