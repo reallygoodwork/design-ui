@@ -25,7 +25,7 @@ export const CSSPanel = () => {
 						readOnly: true,
 					}}
 					defaultLanguage="css"
-					defaultValue={`:root {
+					defaultValue={`.${layer?.name.toLowerCase().replace(" ", "-")} {
 	${cssString}
 }`}
 				/>

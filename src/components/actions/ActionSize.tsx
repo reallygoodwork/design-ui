@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useDesignerAction } from "../../hooks/useDesignerAction";
+import { useLayerDimensions } from "../../hooks/useLayerDimensions";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { ActionPopover } from "./ActionPopover";
 import { NumericActionControl } from "./NumericActionControl";
@@ -8,6 +9,9 @@ export const ActionSize = () => {
 	const selectedLayers = useSelectedLayers();
 	const designerAction = useDesignerAction();
 	const selectedLayer = selectedLayers[0];
+
+	// Get computed dimensions from the DOM
+	const dimensions = useLayerDimensions(selectedLayer);
 
 	// Width values
 	const widthValue = selectedLayer?.cssVars?.["--width"];
@@ -19,16 +23,24 @@ export const ActionSize = () => {
 	const minHeightValue = selectedLayer?.cssVars?.["--min-height"];
 	const maxHeightValue = selectedLayer?.cssVars?.["--max-height"];
 
-	// Display values for triggers
+	// Display values for triggers - show CSS value if set, otherwise show computed dimension
 	const widthDisplay = useMemo(() => {
-		if (!widthValue) return "Width";
-		return widthValue;
-	}, [widthValue]);
+		if (widthValue) return widthValue;
+		if (dimensions?.width) return `${dimensions.width}px`;
+		return "";
+	}, [widthValue, dimensions?.width]);
 
 	const heightDisplay = useMemo(() => {
-		if (!heightValue) return "Height";
-		return heightValue;
-	}, [heightValue]);
+		if (heightValue) return heightValue;
+		if (dimensions?.height) return `${dimensions.height}px`;
+		return "";
+	}, [heightValue, dimensions?.height]);
+
+	// Placeholder values for inputs - show computed dimension when no value is set
+	const widthPlaceholder = dimensions?.width ? `${dimensions.width}` : undefined;
+	const heightPlaceholder = dimensions?.height
+		? `${dimensions.height}`
+		: undefined;
 
 	const hasWidthValue = Boolean(widthValue || minWidthValue || maxWidthValue);
 	const hasHeightValue = Boolean(heightValue || minHeightValue || maxHeightValue);
@@ -80,6 +92,7 @@ export const ActionSize = () => {
 					defaultValue={0}
 					showSteppers={false}
 					orientation="horizontal"
+					placeholder={widthPlaceholder}
 				/>
 				<NumericActionControl
 					cssProperty="--min-width"
@@ -110,6 +123,7 @@ export const ActionSize = () => {
 					defaultValue={0}
 					showSteppers={false}
 					orientation="horizontal"
+					placeholder={heightPlaceholder}
 				/>
 				<NumericActionControl
 					cssProperty="--min-height"

@@ -7,11 +7,13 @@ export const InputGroup = ({
 	value,
 	onChange,
 	type,
+	placeholder,
 }: {
 	addon?: ReactNode;
 	value: string;
 	onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 	type?: string;
+	placeholder?: string;
 }) => {
 	return (
 		<div
@@ -44,6 +46,7 @@ export const InputGroup = ({
 					aria-valuenow={value ? parseInt(value, 10) : undefined}
 					value={value || ""}
 					onChange={onChange}
+					placeholder={placeholder}
 				/>
 			</div>
 		</div>

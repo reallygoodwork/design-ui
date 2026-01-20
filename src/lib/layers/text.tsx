@@ -35,7 +35,7 @@ export const textLayerType = {
 		<p
 			style={applyCssVars(layer.cssVars, textLayerType.supportedCssProperties)}
 		>
-			{layer.name}
+			{layer.value}
 			{children}
 		</p>
 	),

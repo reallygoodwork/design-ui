@@ -1,3 +1,4 @@
+import { ScrollArea } from "@base-ui/react/scroll-area";
 import { ActionAlignItems } from "./actions/ActionAlignItems";
 import { ActionBackgroundColor } from "./actions/ActionBackgroundColor";
 import { ActionBorder } from "./actions/ActionBorder";
@@ -19,6 +20,7 @@ import { ActionPadding } from "./actions/ActionPadding";
 import { ActionPosition } from "./actions/ActionPosition";
 import { ActionSize } from "./actions/ActionSize";
 import { ActionTextAlign } from "./actions/ActionTextAlign";
+import { ActionTextContent } from "./actions/ActionTextContent";
 import { ActionTextDecoration } from "./actions/ActionTextDecoration";
 import { ActionTextShadow } from "./actions/ActionTextShadow";
 import { ActionTextStyle } from "./actions/ActionTextStyle";
@@ -29,10 +31,11 @@ export const DesignActionPanel = () => {
 	return (
 		<>
 			<DesignerPane title="Layer">
-				<ActionPosition />
 				<ActionSize />
+				<ActionPosition />
 				<ActionOpacity />
 				<ActionBorderRadius />
+				<ActionTextContent />
 			</DesignerPane>
 			<DesignerPane title="Layout">
 				<ActionDisplay />

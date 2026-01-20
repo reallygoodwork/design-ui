@@ -1,12 +1,13 @@
-import type { ReactNode } from "react";
-
-export const DesignerPanel = ({ children }: { children: ReactNode }) => {
+export const DesignPanel = ({ children }: { children: React.ReactNode }) => {
 	return (
 		<div
 			data-slot="designer-panel"
-			className="group flex flex-col gap-2 py-4 last:border-b-0 has-data-[slot=designer-pane-header]:gap-4 flex-1 border-b-0"
+			className="relative z-20 flex h-full w-[260px] shrink-0 flex-col bg-background first:border-r border-border last:border-l *:[div]:no-scrollbar"
+			style={{
+				'--designer-panel-height': '48px',
+			}}
 		>
-			{children}
+			<div className="flex flex-1 flex-col overflow-hidden">{children}</div>
 		</div>
 	);
 };

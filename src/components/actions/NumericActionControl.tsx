@@ -21,6 +21,7 @@ interface NumericActionControlProps {
 	showSteppers?: boolean;
 	orientation?: "horizontal" | "vertical";
 	addon?: ReactNode;
+	placeholder?: string;
 }
 
 export const NumericActionControl = ({
@@ -33,6 +34,7 @@ export const NumericActionControl = ({
 	showSteppers = true,
 	orientation = "vertical",
 	addon = "",
+	placeholder,
 }: NumericActionControlProps) => {
 	const selectedLayers = useSelectedLayers();
 	const designerAction = useDesignerAction();
@@ -114,6 +116,7 @@ export const NumericActionControl = ({
 					value={inputValue}
 					onChange={handleInputChange}
 					addon={addon}
+					placeholder={placeholder}
 				/>
 				<Select
 					items={unitItems}
