@@ -4,7 +4,7 @@ export const DesignerHeader = ({
 	children?: React.ReactNode;
 }) => {
 	return (
-		<div className="flex h-12 w-full shrink-0 items-center gap-2 border-b bg-background px-4">
+		<div className="flex h-12 w-full shrink-0 items-center gap-2 border-b border-border bg-background px-4">
 			{children}
 		</div>
 	);

@@ -21,7 +21,7 @@ export const DesignerPane = ({
 
 	return (
 		<div
-			className="group flex flex-col gap-2 border-b py-4 last:border-b-0 has-data-[slot=designer-pane-header]:gap-4"
+			className="group flex flex-col gap-2 border-b border-border py-4 last:border-b-0 has-data-[slot=designer-pane-header]:gap-4"
 			data-slot="designer-pane"
 		>
 			{title && (

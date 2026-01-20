@@ -1,28 +1,6 @@
-import { ActionAlignItems } from "./components/actions/ActionAlignItems";
-import { ActionBackgroundColor } from "./components/actions/ActionBackgroundColor";
-import { ActionBorder } from "./components/actions/ActionBorder";
-import { ActionBorderRadius } from "./components/actions/ActionBorderRadius";
-import { ActionColor } from "./components/actions/ActionColor";
-import { ActionDisplay } from "./components/actions/ActionDisplay";
-import { ActionFlexDirection } from "./components/actions/ActionFlexDirection";
-import { ActionFlexWrap } from "./components/actions/ActionFlexWrap";
-import { ActionFontFamily } from "./components/actions/ActionFontFamily";
-import { ActionFontSize } from "./components/actions/ActionFontSize";
-import { ActionGap } from "./components/actions/ActionGap";
-import { ActionGridLayout } from "./components/actions/ActionGridLayout";
-import { ActionJustifyContent } from "./components/actions/ActionJustifyContent";
-import { ActionLetterSpacing } from "./components/actions/ActionLetterSpacing";
-import { ActionLineHeight } from "./components/actions/ActionLineHeight";
-import { ActionMargin } from "./components/actions/ActionMargin";
-import { ActionOpacity } from "./components/actions/ActionOpacity";
-import { ActionPadding } from "./components/actions/ActionPadding";
-import { ActionPosition } from "./components/actions/ActionPosition";
-import { ActionSize } from "./components/actions/ActionSize";
-import { ActionTextAlign } from "./components/actions/ActionTextAlign";
-import { ActionTextDecoration } from "./components/actions/ActionTextDecoration";
-import { ActionTextShadow } from "./components/actions/ActionTextShadow";
-import { ActionTextStyle } from "./components/actions/ActionTextStyle";
-import { ActionTextTransform } from "./components/actions/ActionTextTransform";
+import { CSSPanel } from "./components/CSSPanel";
+import { Tabs } from "./components/common/Tabs";
+import { DesignActionPanel } from "./components/DesignActionPanel";
 import { Designer } from "./components/Designer";
 import { DesignerCanvas } from "./components/DesignerCanvas";
 import { DesignerContent } from "./components/DesignerContent";
@@ -104,39 +82,20 @@ function App() {
 						</DesignerCanvas>
 
 						<DesignPanel>
-							<DesignerPane title="Layer">
-								<ActionPosition />
-								<ActionSize />
-								<ActionOpacity />
-								<ActionBorderRadius />
-							</DesignerPane>
-							<DesignerPane title="Layout">
-								<ActionDisplay />
-								<ActionGridLayout />
-								<ActionJustifyContent />
-								<ActionAlignItems />
-								<ActionFlexDirection />
-								<ActionFlexWrap />
-								<ActionGap />
-								<ActionPadding />
-								<ActionMargin />
-							</DesignerPane>
-							<DesignerPane title="Color">
-								<ActionBackgroundColor />
-								<ActionColor />
-								<ActionBorder />
-							</DesignerPane>
-							<DesignerPane title="Typography" showForLayerTypes={["text"]}>
-								<ActionFontFamily />
-								<ActionFontSize />
-								<ActionLineHeight />
-								<ActionLetterSpacing />
-								<ActionTextAlign />
-								<ActionTextStyle />
-								<ActionTextDecoration />
-								<ActionTextTransform />
-								<ActionTextShadow />
-							</DesignerPane>
+							<Tabs
+								items={[
+									{
+										label: "Styles",
+										value: "layer",
+										content: <DesignActionPanel />,
+									},
+									{
+										label: "CSS",
+										value: "css",
+										content: <CSSPanel />,
+									},
+								]}
+							/>
 						</DesignPanel>
 
 						<DesignToolbarContainer />

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 * {
-  border-color: var(--border);
+  /* border-color: var(--border); */
   outline-color: var(--ring);
 }
 
