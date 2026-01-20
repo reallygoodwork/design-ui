@@ -49,7 +49,7 @@ export const useGoogleFonts = () => {
 
 	const unloadFont = useCallback((fontFamily: string) => {
 		const linkElement = fontLinkElements.get(fontFamily);
-		if (linkElement && linkElement.parentNode) {
+		if (linkElement?.parentNode) {
 			linkElement.parentNode.removeChild(linkElement);
 			fontLinkElements.delete(fontFamily);
 			loadedFonts.delete(fontFamily);

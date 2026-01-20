@@ -9,8 +9,6 @@ export const ActionGridLayout = () => {
 	const designerAction = useDesignerAction();
 	const selectedLayer = selectedLayers[0];
 
-
-
 	// Get current grid values
 	const gridColumns =
 		selectedLayer?.cssVars?.["--grid-template-columns"] || "repeat(3, 1fr)";
@@ -65,14 +63,14 @@ export const ActionGridLayout = () => {
 			selectedLayer?.cssVars?.["--grid-template-rows"]
 	);
 
-		// Only show for grid display modes
-		if (
-			!selectedLayer ||
-			(selectedLayer.cssVars?.["--display"] !== "grid" &&
-				selectedLayer.cssVars?.["--display"] !== "inline-grid")
-		) {
-			return null;
-		}
+	// Only show for grid display modes
+	if (
+		!selectedLayer ||
+		(selectedLayer.cssVars?.["--display"] !== "grid" &&
+			selectedLayer.cssVars?.["--display"] !== "inline-grid")
+	) {
+		return null;
+	}
 
 	return (
 		<ActionPopover

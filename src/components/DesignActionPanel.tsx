@@ -1,4 +1,3 @@
-import { ScrollArea } from "@base-ui/react/scroll-area";
 import { ActionAlignItems } from "./actions/ActionAlignItems";
 import { ActionBackgroundColor } from "./actions/ActionBackgroundColor";
 import { ActionBorder } from "./actions/ActionBorder";

@@ -1,10 +1,10 @@
 import {
-  JustifyContentCenter,
-  JustifyContentFlexEnd,
-  JustifyContentFlexStart,
-  JustifyContentSpaceAround,
-  JustifyContentSpaceBetween,
-  JustifyContentSpaceEvenly,
+	JustifyContentCenter,
+	JustifyContentFlexEnd,
+	JustifyContentFlexStart,
+	JustifyContentSpaceAround,
+	JustifyContentSpaceBetween,
+	JustifyContentSpaceEvenly,
 } from "../../assets/icons";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { ToggleGroupControl } from "./ToggleGroupControl";
@@ -27,7 +27,11 @@ export const ActionJustifyContent = () => {
 			cssProperty="--justify-content"
 			label="Justify"
 			options={[
-				{ label: "Flex Start", value: "flex-start", icon: <JustifyContentFlexStart /> },
+				{
+					label: "Flex Start",
+					value: "flex-start",
+					icon: <JustifyContentFlexStart />,
+				},
 				{
 					label: "Center",
 					value: "center",

@@ -37,13 +37,17 @@ export const ActionSize = () => {
 	}, [heightValue, dimensions?.height]);
 
 	// Placeholder values for inputs - show computed dimension when no value is set
-	const widthPlaceholder = dimensions?.width ? `${dimensions.width}` : undefined;
+	const widthPlaceholder = dimensions?.width
+		? `${dimensions.width}`
+		: undefined;
 	const heightPlaceholder = dimensions?.height
 		? `${dimensions.height}`
 		: undefined;
 
 	const hasWidthValue = Boolean(widthValue || minWidthValue || maxWidthValue);
-	const hasHeightValue = Boolean(heightValue || minHeightValue || maxHeightValue);
+	const hasHeightValue = Boolean(
+		heightValue || minHeightValue || maxHeightValue
+	);
 
 	const handleClearWidth = () => {
 		if (selectedLayer) {

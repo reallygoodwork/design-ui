@@ -87,7 +87,9 @@ export function applyCssVars(
 
 		const propertyKey = CSS_VAR_TO_PROPERTY_MAP[cssVar];
 		if (propertyKey) {
-			style[propertyKey] = value as any;
+			// Type assertion needed because CSSProperties has strict types per property,
+			// but CSS custom properties can contain any string value
+			(style as Record<string, string>)[propertyKey] = value;
 		}
 	}
 

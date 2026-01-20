@@ -94,7 +94,9 @@ export const PaneLayerTreeItem = ({
 					className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md font-medium text-xs leading-none transition-all focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[4px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-7 justify-center p-0 active:scale-95 [&_svg:not([class*='size-'])]:size-3.5 -translate-y-1/2 absolute top-1/2 right-0 opacity-0 group-hover/pane-layer-tree-item:opacity-100 data-[locked=true]:opacity-100"
 					data-locked={layer.isLocked}
 					title={layer.isLocked ? "Unlock layer" : "Lock layer"}
-					onClick={(e) => handleLayerLockChange(layer.id, !layer.isLocked)}
+					onClick={() =>
+						handleLayerLockChange(layer.id, !layer.isLocked || false)
+					}
 				>
 					{layer.isLocked ? <IconLock /> : <IconLockOpen />}
 				</Button>

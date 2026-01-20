@@ -1,6 +1,5 @@
 import { Button } from "@base-ui/react/button";
 import { Tooltip } from "@base-ui/react/tooltip";
-import { IconArrowRight } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 
 export const DesignerToolbarButton = ({

@@ -1,8 +1,4 @@
-import {
-	IconArrowBackUp,
-	IconArrowForwardUp,
-	IconPalette,
-} from "@tabler/icons-react";
+import { IconArrowBackUp, IconArrowForwardUp } from "@tabler/icons-react";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useHistory } from "../hooks/useHistory";
 import { DesignerToolbar } from "./DesignerToolbar";

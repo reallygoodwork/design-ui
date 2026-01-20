@@ -4,7 +4,7 @@ export const DesignPanel = ({ children }: { children: React.ReactNode }) => {
 			data-slot="designer-panel"
 			className="relative z-20 flex h-full w-[260px] shrink-0 flex-col bg-background first:border-r border-border last:border-l *:[div]:no-scrollbar"
 			style={{
-				'--designer-panel-height': '48px',
+				"--designer-panel-height": "48px",
 			}}
 		>
 			<div className="flex flex-1 flex-col overflow-hidden">{children}</div>

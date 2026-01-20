@@ -30,5 +30,5 @@ export const useLayerDimensions = (layer: Layer | undefined) => {
 			width: Math.round(rect.width),
 			height: Math.round(rect.height),
 		};
-	}, [layer?.id, layer?.cssVars]);
+	}, [layer?.id, layer]);
 };

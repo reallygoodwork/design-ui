@@ -7,7 +7,6 @@ import {
 	IconWaveSine,
 } from "@tabler/icons-react";
 import { MinusIcon, Tally2Icon } from "lucide-react";
-import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { ColorActionPopover } from "./ColorActionPopover";
 import { NumericActionControl } from "./NumericActionControl";
@@ -35,7 +34,6 @@ const TEXT_DECORATION_STYLE_OPTIONS = [
 export const ActionTextDecoration = () => {
 	const selectedLayers = useSelectedLayers();
 	const selectedLayer = selectedLayers[0];
-	const designerAction = useDesignerAction();
 
 	const currentValue = selectedLayer?.cssVars?.["--text-decoration"] || "none";
 	return (

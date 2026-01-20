@@ -1,6 +1,4 @@
-import { Button } from "@base-ui/react/button";
 import { Popover } from "@base-ui/react/popover";
-import { IconX } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 import { ClearButton } from "../common/ClearButton";
 import { DesignAction } from "../DesignAction";

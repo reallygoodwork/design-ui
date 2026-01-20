@@ -4,7 +4,6 @@ import {
 	AlignItemsFlexEnd,
 	AlignItemsFlexStart,
 	AlignItemsStretch,
-	JustifyContentFlexEnd,
 } from "../../assets/icons";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { ToggleGroupControl } from "./ToggleGroupControl";

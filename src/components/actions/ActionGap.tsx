@@ -9,8 +9,6 @@ export const ActionGap = () => {
 	const designerAction = useDesignerAction();
 	const selectedLayer = selectedLayers[0];
 
-
-
 	const rowGapValue = selectedLayer?.cssVars?.["--row-gap"];
 	const columnGapValue = selectedLayer?.cssVars?.["--column-gap"];
 
@@ -50,7 +48,7 @@ export const ActionGap = () => {
 
 	const hasValue = Boolean(rowGapValue || columnGapValue);
 
-  if (
+	if (
 		!selectedLayer ||
 		(selectedLayer.cssVars?.["--display"] !== "grid" &&
 			selectedLayer.cssVars?.["--display"] !== "flex" &&

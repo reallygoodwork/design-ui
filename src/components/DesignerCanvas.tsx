@@ -114,7 +114,10 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		if (!moveableElement) return false;
 
 		const controlBox = moveableElement.querySelector(".moveable-control-box");
-		if (controlBox && (controlBox === element || controlBox.contains(element))) {
+		if (
+			controlBox &&
+			(controlBox === element || controlBox.contains(element))
+		) {
 			return true;
 		}
 
