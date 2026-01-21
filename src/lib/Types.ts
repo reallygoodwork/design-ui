@@ -11,6 +11,7 @@ export type Layer = {
 	cssVars?: CSSVars;
 	meta?: Record<string, unknown>;
 	isLocked?: boolean;
+	elementType?: string;
 	children?: Layer[];
 };
 
@@ -25,12 +26,15 @@ export type LayerType = {
 	defaultValues: Omit<Layer, "id" | "type" | "children">;
 	render: (
 		layer: LayerWithStyles,
-		children?: React.ReactNode
+		children?: React.ReactNode,
+		elementType?: string
 	) => React.ReactNode;
 	icon?: ReactNode;
 	keybinding?: Keybinding;
 	supportsChildren?: boolean;
 	supportedCssProperties?: SupportedCssProperty[];
+	elementType?: string;
+	availableElementTypes?: string[];
 };
 
 export type Keybinding = {

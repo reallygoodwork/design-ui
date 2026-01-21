@@ -92,6 +92,13 @@ export type Action =
 				isLocked: boolean;
 			};
 	  }
+	| {
+			type: "UPDATE_LAYER_ELEMENT_TYPE";
+			payload: {
+				layerId: string;
+				elementType: string;
+			};
+	  }
 	| { type: "UNDO" }
 	| { type: "REDO" }
 	| { type: "SET_LAYERS"; payload: Layer[] }
@@ -352,6 +359,28 @@ const reducer = (state: State, action: Action): State => {
 					(layer) => ({
 						...layer,
 						isLocked: action.payload.isLocked,
+					})
+				),
+			};
+			const newHistory = [
+				...state.history.slice(0, state.historyIndex + 1),
+				state,
+			];
+			return {
+				...newState,
+				history: newHistory,
+				historyIndex: newHistory.length - 1,
+			};
+		}
+		case "UPDATE_LAYER_ELEMENT_TYPE": {
+			const newState = {
+				...state,
+				layers: updateLayerById(
+					state.layers,
+					action.payload.layerId,
+					(layer) => ({
+						...layer,
+						elementType: action.payload.elementType,
 					})
 				),
 			};

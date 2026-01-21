@@ -16,6 +16,9 @@ const DesignerLayer = ({
 		return null;
 	}
 
+	// Get the element type from layer, or fallback to layerType default
+	const elementType = layer.elementType || layerType.elementType;
+
 	// Determine if layer has explicit dimensions
 	const hasWidth = layer.cssVars?.["--width"];
 	const hasHeight = layer.cssVars?.["--height"];
@@ -69,7 +72,7 @@ const DesignerLayer = ({
 			key={layer.id}
 			style={wrapperStyle}
 		>
-			{layerType.render(layerWithStyles, children)}
+			{layerType.render(layerWithStyles, children, elementType)}
 		</div>
 	);
 };

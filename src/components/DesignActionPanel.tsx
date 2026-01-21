@@ -4,6 +4,7 @@ import { ActionBorder } from "./actions/ActionBorder";
 import { ActionBorderRadius } from "./actions/ActionBorderRadius";
 import { ActionColor } from "./actions/ActionColor";
 import { ActionDisplay } from "./actions/ActionDisplay";
+import { ActionElementType } from "./actions/ActionElementType";
 import { ActionFlexDirection } from "./actions/ActionFlexDirection";
 import { ActionFlexWrap } from "./actions/ActionFlexWrap";
 import { ActionFontFamily } from "./actions/ActionFontFamily";
@@ -35,6 +36,7 @@ export const DesignActionPanel = () => {
 				<ActionOpacity />
 				<ActionBorderRadius />
 				<ActionTextContent />
+				<ActionElementType />
 			</DesignerPane>
 			<DesignerPane title="Layout">
 				<ActionDisplay />

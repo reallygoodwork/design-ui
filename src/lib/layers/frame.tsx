@@ -23,7 +23,6 @@ export const frameLayerType = {
 		"--margin-block-end",
 		"--margin-inline-start",
 		"--margin-inline-end",
-		"--border-radius",
 		"--border-top-left-radius",
 		"--border-top-right-radius",
 		"--border-bottom-left-radius",
@@ -38,6 +37,12 @@ export const frameLayerType = {
 		"--bottom",
 		"--left",
 		"--z-index",
+		"--display",
+		"--flex-direction",
+		"--align-items",
+		"--justify-content",
+		"--column-gap",
+		"--row-gap",
 	],
 	defaultValues: {
 		name: "Frame",
@@ -47,11 +52,16 @@ export const frameLayerType = {
 			"--background-color": "#ffffff",
 		},
 	},
-	render: (layer: LayerWithStyles, children?: React.ReactNode) => (
-		<div
-			style={applyCssVars(layer.cssVars, frameLayerType.supportedCssProperties)}
-		>
-			{children}
-		</div>
-	),
+	render: (layer: LayerWithStyles, children?: React.ReactNode, elementType = "div") => {
+		const Element = elementType as keyof JSX.IntrinsicElements;
+		return (
+			<Element
+				style={applyCssVars(layer.cssVars, frameLayerType.supportedCssProperties)}
+			>
+				{children}
+			</Element>
+		);
+	},
+	elementType: "div",
+	availableElementTypes: ["div", "section", "article", "main", "header", "footer", "nav", "aside"],
 } satisfies LayerType;
