@@ -113,6 +113,14 @@ export type Action =
 	| {
 			type: "DELETE_LAYER";
 			payload: { layerId: string };
+	  }
+	| {
+			type: "MOVE_LAYER";
+			payload: {
+				layerIds: string[];
+				targetId: string;
+				position: "before" | "on" | "after";
+			};
 	  };
 
 // Helper function to find a layer by ID in a nested structure
@@ -317,6 +325,47 @@ const reducer = (state: State, action: Action): State => {
 				layers: newLayers,
 				// Remove deleted layer from selected layers
 				selectedLayers: state.selectedLayers.filter((id) => id !== layerId),
+			};
+			const newHistory = [
+				...state.history.slice(0, state.historyIndex + 1),
+				state,
+			];
+			return {
+				...newState,
+				history: newHistory,
+				historyIndex: newHistory.length - 1,
+			};
+		}
+		case "MOVE_LAYER": {
+			const { layerIds, targetId, position } = action.payload;
+
+			// Map "on" to "inside" for insertLayer
+			const insertPosition = position === "on" ? "inside" : position;
+
+			let newLayers = state.layers;
+
+			// Move each layer one by one
+			for (const layerId of layerIds) {
+				// Don't allow moving a layer into itself or its descendants
+				if (layerId === targetId) continue;
+
+				// Find the layer to move
+				const layerToMove = findLayer(newLayers, layerId);
+				if (!layerToMove) continue;
+
+				// Clone the layer (we need to preserve it before deletion)
+				const movedLayer = { ...layerToMove.layer };
+
+				// Remove the layer from its current position
+				newLayers = deleteLayer(newLayers, layerId);
+
+				// Insert at the new position
+				newLayers = insertLayer(newLayers, movedLayer, targetId, insertPosition);
+			}
+
+			const newState = {
+				...state,
+				layers: newLayers,
 			};
 			const newHistory = [
 				...state.history.slice(0, state.historyIndex + 1),

@@ -1,7 +1,14 @@
-import { Button } from "@base-ui/react/button";
 import { Input } from "@base-ui/react/input";
-import { IconLock, IconLockOpen } from "@tabler/icons-react";
+import { IconChevronRight, IconLock, IconLockOpen } from "@tabler/icons-react";
 import { useRef, useState } from "react";
+import {
+	Button,
+	Collection,
+	Tree,
+	TreeItem,
+	TreeItemContent,
+	useDragAndDrop,
+} from "react-aria-components";
 import { useOnClickOutside } from "usehooks-ts";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useLayers } from "../hooks/useLayers";
@@ -9,116 +16,270 @@ import { useLayerTypes } from "../hooks/useLayerTypes";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
 import type { Layer } from "../lib/Types";
 
-export const PaneLayerTreeItem = ({
-	layer,
-	depth = 0,
-}: {
-	layer: Layer;
-	depth?: number;
-}) => {
-	const ref = useRef(null);
+// Helper function to find a layer by ID in a nested structure
+const findLayerById = (layers: Layer[], layerId: string): Layer | null => {
+	for (const layer of layers) {
+		if (layer.id === layerId) {
+			return layer;
+		}
+		if (layer.children) {
+			const found = findLayerById(layer.children, layerId);
+			if (found) return found;
+		}
+	}
+	return null;
+};
+
+// Helper function to check if a layer is a descendant of another
+const isDescendantOf = (
+	layers: Layer[],
+	potentialDescendantId: string,
+	potentialAncestorId: string
+): boolean => {
+	const ancestor = findLayerById(layers, potentialAncestorId);
+	if (!ancestor?.children) return false;
+
+	for (const child of ancestor.children) {
+		if (child.id === potentialDescendantId) return true;
+		if (isDescendantOf([child], potentialDescendantId, child.id)) return true;
+	}
+	return false;
+};
+
+const LayerTreeItemContent = ({ layer }: { layer: Layer }) => {
+	const ref = useRef<HTMLInputElement>(null);
 	const [isEditing, setIsEditing] = useState(false);
 	const layerTypes = useLayerTypes();
-	const selectedLayers = useSelectedLayers();
 	const designerAction = useDesignerAction();
-
-	const handleDoubleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-		e.stopPropagation();
-		setIsEditing(true);
-	};
 
 	useOnClickOutside(ref, () => {
 		setIsEditing(false);
 	});
 
-	const handleLayerClick = (
-		e: React.MouseEvent<HTMLButtonElement>,
-		layerId: string
-	) => {
+	const handleDoubleClick = (e: React.MouseEvent) => {
 		e.stopPropagation();
-		designerAction({
-			type: "SELECT_LAYER",
-			payload: { layerId, shiftKey: e.shiftKey },
-		});
+		setIsEditing(true);
 	};
 
-	const handleLayerNameChange = (layerId: string, name: string) => {
+	const handleLayerNameChange = (name: string) => {
 		designerAction({
 			type: "UPDATE_LAYER_NAME",
-			payload: { layerId, name },
+			payload: { layerId: layer.id, name },
 		});
 	};
 
-	const handleLayerLockChange = (layerId: string, isLocked: boolean) => {
+	const handleLayerLockChange = () => {
 		designerAction({
 			type: "UPDATE_LAYER_LOCK",
-			payload: { layerId, isLocked },
+			payload: { layerId: layer.id, isLocked: !layer.isLocked },
 		});
 	};
 
+	const layerType = layerTypes.find((lt) => lt.type === layer.type);
+
 	return (
-		<>
-			<div
-				key={layer.id}
-				data-selected={selectedLayers.some((l) => l.id === layer.id)}
-				data-editing={isEditing}
-				data-visibility={true}
-				className={`group/pane-layer-tree-item relative flex items-center gap-2 data-[visibility=false]:opacity-50`}
-				style={{
-					paddingLeft: `${depth * 8}px`,
-				}}
-			>
-				<Button
-					data-slot="context-menu-trigger"
-					type="button"
-					className="inline-flex items-center whitespace-nowrap rounded-md text-xs leading-none transition-all focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[4px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-3.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 h-7 px-2 py-1 has-[>svg]:px-2 w-full flex-1 justify-start gap-2 font-normal active:scale-100 group-hover/pane-layer-tree-item:bg-accent group-hover/pane-layer-tree-item:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground group-data-[selected=true]/pane-layer-tree-item:bg-accent"
-					onClick={(e) => handleLayerClick(e, layer.id)}
-					onDoubleClick={(e) => handleDoubleClick(e)}
+		<TreeItemContent>
+			{({ isExpanded, hasChildItems }) => (
+				<div
+					className="group/pane-layer-tree-item relative flex flex-1 items-center gap-1"
+					data-editing={isEditing}
 				>
-					<span className="size-3.5 shrink-0 text-muted-foreground opacity-80">
-						{layerTypes.find((lt) => lt.type === layer.type)?.icon}
-					</span>
-					<span className="truncate leading-normal group-data-[editing=true]/pane-layer-tree-item:opacity-0">
-						{layer.name}
-					</span>
-				</Button>
-				<Input
-					data-slot="input"
-					value={layer.name}
-					className="h-7 min-w-0 rounded-md border border-input bg-input px-2 py-1 text-base outline-none transition-[color,box-shadow] selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 absolute inset-y-0 right-8 left-6 z-10 hidden w-auto group-data-[editing=true]/pane-layer-tree-item:flex"
-					onChange={(e) => handleLayerNameChange(layer.id, e.target.value)}
-					ref={ref}
-				/>
-				<Button
-					data-slot="button"
-					className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md font-medium text-xs leading-none transition-all focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[4px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-7 justify-center p-0 active:scale-95 [&_svg:not([class*='size-'])]:size-3.5 -translate-y-1/2 absolute top-1/2 right-0 opacity-0 group-hover/pane-layer-tree-item:opacity-100 data-[locked=true]:opacity-100"
-					data-locked={layer.isLocked}
-					title={layer.isLocked ? "Unlock layer" : "Lock layer"}
-					onClick={() =>
-						handleLayerLockChange(layer.id, !layer.isLocked || false)
-					}
-				>
-					{layer.isLocked ? <IconLock /> : <IconLockOpen />}
-				</Button>
-			</div>
-			{/* Render nested children */}
-			{layer.children &&
-				layer.children.length > 0 &&
-				layer.children.map((child) => (
-					<PaneLayerTreeItem key={child.id} layer={child} depth={depth + 1} />
-				))}
-		</>
+					{/* Chevron for expandable items */}
+					{hasChildItems ? (
+						<Button
+							slot="chevron"
+							className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent/50"
+						>
+							<IconChevronRight
+								className={`size-3 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+							/>
+						</Button>
+					) : (
+						<span className="size-4 shrink-0" />
+					)}
+
+					{/* Layer icon and name */}
+					<button
+						type="button"
+						className="flex flex-1 cursor-default items-center gap-2 truncate bg-transparent border-none p-0 text-left"
+						onDoubleClick={handleDoubleClick}
+					>
+						<span className="size-3.5 [&_svg:not([class*='size-'])]:size-3.5 shrink-0 text-muted-foreground opacity-80">
+							{layerType?.icon}
+						</span>
+						<span
+							className={`truncate text-xs leading-normal ${isEditing ? "opacity-0" : ""}`}
+						>
+							{layer.name}
+						</span>
+					</button>
+
+					{/* Inline rename input */}
+					{isEditing && (
+						<Input
+							data-slot="input"
+							value={layer.name}
+							className="absolute -top-0.5 right-8 left-8.25 z-10 h-6 min-w-0 rounded-md border border-input bg-input px-2 py-0.5 -translate-y-0.25 text-xs outline-none transition-[color,box-shadow] selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 leading-none"
+							onChange={(e) => handleLayerNameChange(e.target.value)}
+							ref={ref}
+							autoFocus
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === "Escape") {
+									setIsEditing(false);
+								}
+							}}
+						/>
+					)}
+
+					{/* Lock button */}
+					<button
+						type="button"
+						className={`flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 hover:bg-accent/50 group-hover/pane-layer-tree-item:opacity-100 ${layer.isLocked ? "opacity-100" : ""}`}
+						title={layer.isLocked ? "Unlock layer" : "Lock layer"}
+						onClick={(e) => {
+							e.stopPropagation();
+							handleLayerLockChange();
+						}}
+					>
+						{layer.isLocked ? (
+							<IconLock className="size-3" />
+						) : (
+							<IconLockOpen className="size-3" />
+						)}
+					</button>
+				</div>
+			)}
+		</TreeItemContent>
 	);
 };
 
 export const PaneLayerTree = () => {
 	const layers = useLayers();
+	const layerTypes = useLayerTypes();
+	const selectedLayers = useSelectedLayers();
+	const designerAction = useDesignerAction();
+
+	// Get all expanded keys (all layers with children)
+	const getExpandedKeys = (layerList: Layer[]): string[] => {
+		const keys: string[] = [];
+		for (const layer of layerList) {
+			if (layer.children && layer.children.length > 0) {
+				keys.push(layer.id);
+				keys.push(...getExpandedKeys(layer.children));
+			}
+		}
+		return keys;
+	};
+
+	const [expandedKeys, setExpandedKeys] = useState<Set<string>>(
+		() => new Set(getExpandedKeys(layers))
+	);
+
+	const { dragAndDropHooks } = useDragAndDrop({
+		getItems: (keys) => {
+			// Prevent dragging locked layers
+			for (const key of keys) {
+				const layer = findLayerById(layers, key.toString());
+				if (layer?.isLocked) {
+					return [];
+				}
+			}
+			return [...keys].map((key) => ({ "text/plain": key.toString() }));
+		},
+
+		onMove(e) {
+			const targetKey = e.target.key as string;
+			const draggedKeys = [...e.keys] as string[];
+
+			// Prevent dropping a layer into its own descendants
+			for (const draggedKey of draggedKeys) {
+				if (
+					draggedKey === targetKey ||
+					isDescendantOf(layers, targetKey, draggedKey)
+				) {
+					return;
+				}
+			}
+
+			designerAction({
+				type: "MOVE_LAYER",
+				payload: {
+					layerIds: draggedKeys,
+					targetId: targetKey,
+					position: e.target.dropPosition,
+				},
+			});
+		},
+
+		shouldAcceptItemDrop(target) {
+			// Find target layer and check if its type supports children
+			const targetLayer = findLayerById(layers, target.key as string);
+			if (!targetLayer) return false;
+
+			const targetType = layerTypes.find((lt) => lt.type === targetLayer.type);
+			return targetType?.supportsChildren ?? false;
+		},
+	});
+
+	const handleSelectionChange = (keys: "all" | Set<React.Key>) => {
+		if (keys === "all") {
+			// Select all - not typically used in layer trees
+			return;
+		}
+
+		const keyArray = [...keys] as string[];
+
+		if (keyArray.length === 0) {
+			designerAction({ type: "DESELECT_ALL" });
+		} else {
+			// For simplicity, select the last key (React-Aria handles multi-select internally)
+			const lastKey = keyArray[keyArray.length - 1];
+			designerAction({
+				type: "SELECT_LAYER",
+				payload: { layerId: lastKey, shiftKey: keyArray.length > 1 },
+			});
+		}
+	};
+
+	const renderItem = (layer: Layer) => {
+		const hasChildren = layer.children && layer.children.length > 0;
+
+		return (
+			<TreeItem
+				key={layer.id}
+				id={layer.id}
+				textValue={layer.name}
+				className={({ isSelected, isFocusVisible, isHovered, isDropTarget }) =>
+					`flex cursor-default items-center gap-1 rounded-md pr-1 py-0.5 pl-[calc(calc(var(--tree-item-level)-1)*0.5rem))] text-sm outline-none h-7 ${
+						isSelected
+							? "bg-accent text-accent-foreground"
+							: isHovered
+								? "bg-accent/50"
+								: ""
+					} ${isFocusVisible ? "ring-2 ring-ring ring-offset-1" : ""} ${isDropTarget ? "bg-primary/20 ring-2 ring-primary" : ""}`
+				}
+			>
+				<LayerTreeItemContent layer={layer} />
+				{hasChildren && (
+					<Collection items={layer.children}>{renderItem}</Collection>
+				)}
+			</TreeItem>
+		);
+	};
 
 	return (
-		<div className="-m-1 flex flex-col gap-0.5 overflow-y-auto p-1">
-			{layers.map((layer) => (
-				<PaneLayerTreeItem key={layer.id} layer={layer} />
-			))}
-		</div>
+		<Tree
+			aria-label="Layer tree"
+			selectionMode="single"
+			selectedKeys={new Set(selectedLayers.map((l) => l.id))}
+			onSelectionChange={handleSelectionChange}
+			expandedKeys={expandedKeys}
+			onExpandedChange={(keys) => setExpandedKeys(keys as Set<string>)}
+			dragAndDropHooks={dragAndDropHooks}
+			items={layers}
+			className="-m-1 flex flex-col gap-0.5 overflow-y-auto p-1 outline-none"
+		>
+			{renderItem}
+		</Tree>
 	);
 };
