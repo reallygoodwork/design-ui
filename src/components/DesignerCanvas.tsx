@@ -1,4 +1,11 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import {
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import InfiniteViewer, {
 	type OnPinch,
 	type OnScroll,
@@ -8,19 +15,31 @@ import Selecto from "react-selecto";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useDesignerContext } from "../hooks/useDesignerContext";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
+import { calculateBoundingBox } from "../lib/breakpointUtils";
 
 import { DimensionAble } from "./ables/DimensionAble";
 import { StructureAble } from "./ables/StructureAble";
 
 // Helper to get all layers at a specific point, ordered from shallowest (parent) to deepest (nested child)
 // This enables Figma-style selection: first click selects parent, subsequent clicks drill down
+// Also returns the breakpoint ID of the clicked element
 const getLayersAtPoint = (
 	x: number,
 	y: number,
 	state: ReturnType<typeof useDesignerContext>["state"]
-): string[] => {
+): { layerIds: string[]; breakpointId: string | null } => {
 	// Get all elements at this point (document.elementsFromPoint returns front-to-back, i.e. deepest first)
 	const elements = document.elementsFromPoint(x, y);
+
+	// Find the breakpoint frame that was clicked
+	let breakpointId: string | null = null;
+	for (const el of elements) {
+		const bpFrame = el.closest("[data-breakpoint-id]");
+		if (bpFrame) {
+			breakpointId = bpFrame.getAttribute("data-breakpoint-id");
+			break;
+		}
+	}
 
 	// Filter to only designer layers and extract layer IDs
 	const layerIds = elements
@@ -48,12 +67,14 @@ const getLayersAtPoint = (
 	};
 
 	// Filter out locked layers, then reverse so shallowest (parent) is first
-	return layerIds
+	const filteredLayerIds = layerIds
 		.filter((id) => {
 			const layer = findLayer(state.layers, id);
 			return layer && !layer.isLocked;
 		})
 		.reverse();
+
+	return { layerIds: filteredLayerIds, breakpointId };
 };
 
 export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
@@ -133,8 +154,12 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 	) => {
 		const currentTime = Date.now();
 
-		// Get all layers at this point (ordered shallowest/parent first)
-		const layersAtPoint = getLayersAtPoint(clickX, clickY, state);
+		// Get all layers at this point (ordered shallowest/parent first) and the breakpoint
+		const { layerIds: layersAtPoint, breakpointId } = getLayersAtPoint(
+			clickX,
+			clickY,
+			state
+		);
 
 		// If clicking outside any layer, deselect
 		if (layersAtPoint.length === 0) {
@@ -183,9 +208,14 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		}
 
 		// Select the layer (handle shift key for multi-select)
+		// Also set the active breakpoint based on which frame was clicked
 		designerAction({
 			type: "SELECT_LAYER",
-			payload: { layerId: layerToSelect, shiftKey },
+			payload: {
+				layerId: layerToSelect,
+				shiftKey,
+				breakpointId: breakpointId ?? undefined,
+			},
 		});
 	};
 
@@ -195,46 +225,93 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		// Intentionally empty - all selection logic is handled in onSelectEnd
 	};
 
-	const selectedLayerElements = selectedLayers.map((layer) =>
-		document.querySelector(
-			`.designer-frame .designer-layer[data-layer-id="${layer.id}"]`
-		)
-	);
+	// Query selected layers within the active breakpoint
+	// This ensures Moveable targets the correct layer instance
+	const selectedLayerElements = selectedLayers.map((layer) => {
+		// If we have an active breakpoint, target layers within that specific frame
+		if (state.activeBreakpointId) {
+			return document.querySelector(
+				`.breakpoint-frame[data-breakpoint-id="${state.activeBreakpointId}"] .designer-layer[data-layer-id="${layer.id}"]`
+			);
+		}
+		// Fallback to any matching layer (backwards compatibility)
+		return document.querySelector(
+			`.breakpoint-content .designer-layer[data-layer-id="${layer.id}"]`
+		);
+	});
 
 	// Sync zoom changes from keyboard/controls to InfiniteViewer
 	useEffect(() => {
-		console.log("Zoom state changed to:", state.zoom);
 		if (viewerRef.current) {
-			console.log("Calling setZoom on InfiniteViewer:", state.zoom);
 			viewerRef.current.setZoom(state.zoom);
-		} else {
-			console.log("viewerRef.current is null");
 		}
 	}, [state.zoom]);
 
-	// Center the frame when it mounts, frame size changes, or zoom changes
-	useEffect(() => {
-		if (viewerRef.current && state.frameSize) {
-			// Use multiple requestAnimationFrame calls to ensure InfiniteViewer is fully initialized
-			// and the scroll area is properly sized
+	// Helper function to center on all breakpoint frames
+	const centerOnBreakpoints = useCallback(() => {
+		const viewer = viewerRef.current;
+		if (!viewer) return;
 
-			const viewer = viewerRef.current;
-			if (!viewer) return;
+		// Ensure InfiniteViewer has calculated all dimensions
+		viewer.resize();
 
-			// Ensure InfiniteViewer has calculated all dimensions
-			viewer.resize();
+		// Calculate the center of all breakpoint frames
+		if (state.breakpoints.length > 0) {
+			const boundingBox = calculateBoundingBox(state.breakpoints);
+			// Calculate center point of the bounding box
+			const centerX = boundingBox.x + boundingBox.width / 2;
+			const centerY = boundingBox.y + boundingBox.height / 2;
 
-			// Use scrollCenter which handles offsets and margins internally
-			// According to InfiniteViewer source, scrollCenter centers the scroll area
-			// Since our frame is centered with margin: auto, the scroll area center = frame center
+			// Get current scroll position and viewport size
+			const currentScrollLeft = viewer.getScrollLeft();
+			const currentScrollTop = viewer.getScrollTop();
+			const viewportWidth = viewer.getContainerWidth();
+			const viewportHeight = viewer.getContainerHeight();
+			const zoom = viewer.getZoom();
+
+			// Calculate where we need to scroll to center on the bounding box
+			const targetScrollLeft = centerX * zoom - viewportWidth / 2;
+			const targetScrollTop = centerY * zoom - viewportHeight / 2;
+
+			// Calculate deltas
+			const deltaX = targetScrollLeft - currentScrollLeft;
+			const deltaY = targetScrollTop - currentScrollTop;
+
+			// Scroll by the delta to center
+			viewer.scrollBy(deltaX, deltaY);
+		} else if (state.frameSize) {
+			// Fallback: use scrollCenter for legacy frameSize (deprecated, kept for backwards compatibility)
 			viewer.scrollCenter({
 				horizontal: true,
 				vertical: true,
 			});
 		}
-		// We intentionally include state.zoom to recenter when zoom changes
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [state.frameSize]);
+	}, [state.breakpoints, state.frameSize]);
+
+	// Check if we have content to center on (breakpoints or deprecated frameSize)
+	const hasContentToCenter = useMemo(
+		() => state.breakpoints.length > 0 || Boolean(state.frameSize),
+		[state.breakpoints.length, state.frameSize]
+	);
+
+	// Center on initial mount
+	const [hasCentered, setHasCentered] = useState(false);
+	useEffect(() => {
+		if (viewerRef.current && !hasCentered && hasContentToCenter) {
+			centerOnBreakpoints();
+			setHasCentered(true);
+		}
+	}, [hasContentToCenter, hasCentered, centerOnBreakpoints]);
+
+	// Respond to explicit center requests (e.g., from zoom-to-fit)
+	useEffect(() => {
+		if (state.centerRequestId > 0) {
+			// Use requestAnimationFrame to ensure zoom is applied first
+			requestAnimationFrame(() => {
+				centerOnBreakpoints();
+			});
+		}
+	}, [state.centerRequestId, centerOnBreakpoints]);
 
 	// Update Moveable when zoom changes so it recalculates positions and scales correctly
 	useEffect(() => {
@@ -375,7 +452,21 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 					designerAction({ type: "SET_PAN", payload: { x: 0, y: 0 } });
 					return true;
 				case "1":
-					if (state.frameSize) {
+					// Zoom to fit all breakpoint frames
+					if (state.breakpoints.length > 0) {
+						e.preventDefault();
+						const boundingBox = calculateBoundingBox(state.breakpoints);
+						const padding = 200;
+						const availableWidth = window.innerWidth - padding;
+						const availableHeight = window.innerHeight - padding;
+						const zoomX = availableWidth / boundingBox.width;
+						const zoomY = availableHeight / boundingBox.height;
+						const newZoom = Math.min(zoomX, zoomY, 10);
+						designerAction({ type: "SET_ZOOM", payload: newZoom });
+						// Signal to center on all breakpoints
+						designerAction({ type: "CENTER_ON_BREAKPOINTS" });
+					} else if (state.frameSize) {
+						// Fallback for legacy frameSize
 						e.preventDefault();
 						const padding = 200;
 						const availableWidth = window.innerWidth - padding;
@@ -411,7 +502,13 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		return () => {
 			window.removeEventListener("keydown", handleKeyDown);
 		};
-	}, [state.selectedLayers, state.zoom, state.frameSize, designerAction]);
+	}, [
+		state.selectedLayers,
+		state.zoom,
+		state.frameSize,
+		state.breakpoints,
+		designerAction,
+	]);
 
 	return (
 		<div
@@ -421,7 +518,10 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 			<Selecto
 				ref={selectoRef}
 				dragContainer={"[data-slot='designer-canvas']"}
-				selectableTargets={[".designer-frame .designer-layer"]}
+				selectableTargets={[
+					".breakpoint-content .designer-layer",
+					".designer-frame .designer-layer",
+				]}
 				hitRate={0}
 				selectByClick={true}
 				selectFromInside={true}
@@ -444,12 +544,23 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 						);
 					} else if (e.selected.length > 0) {
 						// Handle drag selections - select based on what Selecto found
-						const selectedLayerId = (e.selected[0] as HTMLElement)?.dataset
-							?.layerId;
+						const selectedElement = e.selected[0] as HTMLElement;
+						const selectedLayerId = selectedElement?.dataset?.layerId;
+						// Get the breakpoint ID from the parent breakpoint frame
+						const breakpointFrame = selectedElement?.closest(
+							"[data-breakpoint-id]"
+						);
+						const breakpointId =
+							breakpointFrame?.getAttribute("data-breakpoint-id");
+
 						if (selectedLayerId) {
 							designerAction({
 								type: "SELECT_LAYER",
-								payload: { layerId: selectedLayerId, shiftKey: false },
+								payload: {
+									layerId: selectedLayerId,
+									shiftKey: false,
+									breakpointId: breakpointId ?? undefined,
+								},
 							});
 						}
 					}
@@ -475,7 +586,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 			<InfiniteViewer
 				ref={viewerRef}
 				className="designer-canvas size-full"
-				margin={1000}
+				margin={3000}
 				zoom={state.zoom}
 				usePinch={true}
 				// useMouseDrag={true}

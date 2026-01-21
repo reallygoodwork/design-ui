@@ -59,11 +59,18 @@ export const textLayerType = {
 			"--font-family": "Arial",
 		},
 	},
-	render: (layer: LayerWithStyles, children?: React.ReactNode, elementType = "p") => {
+	render: (
+		layer: LayerWithStyles,
+		children?: React.ReactNode,
+		elementType = "p"
+	) => {
 		const Element = elementType as keyof JSX.IntrinsicElements;
 		return (
 			<Element
-				style={applyCssVars(layer.cssVars, textLayerType.supportedCssProperties)}
+				style={applyCssVars(
+					layer.cssVars,
+					textLayerType.supportedCssProperties
+				)}
 			>
 				{layer.value}
 				{children}
@@ -71,5 +78,15 @@ export const textLayerType = {
 		);
 	},
 	elementType: "p",
-	availableElementTypes: ["p", "span", "h1", "h2", "h3", "h4", "h5", "h6", "label"],
+	availableElementTypes: [
+		"p",
+		"span",
+		"h1",
+		"h2",
+		"h3",
+		"h4",
+		"h5",
+		"h6",
+		"label",
+	],
 } satisfies LayerType;

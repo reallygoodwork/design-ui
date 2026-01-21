@@ -3,12 +3,27 @@ import type { SupportedCssProperty } from "./cssPropertyMapping";
 
 export type CSSVars = Record<string, string>;
 
+/**
+ * Represents a breakpoint frame on the canvas (e.g., Mobile, Tablet, Desktop)
+ */
+export type Breakpoint = {
+	id: string;
+	name: string;
+	width: number;
+	height: number;
+	position: { x: number; y: number }; // Position on infinite canvas
+};
+
 export type Layer = {
 	id: string;
 	name: string;
 	type: string;
 	value: string;
-	cssVars?: CSSVars;
+	cssVars?: CSSVars; // Base styles (smallest/primary breakpoint)
+	breakpointCssVars?: {
+		// Per-breakpoint overrides (larger breakpoints only)
+		[breakpointId: string]: CSSVars; // Only stores EXPLICIT overrides, not inherited values
+	};
 	meta?: Record<string, unknown>;
 	isLocked?: boolean;
 	elementType?: string;

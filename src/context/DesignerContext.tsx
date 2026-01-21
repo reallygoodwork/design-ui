@@ -1,6 +1,6 @@
 import { createContext, type ReactNode } from "react";
 import { type Action, type State, useDesigner } from "../hooks/useDesigner";
-import type { Layer, LayerType } from "../lib/Types";
+import type { Breakpoint, CSSVars, Layer, LayerType } from "../lib/Types";
 
 export const DesignerContext = createContext<{
 	state: State;
@@ -14,6 +14,8 @@ type DesignerProviderProps = {
 	onLayersChange?: (layers: Layer[]) => void;
 	frameSize?: { width: number; height: number };
 	defaultLayerTypes?: LayerType[];
+	breakpoints?: Breakpoint[];
+	frameStyles?: CSSVars;
 };
 
 export const DesignerProvider = ({
@@ -23,6 +25,8 @@ export const DesignerProvider = ({
 	onLayersChange,
 	frameSize,
 	defaultLayerTypes,
+	breakpoints,
+	frameStyles,
 }: DesignerProviderProps) => {
 	const designer = useDesigner({
 		defaultLayers,
@@ -30,6 +34,8 @@ export const DesignerProvider = ({
 		onLayersChange,
 		frameSize,
 		layerTypes: defaultLayerTypes,
+		breakpoints,
+		frameStyles,
 	});
 
 	return (

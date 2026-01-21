@@ -14,10 +14,16 @@ export const ActionElementType = () => {
 	if (!selectedLayer) return null;
 
 	// Find the layer type definition
-	const layerType = state.layerTypes.find((lt) => lt.type === selectedLayer.type);
+	const layerType = state.layerTypes.find(
+		(lt) => lt.type === selectedLayer.type
+	);
 
 	// Only show if layer type has available element types
-	if (!layerType || !layerType.availableElementTypes || layerType.availableElementTypes.length === 0) {
+	if (
+		!layerType ||
+		!layerType.availableElementTypes ||
+		layerType.availableElementTypes.length === 0
+	) {
 		return null;
 	}
 

@@ -1,6 +1,7 @@
 import { Menu as BaseMenu } from "@base-ui/react/menu";
 import { IconChevronDown } from "@tabler/icons-react";
 import { useDesignerContext } from "../hooks/useDesignerContext";
+import { calculateBoundingBox } from "../lib/breakpointUtils";
 
 export const ZoomControl = () => {
 	const { state, dispatch } = useDesignerContext();
@@ -21,22 +22,26 @@ export const ZoomControl = () => {
 	};
 
 	const handleZoomToFit = () => {
-		// Calculate zoom to fit based on frame size
-		if (state.frameSize) {
-			const containerWidth = window.innerWidth;
-			const containerHeight = window.innerHeight;
-			const frameWidth = state.frameSize.width;
-			const frameHeight = state.frameSize.height;
+		const containerWidth = window.innerWidth;
+		const containerHeight = window.innerHeight;
+		const padding = 200;
+		const availableWidth = containerWidth - padding;
+		const availableHeight = containerHeight - padding;
 
-			// Add some padding (e.g., 100px on each side)
-			const padding = 200;
-			const availableWidth = containerWidth - padding;
-			const availableHeight = containerHeight - padding;
-
-			const zoomX = availableWidth / frameWidth;
-			const zoomY = availableHeight / frameHeight;
-			const newZoom = Math.min(zoomX, zoomY, 10); // Don't zoom beyond 10x
-
+		// Use breakpoints bounding box if available
+		if (state.breakpoints.length > 0) {
+			const boundingBox = calculateBoundingBox(state.breakpoints);
+			const zoomX = availableWidth / boundingBox.width;
+			const zoomY = availableHeight / boundingBox.height;
+			const newZoom = Math.min(zoomX, zoomY, 10);
+			dispatch({ type: "SET_ZOOM", payload: newZoom });
+			// Signal to center on all breakpoints
+			dispatch({ type: "CENTER_ON_BREAKPOINTS" });
+		} else if (state.frameSize) {
+			// Fallback to legacy frameSize
+			const zoomX = availableWidth / state.frameSize.width;
+			const zoomY = availableHeight / state.frameSize.height;
+			const newZoom = Math.min(zoomX, zoomY, 10);
 			dispatch({ type: "SET_ZOOM", payload: newZoom });
 		}
 	};

@@ -1,97 +1,42 @@
-import type React from "react";
 import { useDesignerContext } from "../hooks/useDesignerContext";
-import { useLayers } from "../hooks/useLayers";
-import type { Layer, LayerWithStyles } from "../lib/Types";
+import { calculateBoundingBox } from "../lib/breakpointUtils";
+import { BreakpointFrame } from "./BreakpointFrame";
 
-const DesignerLayer = ({
-	layer,
-	state,
-}: {
-	layer: Layer;
-	state: ReturnType<typeof useDesignerContext>["state"];
-}) => {
-	const layerType = state.layerTypes.find((lt) => lt.type === layer.type);
+/**
+ * Renders all breakpoint frames on the canvas.
+ * Each breakpoint frame contains the same layer tree with breakpoint-specific styles.
+ */
+export const DesignerFrame = () => {
+	const { state } = useDesignerContext();
 
-	if (!layerType) {
+	// If no breakpoints defined, render nothing
+	if (state.breakpoints.length === 0) {
 		return null;
 	}
 
-	// Get the element type from layer, or fallback to layerType default
-	const elementType = layer.elementType || layerType.elementType;
-
-	// Determine if layer has explicit dimensions
-	const hasWidth = layer.cssVars?.["--width"];
-	const hasHeight = layer.cssVars?.["--height"];
-
-	// Build styles for the wrapper div (what Moveable targets)
-	const wrapperStyle: React.CSSProperties = {
-		// position: "absolute",
-		// transform: `translateX(${
-		//   layer.cssVars?.["--translate-x"] || 0
-		// }) translateY(${layer.cssVars?.["--translate-y"] || 0})`,
-		// outline: isSelected ? "2px solid #3b82f6" : "none",
-		// border: isSelected ? "2px solid #3b82f6" : "none",
-	};
-
-	// Only apply width/height if they're explicitly set
-	// Otherwise, let the content determine the size (block elements will take full width)
-	if (hasWidth) {
-		wrapperStyle.width = hasWidth;
-	}
-	if (hasHeight) {
-		wrapperStyle.height = hasHeight;
-	}
-
-	const layerWithStyles: LayerWithStyles = {
-		...layer,
-		style: {
-			// Content styles - let the rendered content use its natural sizing
-			// unless dimensions are explicitly set
-			...(hasWidth && { width: hasWidth }),
-			...(hasHeight && { height: hasHeight }),
-		},
-		contentStyle: {
-			...layer.cssVars,
-		},
-	};
-
-	// Render nested children first
-	const children =
-		layer.children && layer.children.length > 0 ? (
-			<div>
-				{layer.children.map((child) => (
-					<DesignerLayer key={child.id} layer={child} state={state} />
-				))}
-			</div>
-		) : undefined;
+	// Calculate bounding box to size the container
+	const boundingBox = calculateBoundingBox(state.breakpoints);
+	// Add padding around the bounding box for headers and spacing
+	const padding = 100;
 
 	return (
 		<div
-			className="designer-layer"
-			data-layer-id={layer.id}
-			key={layer.id}
-			style={wrapperStyle}
-		>
-			{layerType.render(layerWithStyles, children, elementType)}
-		</div>
-	);
-};
-
-export const DesignerFrame = () => {
-	const { state } = useDesignerContext();
-	const layers = useLayers();
-
-	return (
-		<div
-			data-slot="designer-frame"
-			className="designer-frame relative bg-white"
+			className="designer-frame"
 			style={{
-				width: state.frameSize?.width,
-				height: state.frameSize?.height,
+				position: "relative",
+				width: boundingBox.width + boundingBox.x + padding,
+				height: boundingBox.height + boundingBox.y + padding,
+				minWidth: boundingBox.width + boundingBox.x + padding,
+				minHeight: boundingBox.height + boundingBox.y + padding,
 			}}
 		>
-			{layers.map((layer) => (
-				<DesignerLayer key={layer.id} layer={layer} state={state} />
+			{state.breakpoints.map((breakpoint) => (
+				<BreakpointFrame
+					key={breakpoint.id}
+					breakpoint={breakpoint}
+					isActive={state.activeBreakpointId === breakpoint.id}
+					isSelected={state.selectedBreakpointId === breakpoint.id}
+				/>
 			))}
 		</div>
 	);

@@ -1,5 +1,6 @@
 import { useEffect, useReducer } from "react";
-import type { Layer, LayerType } from "../lib/Types";
+import { isPrimaryBreakpoint } from "../lib/breakpointUtils";
+import type { Breakpoint, CSSVars, Layer, LayerType } from "../lib/Types";
 
 /**
  * The state of the designer.
@@ -18,6 +19,23 @@ export type State = {
 	 */
 	selectedLayers: string[];
 	/**
+	 * All breakpoints (responsive frames).
+	 */
+	breakpoints: Breakpoint[];
+	/**
+	 * The currently active breakpoint for editing.
+	 */
+	activeBreakpointId: string | null;
+	/**
+	 * The selected breakpoint frame (when frame itself is selected, not a layer).
+	 * Mutually exclusive with selectedLayers.
+	 */
+	selectedBreakpointId: string | null;
+	/**
+	 * Shared document-level styles (like body styles, apply to all breakpoints).
+	 */
+	frameStyles: CSSVars;
+	/**
 	 * The history of the designer state.
 	 */
 	history: State[];
@@ -34,6 +52,7 @@ export type State = {
 	 */
 	pan: { x: number; y: number };
 	/**
+	 * @deprecated Use breakpoints instead
 	 * The size of the frame.
 	 */
 	frameSize?: { width: number; height: number };
@@ -45,6 +64,11 @@ export type State = {
 		layerId: string;
 		position: "before" | "inside" | "after";
 	};
+	/**
+	 * Counter to trigger re-centering on breakpoints.
+	 * When this changes, DesignerCanvas will center on all frames.
+	 */
+	centerRequestId: number;
 };
 
 /**
@@ -61,7 +85,7 @@ export type Action =
 	  }
 	| {
 			type: "SELECT_LAYER";
-			payload: { layerId: string; shiftKey: boolean };
+			payload: { layerId: string; shiftKey: boolean; breakpointId?: string };
 	  }
 	| { type: "DESELECT_ALL" }
 	| {
@@ -69,6 +93,7 @@ export type Action =
 			payload: {
 				id: string;
 				css: Record<string, string>;
+				breakpointId?: string; // If provided, updates breakpoint-specific styles
 			};
 	  }
 	| {
@@ -121,6 +146,41 @@ export type Action =
 				targetId: string;
 				position: "before" | "on" | "after";
 			};
+	  }
+	// Breakpoint actions
+	| {
+			type: "ADD_BREAKPOINT";
+			payload: { breakpoint: Breakpoint };
+	  }
+	| {
+			type: "UPDATE_BREAKPOINT";
+			payload: {
+				id: string;
+				updates: Partial<Omit<Breakpoint, "id">>;
+			};
+	  }
+	| {
+			type: "DELETE_BREAKPOINT";
+			payload: { id: string };
+	  }
+	| {
+			type: "SET_ACTIVE_BREAKPOINT";
+			payload: { breakpointId: string | null };
+	  }
+	| {
+			type: "SELECT_BREAKPOINT";
+			payload: { breakpointId: string };
+	  }
+	| {
+			type: "UPDATE_FRAME_STYLES";
+			payload: { css: Record<string, string> };
+	  }
+	| {
+			type: "SET_BREAKPOINTS";
+			payload: Breakpoint[];
+	  }
+	| {
+			type: "CENTER_ON_BREAKPOINTS";
 	  };
 
 // Helper function to find a layer by ID in a nested structure
@@ -244,14 +304,216 @@ const insertLayer = (
 	}
 };
 
+// Helper function to add current state to history
+const addHistoryEntry = (state: State, newState: Partial<State>): State => {
+	const newHistory = [...state.history.slice(0, state.historyIndex + 1), state];
+	return {
+		...state,
+		...newState,
+		history: newHistory,
+		historyIndex: newHistory.length - 1,
+	};
+};
+
+// Helper function to update layer CSS (handles primary vs breakpoint-specific)
+const updateLayerCss = (
+	layer: Layer,
+	css: Record<string, string>,
+	targetBreakpointId: string | null,
+	breakpoints: Breakpoint[]
+): Layer => {
+	const isPrimary =
+		!targetBreakpointId ||
+		breakpoints.length === 0 ||
+		isPrimaryBreakpoint(targetBreakpointId, breakpoints);
+
+	if (isPrimary) {
+		// Update base cssVars for primary breakpoint
+		const updatedCssVars = { ...layer.cssVars };
+		Object.entries(css).forEach(([key, value]) => {
+			if (value === undefined || value === "") {
+				delete updatedCssVars[key];
+			} else {
+				updatedCssVars[key] = value;
+			}
+		});
+		return {
+			...layer,
+			cssVars: updatedCssVars,
+		};
+	}
+
+	// Update breakpoint-specific cssVars for non-primary breakpoints
+	const currentBreakpointCssVars =
+		layer.breakpointCssVars?.[targetBreakpointId] ?? {};
+	const updatedBreakpointCssVars = { ...currentBreakpointCssVars };
+
+	Object.entries(css).forEach(([key, value]) => {
+		if (value === undefined || value === "") {
+			delete updatedBreakpointCssVars[key];
+		} else {
+			updatedBreakpointCssVars[key] = value;
+		}
+	});
+
+	// Build the new breakpointCssVars object
+	const newBreakpointCssVars = { ...layer.breakpointCssVars };
+	if (Object.keys(updatedBreakpointCssVars).length > 0) {
+		newBreakpointCssVars[targetBreakpointId] = updatedBreakpointCssVars;
+	} else {
+		// Remove empty breakpoint entry
+		delete newBreakpointCssVars[targetBreakpointId];
+	}
+
+	return {
+		...layer,
+		breakpointCssVars:
+			Object.keys(newBreakpointCssVars).length > 0
+				? newBreakpointCssVars
+				: undefined,
+	};
+};
+
+// Helper function to handle layer selection
+const handleSelectLayer = (
+	state: State,
+	layerId: string,
+	shiftKey: boolean,
+	breakpointId?: string
+): State => {
+	const targetLayer = findLayer(state.layers, layerId);
+
+	// Don't select locked layers
+	if (targetLayer?.layer.isLocked) {
+		return state;
+	}
+
+	const baseUpdate = {
+		selectedBreakpointId: null,
+		activeBreakpointId: breakpointId ?? state.activeBreakpointId,
+	};
+
+	if (shiftKey) {
+		if (state.selectedLayers.includes(layerId)) {
+			return {
+				...state,
+				...baseUpdate,
+				selectedLayers: state.selectedLayers.filter((id) => id !== layerId),
+			};
+		}
+		return {
+			...state,
+			...baseUpdate,
+			selectedLayers: [...state.selectedLayers, layerId],
+		};
+	}
+
+	return {
+		...state,
+		...baseUpdate,
+		selectedLayers: [layerId],
+	};
+};
+
+// Helper function to handle layer movement
+const handleMoveLayer = (
+	state: State,
+	layerIds: string[],
+	targetId: string,
+	position: "before" | "on" | "after"
+): State => {
+	const insertPosition = position === "on" ? "inside" : position;
+	let newLayers = state.layers;
+
+	for (const layerId of layerIds) {
+		if (layerId === targetId) continue;
+
+		const layerToMove = findLayer(newLayers, layerId);
+		if (!layerToMove) continue;
+
+		const movedLayer = { ...layerToMove.layer };
+		newLayers = deleteLayer(newLayers, layerId);
+		newLayers = insertLayer(newLayers, movedLayer, targetId, insertPosition);
+	}
+
+	return addHistoryEntry(state, { layers: newLayers });
+};
+
+// Helper function to update a simple layer property
+const updateLayerProperty = (
+	state: State,
+	layerId: string,
+	updater: (layer: Layer) => Layer
+): State => {
+	const newLayers = updateLayerById(state.layers, layerId, updater);
+	return addHistoryEntry(state, { layers: newLayers });
+};
+
+// Helper function to handle undo
+const handleUndo = (state: State): State => {
+	if (state.history.length > 0 && state.historyIndex >= 0) {
+		const restoredState = state.history[state.historyIndex];
+		const newIndex = state.historyIndex - 1;
+		return {
+			...restoredState,
+			history: state.history,
+			historyIndex: newIndex,
+		};
+	}
+	return state;
+};
+
+// Helper function to handle redo
+const handleRedo = (state: State): State => {
+	if (state.historyIndex < state.history.length - 1) {
+		const newIndex = state.historyIndex + 1;
+		return {
+			...state.history[newIndex],
+			history: state.history,
+			historyIndex: newIndex,
+		};
+	}
+	return state;
+};
+
+// Helper function to handle breakpoint updates with history
+const updateBreakpoints = (
+	state: State,
+	updater: (breakpoints: Breakpoint[]) => Breakpoint[]
+): State => {
+	const newBreakpoints = updater(state.breakpoints);
+	return addHistoryEntry(state, { breakpoints: newBreakpoints });
+};
+
+// Helper function to update frame styles
+const applyFrameStylesUpdate = (
+	state: State,
+	css: Record<string, string>
+): State => {
+	const updatedFrameStyles = { ...state.frameStyles };
+	Object.entries(css).forEach(([key, value]) => {
+		if (value === undefined || value === "") {
+			delete updatedFrameStyles[key];
+		} else {
+			updatedFrameStyles[key] = value;
+		}
+	});
+	return addHistoryEntry(state, { frameStyles: updatedFrameStyles });
+};
+
 const initialState: State = {
 	layers: [],
 	layerTypes: [],
 	selectedLayers: [],
+	breakpoints: [],
+	activeBreakpointId: null,
+	selectedBreakpointId: null,
+	frameStyles: {},
 	history: [],
 	historyIndex: -1,
 	zoom: 1,
 	pan: { x: 0, y: 0 },
+	centerRequestId: 0,
 };
 
 const reducer = (state: State, action: Action): State => {
@@ -260,57 +522,21 @@ const reducer = (state: State, action: Action): State => {
 			return { ...state, layers: action.payload };
 		case "ADD_LAYER": {
 			const { layer, targetLayerId, position } = action.payload;
-
 			const newLayers = insertLayer(
 				state.layers,
 				layer,
 				targetLayerId,
 				position
 			);
-
-			const newState = {
-				...state,
-				layers: newLayers,
-			};
-			const newHistory = [
-				...state.history.slice(0, state.historyIndex + 1),
-				state,
-			];
-			return {
-				...newState,
-				history: newHistory,
-				historyIndex: newHistory.length - 1,
-			};
+			return addHistoryEntry(state, { layers: newLayers });
 		}
 		case "SELECT_LAYER": {
-			const { layerId, shiftKey } = action.payload;
-
-			// Find the layer to check if it's locked
-			const targetLayer = findLayer(state.layers, layerId);
-
-			// Don't select locked layers
-			if (targetLayer?.layer.isLocked) {
-				return state;
-			}
-
-			if (shiftKey) {
-				if (state.selectedLayers.includes(layerId)) {
-					return {
-						...state,
-						selectedLayers: state.selectedLayers.filter((id) => id !== layerId),
-					};
-				} else {
-					return {
-						...state,
-						selectedLayers: [...state.selectedLayers, layerId],
-					};
-				}
-			} else {
-				return {
-					...state,
-					selectedLayers: [layerId],
-				};
-			}
+			return handleSelectLayer(
+				state,
+				action.payload.layerId,
+				action.payload.shiftKey,
+				action.payload.breakpointId
+			);
 		}
 		case "DESELECT_ALL":
 			return {
@@ -320,202 +546,51 @@ const reducer = (state: State, action: Action): State => {
 		case "DELETE_LAYER": {
 			const { layerId } = action.payload;
 			const newLayers = deleteLayer(state.layers, layerId);
-			const newState = {
-				...state,
+			return addHistoryEntry(state, {
 				layers: newLayers,
-				// Remove deleted layer from selected layers
 				selectedLayers: state.selectedLayers.filter((id) => id !== layerId),
-			};
-			const newHistory = [
-				...state.history.slice(0, state.historyIndex + 1),
-				state,
-			];
-			return {
-				...newState,
-				history: newHistory,
-				historyIndex: newHistory.length - 1,
-			};
+			});
 		}
 		case "MOVE_LAYER": {
-			const { layerIds, targetId, position } = action.payload;
-
-			// Map "on" to "inside" for insertLayer
-			const insertPosition = position === "on" ? "inside" : position;
-
-			let newLayers = state.layers;
-
-			// Move each layer one by one
-			for (const layerId of layerIds) {
-				// Don't allow moving a layer into itself or its descendants
-				if (layerId === targetId) continue;
-
-				// Find the layer to move
-				const layerToMove = findLayer(newLayers, layerId);
-				if (!layerToMove) continue;
-
-				// Clone the layer (we need to preserve it before deletion)
-				const movedLayer = { ...layerToMove.layer };
-
-				// Remove the layer from its current position
-				newLayers = deleteLayer(newLayers, layerId);
-
-				// Insert at the new position
-				newLayers = insertLayer(newLayers, movedLayer, targetId, insertPosition);
-			}
-
-			const newState = {
-				...state,
-				layers: newLayers,
-			};
-			const newHistory = [
-				...state.history.slice(0, state.historyIndex + 1),
+			return handleMoveLayer(
 				state,
-			];
-			return {
-				...newState,
-				history: newHistory,
-				historyIndex: newHistory.length - 1,
-			};
+				action.payload.layerIds,
+				action.payload.targetId,
+				action.payload.position
+			);
 		}
-		case "UPDATE_LAYER_NAME": {
-			const newState = {
-				...state,
-				layers: updateLayerById(
-					state.layers,
-					action.payload.layerId,
-					(layer) => ({
-						...layer,
-						name: action.payload.name,
-					})
-				),
-			};
-			const newHistory = [
-				...state.history.slice(0, state.historyIndex + 1),
-				state,
-			];
-			return {
-				...newState,
-				history: newHistory,
-				historyIndex: newHistory.length - 1,
-			};
-		}
-		case "UPDATE_LAYER_LOCK": {
-			const newState = {
-				...state,
-				layers: updateLayerById(
-					state.layers,
-					action.payload.layerId,
-					(layer) => ({
-						...layer,
-						isLocked: action.payload.isLocked,
-					})
-				),
-			};
-			const newHistory = [
-				...state.history.slice(0, state.historyIndex + 1),
-				state,
-			];
-			return {
-				...newState,
-				history: newHistory,
-				historyIndex: newHistory.length - 1,
-			};
-		}
-		case "UPDATE_LAYER_ELEMENT_TYPE": {
-			const newState = {
-				...state,
-				layers: updateLayerById(
-					state.layers,
-					action.payload.layerId,
-					(layer) => ({
-						...layer,
-						elementType: action.payload.elementType,
-					})
-				),
-			};
-			const newHistory = [
-				...state.history.slice(0, state.historyIndex + 1),
-				state,
-			];
-			return {
-				...newState,
-				history: newHistory,
-				historyIndex: newHistory.length - 1,
-			};
-		}
+		case "UPDATE_LAYER_NAME":
+			return updateLayerProperty(state, action.payload.layerId, (layer) => ({
+				...layer,
+				name: action.payload.name,
+			}));
+		case "UPDATE_LAYER_LOCK":
+			return updateLayerProperty(state, action.payload.layerId, (layer) => ({
+				...layer,
+				isLocked: action.payload.isLocked,
+			}));
+		case "UPDATE_LAYER_ELEMENT_TYPE":
+			return updateLayerProperty(state, action.payload.layerId, (layer) => ({
+				...layer,
+				elementType: action.payload.elementType,
+			}));
 		case "UPDATE_LAYER_CSS": {
-			const newState = {
-				...state,
-				layers: updateLayerById(state.layers, action.payload.id, (layer) => {
-					// Merge CSS vars, removing any that are set to empty string or undefined
-					const updatedCssVars = { ...layer.cssVars };
-					Object.entries(action.payload.css).forEach(([key, value]) => {
-						if (value === undefined || value === "") {
-							delete updatedCssVars[key];
-						} else {
-							updatedCssVars[key] = value;
-						}
-					});
-
-					return {
-						...layer,
-						cssVars: updatedCssVars,
-					};
-				}),
-			};
-			const newHistory = [
-				...state.history.slice(0, state.historyIndex + 1),
-				state,
-			];
-			return {
-				...newState,
-				history: newHistory,
-				historyIndex: newHistory.length - 1,
-			};
+			const { id, css, breakpointId } = action.payload;
+			const targetBreakpointId = breakpointId ?? state.activeBreakpointId;
+			const newLayers = updateLayerById(state.layers, id, (layer) =>
+				updateLayerCss(layer, css, targetBreakpointId, state.breakpoints)
+			);
+			return addHistoryEntry(state, { layers: newLayers });
 		}
-		case "UPDATE_LAYER_VALUE": {
-			const newState = {
-				...state,
-				layers: updateLayerById(state.layers, action.payload.id, (layer) => ({
-					...layer,
-					value: action.payload.value,
-				})),
-			};
-			const newHistory = [
-				...state.history.slice(0, state.historyIndex + 1),
-				state,
-			];
-			return {
-				...newState,
-				history: newHistory,
-				historyIndex: newHistory.length - 1,
-			};
-		}
-		case "UNDO": {
-			if (state.history.length > 0 && state.historyIndex >= 0) {
-				// Restore the state at historyIndex (this is the state before the current action)
-				const restoredState = state.history[state.historyIndex];
-				// Move historyIndex back by 1, or to -1 if we're at the first entry
-				const newIndex = state.historyIndex - 1;
-				return {
-					...restoredState,
-					history: state.history,
-					historyIndex: newIndex,
-				};
-			}
-			return state;
-		}
-		case "REDO": {
-			if (state.historyIndex < state.history.length - 1) {
-				const newIndex = state.historyIndex + 1;
-				return {
-					...state.history[newIndex],
-					history: state.history,
-					historyIndex: newIndex,
-				};
-			}
-			return state;
-		}
+		case "UPDATE_LAYER_VALUE":
+			return updateLayerProperty(state, action.payload.id, (layer) => ({
+				...layer,
+				value: action.payload.value,
+			}));
+		case "UNDO":
+			return handleUndo(state);
+		case "REDO":
+			return handleRedo(state);
 		case "SET_FRAME_SIZE":
 			return { ...state, frameSize: action.payload };
 		case "SET_ZOOM":
@@ -538,6 +613,73 @@ const reducer = (state: State, action: Action): State => {
 					? { ...state.addLayerDialog, open: false }
 					: undefined,
 			};
+		// Breakpoint actions
+		case "ADD_BREAKPOINT": {
+			const newBreakpoints = [...state.breakpoints, action.payload.breakpoint];
+			return addHistoryEntry(state, {
+				breakpoints: newBreakpoints,
+				activeBreakpointId:
+					state.activeBreakpointId ?? action.payload.breakpoint.id,
+			});
+		}
+		case "UPDATE_BREAKPOINT":
+			return updateBreakpoints(state, (breakpoints) =>
+				breakpoints.map((bp) =>
+					bp.id === action.payload.id
+						? { ...bp, ...action.payload.updates }
+						: bp
+				)
+			);
+		case "DELETE_BREAKPOINT": {
+			if (state.breakpoints.length <= 1) {
+				return state;
+			}
+			const newBreakpoints = state.breakpoints.filter(
+				(bp) => bp.id !== action.payload.id
+			);
+			return addHistoryEntry(state, {
+				breakpoints: newBreakpoints,
+				activeBreakpointId:
+					state.activeBreakpointId === action.payload.id
+						? (newBreakpoints[0]?.id ?? null)
+						: state.activeBreakpointId,
+				selectedBreakpointId:
+					state.selectedBreakpointId === action.payload.id
+						? null
+						: state.selectedBreakpointId,
+			});
+		}
+		case "SET_ACTIVE_BREAKPOINT":
+			return {
+				...state,
+				activeBreakpointId: action.payload.breakpointId,
+			};
+		case "SELECT_BREAKPOINT":
+			return {
+				...state,
+				selectedBreakpointId: action.payload.breakpointId,
+				selectedLayers: [], // Clear layer selection when selecting a breakpoint
+				activeBreakpointId: action.payload.breakpointId, // Also set as active
+			};
+		case "UPDATE_FRAME_STYLES": {
+			return applyFrameStylesUpdate(state, action.payload.css);
+		}
+		case "SET_BREAKPOINTS": {
+			return {
+				...state,
+				breakpoints: action.payload,
+				// Set first breakpoint as active if none selected
+				activeBreakpointId:
+					state.activeBreakpointId ?? action.payload[0]?.id ?? null,
+			};
+		}
+		case "CENTER_ON_BREAKPOINTS": {
+			// Increment centerRequestId to signal DesignerCanvas to re-center
+			return {
+				...state,
+				centerRequestId: state.centerRequestId + 1,
+			};
+		}
 		default:
 			return state;
 	}
@@ -564,9 +706,18 @@ type UseDesignerProps = {
 	 */
 	onLayersChange?: (layers: Layer[]) => void;
 	/**
+	 * @deprecated Use breakpoints instead
 	 * The size of the frame.
 	 */
 	frameSize?: { width: number; height: number };
+	/**
+	 * The initial breakpoints (responsive frames).
+	 */
+	breakpoints?: Breakpoint[];
+	/**
+	 * Shared document-level styles.
+	 */
+	frameStyles?: CSSVars;
 };
 
 /**
@@ -578,12 +729,32 @@ export const useDesigner = ({
 	onLayersChange,
 	frameSize,
 	layerTypes,
+	breakpoints,
+	frameStyles,
 }: UseDesignerProps) => {
+	// If no breakpoints provided but frameSize is, create a default breakpoint
+	const initialBreakpoints: Breakpoint[] =
+		breakpoints ??
+		(frameSize
+			? [
+					{
+						id: "default",
+						name: "Default",
+						width: frameSize.width,
+						height: frameSize.height,
+						position: { x: 0, y: 0 },
+					},
+				]
+			: []);
+
 	const [state, dispatch] = useReducer(reducer, {
 		...initialState,
 		layers: defaultLayers || layers || [],
 		layerTypes: layerTypes || [],
 		frameSize,
+		breakpoints: initialBreakpoints,
+		activeBreakpointId: initialBreakpoints[0]?.id ?? null,
+		frameStyles: frameStyles ?? {},
 	});
 
 	useEffect(() => {

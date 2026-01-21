@@ -1,18 +1,26 @@
 "use client";
 
 import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
+import type { ReactNode } from "react";
 
 export const Tooltip = ({
 	triggerProps,
 	content,
+	children,
 }: {
-	triggerProps: React.ComponentProps<typeof BaseTooltip.Trigger>;
-	content: string;
+	triggerProps?: React.ComponentProps<typeof BaseTooltip.Trigger>;
+	content?: string;
+	children?: ReactNode;
 }) => {
+	// If no content, just render children directly
+	if (!content) {
+		return <>{children}</>;
+	}
+
 	return (
 		<BaseTooltip.Provider>
 			<BaseTooltip.Root>
-				<BaseTooltip.Trigger {...triggerProps} />
+				<BaseTooltip.Trigger {...triggerProps}>{children}</BaseTooltip.Trigger>
 				<BaseTooltip.Portal>
 					<BaseTooltip.Positioner sideOffset={10}>
 						<BaseTooltip.Popup

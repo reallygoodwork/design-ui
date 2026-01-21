@@ -4,7 +4,7 @@ import { useKeybindings } from "../hooks/useKeybindings";
 import { frameLayerType } from "../lib/layers/frame";
 import { imageLayerType } from "../lib/layers/image";
 import { textLayerType } from "../lib/layers/text";
-import type { Layer, LayerType } from "../lib/Types";
+import type { Breakpoint, CSSVars, Layer, LayerType } from "../lib/Types";
 import { AddLayerDialog } from "./AddLayerDialog";
 import { FontLoader } from "./FontLoader";
 
@@ -33,38 +33,28 @@ type DesignerProps = {
 	 */
 	onLayersChange?: (layers: Layer[]) => void;
 	/**
+	 * @deprecated Use breakpoints instead.
 	 * The size of the frame.
 	 */
 	frameSize?: { width: number; height: number };
+	/**
+	 * The breakpoints (responsive frames) for the designer.
+	 */
+	breakpoints?: Breakpoint[];
+	/**
+	 * Shared document-level styles (like body styles).
+	 */
+	frameStyles?: CSSVars;
 };
 
 /**
- * The main container for the designer.
+ * Inner component that uses context hooks - must be rendered inside DesignerProvider.
  */
-export const Designer = ({
-	children,
-	defaultLayers,
-	layers,
-	onLayersChange,
-	frameSize,
-	layerTypes,
-}: DesignerProps) => {
+const DesignerInner = ({ children }: { children: ReactNode }) => {
 	useKeybindings();
 
-	const allLayerTypes = [
-		textLayerType,
-		imageLayerType,
-		frameLayerType,
-		...(layerTypes || []),
-	];
 	return (
-		<DesignerProvider
-			defaultLayers={defaultLayers}
-			layers={layers}
-			onLayersChange={onLayersChange}
-			frameSize={frameSize}
-			defaultLayerTypes={allLayerTypes}
-		>
+		<>
 			<FontLoader />
 			<div
 				data-slot="designer"
@@ -78,6 +68,41 @@ export const Designer = ({
 				</div>
 				<AddLayerDialog />
 			</div>
+		</>
+	);
+};
+
+/**
+ * The main container for the designer.
+ */
+export const Designer = ({
+	children,
+	defaultLayers,
+	layers,
+	onLayersChange,
+	frameSize,
+	layerTypes,
+	breakpoints,
+	frameStyles,
+}: DesignerProps) => {
+	const allLayerTypes = [
+		textLayerType,
+		imageLayerType,
+		frameLayerType,
+		...(layerTypes || []),
+	];
+
+	return (
+		<DesignerProvider
+			defaultLayers={defaultLayers}
+			layers={layers}
+			onLayersChange={onLayersChange}
+			frameSize={frameSize}
+			defaultLayerTypes={allLayerTypes}
+			breakpoints={breakpoints}
+			frameStyles={frameStyles}
+		>
+			<DesignerInner>{children}</DesignerInner>
 		</DesignerProvider>
 	);
 };

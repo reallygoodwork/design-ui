@@ -13,25 +13,29 @@ export const CSSPanel = () => {
 	return (
 		<DesignerPane title="CSS">
 			{layer ? (
-			<div className="rounded-sm border border-border">
-				<Editor
-					height="600px"
-					theme="vs-dark"
-					options={{
-						minimap: {
-							enabled: false,
-						},
-						lineNumbers: "off",
-						wordWrap: "on",
-						readOnly: true,
-					}}
-					defaultLanguage="css"
-					defaultValue={`.${layer?.name.toLowerCase().replace(" ", "-")} {
+				<div className="rounded-sm border border-border">
+					<Editor
+						height="600px"
+						theme="vs-dark"
+						options={{
+							minimap: {
+								enabled: false,
+							},
+							lineNumbers: "off",
+							wordWrap: "on",
+							readOnly: true,
+						}}
+						defaultLanguage="css"
+						defaultValue={`.${layer?.name.toLowerCase().replace(" ", "-")} {
 	${cssString}
 }`}
-				/>
-			</div>
-			) : <div className="rounded-sm border border-border p-4 text-center text-sm text-muted-foreground">No layer selected</div>}
+					/>
+				</div>
+			) : (
+				<div className="rounded-sm border border-border p-4 text-center text-sm text-muted-foreground">
+					No layer selected
+				</div>
+			)}
 		</DesignerPane>
 	);
 };

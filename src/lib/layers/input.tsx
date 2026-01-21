@@ -16,13 +16,13 @@ export const inputLayerType = {
 		"--min-height",
 		"--border-radius",
 		"--opacity",
-    "--display",
+		"--display",
 		"--flex-direction",
 		"--align-items",
 		"--justify-content",
 		"--column-gap",
 		"--row-gap",
-    "--padding-block-start",
+		"--padding-block-start",
 		"--padding-block-end",
 		"--padding-inline-start",
 		"--padding-inline-end",
@@ -46,8 +46,12 @@ export const inputLayerType = {
 		},
 	},
 	render: (layer: LayerWithStyles, _children?: React.ReactNode) => (
-		<input type="text" value={layer.value} style={applyCssVars(layer.cssVars, inputLayerType.supportedCssProperties)} />
+		<input
+			type="text"
+			value={layer.value}
+			style={applyCssVars(layer.cssVars, inputLayerType.supportedCssProperties)}
+		/>
 	),
-  elementType: "input",
+	elementType: "input",
 	availableElementTypes: ["input", "textarea", "select"],
 } satisfies LayerType;

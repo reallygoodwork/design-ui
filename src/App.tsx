@@ -1,3 +1,4 @@
+import { BreakpointPropertiesPanel } from "./components/BreakpointPropertiesPanel";
 import { CSSPanel } from "./components/CSSPanel";
 import { Tabs } from "./components/common/Tabs";
 import { DesignActionPanel } from "./components/DesignActionPanel";
@@ -10,8 +11,7 @@ import { DesignerPane } from "./components/DesignerPane";
 import { DesignPanel } from "./components/DesignerPanel";
 import { DesignToolbarContainer } from "./components/DesignToolbarContainer";
 import { PaneLayerTree } from "./components/PaneLayerTree";
-import { DesignerProvider } from "./context/DesignerContext";
-import type { Layer } from "./lib/Types";
+import type { Breakpoint, Layer } from "./lib/Types";
 
 const initialLayers: Layer[] = [
 	{
@@ -20,8 +20,6 @@ const initialLayers: Layer[] = [
 		name: "Text 1",
 		value: "Hello World",
 		cssVars: {
-			// "--width": "200px",
-			// "--height": "100px",
 			"--font-size": "16px",
 			"--color": "#000000",
 		},
@@ -29,12 +27,10 @@ const initialLayers: Layer[] = [
 	{
 		id: "2",
 		type: "frame",
-		name: "Text 1",
-		value: "Hello World",
+		name: "Frame 1",
+		value: "",
 		cssVars: {
 			"--background-color": "#00ff00",
-			// "--width": "200px",
-			// "--height": "100px",
 		},
 		children: [
 			{
@@ -61,48 +57,70 @@ const initialLayers: Layer[] = [
 	},
 ];
 
+// Define initial breakpoints (mobile-first: smallest to largest)
+const initialBreakpoints: Breakpoint[] = [
+	{
+		id: "mobile",
+		name: "Mobile",
+		width: 375,
+		height: 667,
+		position: { x: 0, y: 0 },
+	},
+	{
+		id: "tablet",
+		name: "Tablet",
+		width: 768,
+		height: 1024,
+		position: { x: 425, y: 0 },
+	},
+	{
+		id: "desktop",
+		name: "Desktop",
+		width: 1440,
+		height: 900,
+		position: { x: 1243, y: 0 },
+	},
+];
+
 function App() {
 	return (
-		<DesignerProvider>
-			<div className="flex h-screen w-screen isolate ds">
-				<Designer
-					layers={initialLayers}
-					frameSize={{ width: 600, height: 600 }}
-				>
-					<DesignerHeader />
-					<DesignerContent>
-						<DesignPanel>
-							<DesignerPane>
-								<PaneLayerTree />
-							</DesignerPane>
-						</DesignPanel>
+		<div className="flex h-screen w-screen isolate ds">
+			<Designer layers={initialLayers} breakpoints={initialBreakpoints}>
+				<DesignerHeader />
+				<DesignerContent>
+					<DesignPanel>
+						<DesignerPane>
+							<PaneLayerTree />
+						</DesignerPane>
+					</DesignPanel>
 
-						<DesignerCanvas>
-							<DesignerFrame />
-						</DesignerCanvas>
+					<DesignerCanvas>
+						<DesignerFrame />
+					</DesignerCanvas>
 
-						<DesignPanel>
-							<Tabs
-								items={[
-									{
-										label: "Styles",
-										value: "layer",
-										content: <DesignActionPanel />,
-									},
-									{
-										label: "CSS",
-										value: "css",
-										content: <CSSPanel />,
-									},
-								]}
-							/>
-						</DesignPanel>
+					<DesignPanel>
+						{/* Show breakpoint properties when frame selected, layer styles otherwise */}
+						<BreakpointPropertiesPanel />
+						<Tabs
+							items={[
+								{
+									label: "Styles",
+									value: "layer",
+									content: <DesignActionPanel />,
+								},
+								{
+									label: "CSS",
+									value: "css",
+									content: <CSSPanel />,
+								},
+							]}
+						/>
+					</DesignPanel>
 
-						<DesignToolbarContainer />
-					</DesignerContent>
-				</Designer>
-			</div>
-		</DesignerProvider>
+					<DesignToolbarContainer />
+				</DesignerContent>
+			</Designer>
+		</div>
 	);
 }
 

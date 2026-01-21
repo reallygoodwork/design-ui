@@ -1,12 +1,13 @@
 import { Button } from "@base-ui/react/button";
 import { IconMinus, IconPlus } from "@tabler/icons-react";
 import { type ReactNode, useMemo, useState } from "react";
-import { useDesignerAction } from "../../hooks/useDesignerAction";
+import { useBreakpointCss } from "../../hooks/useBreakpointCss";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { formatCSSValue, parseCSSValue } from "../../lib/cssValueHelpers";
 import { ClearButton } from "../common/ClearButton";
 import { InputGroup } from "../common/InputGroup";
 import { Select } from "../common/Select";
+import { Tooltip } from "../common/Tooltip";
 import { DesignAction } from "../DesignAction";
 
 const DEFAULT_UNITS = ["px", "%", "vw", "vh", "rem", "em"] as const;
@@ -37,15 +38,28 @@ export const NumericActionControl = ({
 	placeholder,
 }: NumericActionControlProps) => {
 	const selectedLayers = useSelectedLayers();
-	const designerAction = useDesignerAction();
 	const selectedLayer = selectedLayers[0];
 
-	const rawValue = selectedLayer?.cssVars?.[cssProperty];
+	// Use breakpoint-aware CSS hook
+	const {
+		value: rawValue,
+		inheritedValue,
+		isExplicit,
+		fromBreakpointName,
+		isPrimary,
+		setValue,
+		clearValue,
+	} = useBreakpointCss(cssProperty);
 
 	// Parse the current value into number and unit
 	const { value: numericValue, unit: currentUnit } = useMemo(() => {
 		return parseCSSValue(rawValue, defaultUnit);
 	}, [rawValue, defaultUnit]);
+
+	// Parse inherited value for placeholder
+	const { value: inheritedNumericValue } = useMemo(() => {
+		return parseCSSValue(inheritedValue, defaultUnit);
+	}, [inheritedValue, defaultUnit]);
 
 	// Local state for unit (to allow changing unit independently)
 	const [selectedUnit, setSelectedUnit] = useState(currentUnit);
@@ -54,13 +68,7 @@ export const NumericActionControl = ({
 	const updateCSSValue = (value: number | string, unit: string) => {
 		if (selectedLayer) {
 			const cssValue = formatCSSValue(value, unit);
-			designerAction({
-				type: "UPDATE_LAYER_CSS",
-				payload: {
-					id: selectedLayer.id,
-					css: { [cssProperty]: cssValue },
-				},
-			});
+			setValue(cssValue);
 		}
 	};
 
@@ -71,25 +79,22 @@ export const NumericActionControl = ({
 
 	const handleIncrease = () => {
 		if (selectedLayer) {
-			const newValue = (numericValue || defaultValue) + step;
+			const baseValue = numericValue || inheritedNumericValue || defaultValue;
+			const newValue = baseValue + step;
 			updateCSSValue(newValue, selectedUnit);
 		}
 	};
 
 	const handleDecrease = () => {
 		if (selectedLayer) {
-			const newValue = (numericValue || defaultValue) - step;
+			const baseValue = numericValue || inheritedNumericValue || defaultValue;
+			const newValue = baseValue - step;
 			updateCSSValue(newValue, selectedUnit);
 		}
 	};
 
 	const handleClear = () => {
-		if (selectedLayer) {
-			designerAction({
-				type: "UPDATE_LAYER_CSS",
-				payload: { id: selectedLayer.id, css: { [cssProperty]: "" } },
-			});
-		}
+		clearValue();
 	};
 
 	const handleUnitChange = (newUnit: string) => {
@@ -101,23 +106,48 @@ export const NumericActionControl = ({
 	};
 
 	// Convert numeric value to string for input
-	const inputValue =
-		numericValue === 0 && !rawValue ? "" : numericValue.toString();
+	// If not explicit, show empty and use placeholder for inherited
+	const inputValue = isExplicit
+		? numericValue === 0 && !rawValue
+			? ""
+			: numericValue.toString()
+		: "";
+
+	// Placeholder shows inherited value
+	const inheritedPlaceholder =
+		!isExplicit && inheritedNumericValue
+			? inheritedNumericValue.toString()
+			: placeholder;
 
 	// Convert units array to select items format
 	const unitItems = units.map((unit) => ({ label: unit, value: unit }));
 
-	const hasValue = Boolean(selectedLayer?.cssVars?.[cssProperty]);
+	const hasValue = isExplicit;
+
+	// Build tooltip for inheritance info
+	const inheritanceTooltip =
+		!isPrimary && fromBreakpointName
+			? isExplicit
+				? `Overrides ${fromBreakpointName}`
+				: `Inherited from ${fromBreakpointName}`
+			: undefined;
+
+	// Build label with optional override indicator
+	const labelWithIndicator = !isPrimary && isExplicit ? `${label} •` : label;
 
 	return (
-		<DesignAction label={label} orientation={orientation}>
+		<DesignAction label={labelWithIndicator} orientation={orientation}>
 			<div className="flex items-center gap-1">
-				<InputGroup
-					value={inputValue}
-					onChange={handleInputChange}
-					addon={addon}
-					placeholder={placeholder}
-				/>
+				<Tooltip content={inheritanceTooltip}>
+					<div className="flex-1">
+						<InputGroup
+							value={inputValue}
+							onChange={handleInputChange}
+							addon={addon}
+							placeholder={inheritedPlaceholder}
+						/>
+					</div>
+				</Tooltip>
 				<Select
 					items={unitItems}
 					value={selectedUnit}

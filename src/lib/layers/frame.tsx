@@ -52,16 +52,32 @@ export const frameLayerType = {
 			"--background-color": "#ffffff",
 		},
 	},
-	render: (layer: LayerWithStyles, children?: React.ReactNode, elementType = "div") => {
+	render: (
+		layer: LayerWithStyles,
+		children?: React.ReactNode,
+		elementType = "div"
+	) => {
 		const Element = elementType as keyof JSX.IntrinsicElements;
 		return (
 			<Element
-				style={applyCssVars(layer.cssVars, frameLayerType.supportedCssProperties)}
+				style={applyCssVars(
+					layer.cssVars,
+					frameLayerType.supportedCssProperties
+				)}
 			>
 				{children}
 			</Element>
 		);
 	},
 	elementType: "div",
-	availableElementTypes: ["div", "section", "article", "main", "header", "footer", "nav", "aside"],
+	availableElementTypes: [
+		"div",
+		"section",
+		"article",
+		"main",
+		"header",
+		"footer",
+		"nav",
+		"aside",
+	],
 } satisfies LayerType;
