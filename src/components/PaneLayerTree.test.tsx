@@ -227,3 +227,43 @@ describe("section header", () => {
 		expect(toggle()).not.toBe(selectTarget());
 	});
 });
+
+describe("drag handle", () => {
+	afterEach(() => {
+		cleanup();
+		vi.restoreAllMocks();
+	});
+
+	it("logs no missing drag-handle warning", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+		const error = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => undefined);
+		setup();
+		const logged = [...warn.mock.calls, ...error.mock.calls]
+			.flat()
+			.map(String)
+			.filter((m) => m.includes("Draggable items in a Tree must contain"));
+		expect(logged).toEqual([]);
+	});
+
+	it("gives every row exactly one named drag button", () => {
+		setup();
+		const tree = screen.getByRole("treegrid", { name: "Desktop layer tree" });
+		const rows = within(tree).getAllByRole("row");
+		expect(rows.length).toBeGreaterThan(0);
+		for (const row of rows) {
+			const handles = row.querySelectorAll('[slot="drag"]');
+			expect(handles).toHaveLength(1);
+			expect(handles[0].getAttribute("aria-label")).toMatch(/\S/);
+		}
+	});
+
+	it("still selects on a row click", async () => {
+		const { select } = setup();
+		select("Other");
+		const row = rowsIn("Desktop");
+		await userEvent.click(row("Frame"));
+		expect(row("Frame").getAttribute("data-selected")).toBe("true");
+	});
+});
