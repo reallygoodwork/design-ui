@@ -1,34 +1,76 @@
-import { useMemo } from "react";
+import { useLayoutEffect, useState } from "react";
 import type { Layer } from "../lib/Types";
+import { useDesignerContext } from "./useDesignerContext";
+
+type Dimensions = { width: number; height: number };
 
 /**
- * Hook to get the computed dimensions of a layer element.
- * Reads the actual rendered width and height from the DOM.
+ * Find a layer's element inside a breakpoint frame (the active one, or the
+ * first frame if there is none). Kept as one function so the DOM lookup can
+ * later be routed through a frame registry.
+ */
+const findLayerElement = (
+	layerId: string,
+	breakpointId: string | null
+): HTMLElement | null => {
+	const frame =
+		(breakpointId &&
+			document.querySelector(
+				`.breakpoint-frame[data-breakpoint-id="${breakpointId}"]`
+			)) ||
+		document.querySelector(".breakpoint-frame");
+	return (
+		frame?.querySelector<HTMLElement>(
+			`.designer-layer[data-layer-id="${layerId}"]`
+		) ?? null
+	);
+};
+
+/**
+ * Hook to get the layout dimensions of a layer element in the active
+ * breakpoint's frame, in unzoomed CSS pixels. Kept current with a
+ * `ResizeObserver`.
  *
  * @param layer - The layer to get dimensions for
- * @returns Object with width and height in pixels (rounded), or null if element not found
+ * @returns Object with width and height in pixels, or null if element not found
  */
 export const useLayerDimensions = (layer: Layer | undefined) => {
-	return useMemo(() => {
-		if (!layer) {
-			return null;
-		}
+	const { state } = useDesignerContext();
+	const layerId = layer?.id;
+	const { activeBreakpointId, zoom } = state;
+	const [dimensions, setDimensions] = useState<Dimensions | null>(null);
 
-		// Query the DOM element for this layer
-		const element = document.querySelector(
-			`.designer-frame .designer-layer[data-layer-id="${layer.id}"]`
-		) as HTMLElement | null;
-
+	// biome-ignore lint/correctness/useExhaustiveDependencies: zoom triggers a re-measure
+	useLayoutEffect(() => {
+		const element = layerId
+			? findLayerElement(layerId, activeBreakpointId)
+			: null;
 		if (!element) {
-			return null;
+			setDimensions(null);
+			return;
 		}
 
-		// Get computed dimensions using getBoundingClientRect
-		const rect = element.getBoundingClientRect();
-
-		return {
-			width: Math.round(rect.width),
-			height: Math.round(rect.height),
+		const measure = () => {
+			// offsetWidth/Height ignore the canvas's CSS scale()
+			const next = {
+				width: Math.round(element.offsetWidth),
+				height: Math.round(element.offsetHeight),
+			};
+			setDimensions((prev) =>
+				prev && prev.width === next.width && prev.height === next.height
+					? prev
+					: next
+			);
 		};
-	}, [layer?.id, layer]);
+		measure();
+
+		if (typeof ResizeObserver === "undefined") {
+			return;
+		}
+		const observer = new ResizeObserver(measure);
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, [layerId, activeBreakpointId, zoom]);
+
+	return layerId ? dimensions : null;
 };
