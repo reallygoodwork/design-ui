@@ -6,7 +6,16 @@ export const ActionTextShadow = () => {
 	const selectedLayers = useSelectedLayers();
 	const selectedLayer = selectedLayers[0];
 
-	const currentValue = selectedLayer?.cssVars?.["--text-decoration"] || "none";
+	const vars = selectedLayer?.cssVars;
+	const parts = [
+		vars?.["--text-shadow-offset-x"],
+		vars?.["--text-shadow-offset-y"],
+		vars?.["--text-shadow-blur-radius"],
+	];
+	const currentValue =
+		vars?.["--text-shadow-color"] || parts.some(Boolean)
+			? parts.map((v) => v || "0").join(" ")
+			: "none";
 	return (
 		<ColorActionPopover
 			cssProperty="--text-shadow-color"

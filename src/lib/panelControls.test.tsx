@@ -26,7 +26,9 @@ import { DesignerProvider } from "../context/DesignerContext";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useDesignerContext } from "../hooks/useDesignerContext";
 import { breakpoints, defaultLayerTypes, makeLayer } from "../test/fixtures";
+import { applyCssVars } from "./cssPropertyMapping";
 import { frameLayerType } from "./layers/frame";
+import { imageLayerType } from "./layers/image";
 import { inputLayerType } from "./layers/input";
 import { textLayerType } from "./layers/text";
 import type { CSSVars, LayerType } from "./Types";
@@ -452,10 +454,13 @@ describe("every toggle option is valid CSS for the property it writes", () => {
 		}
 	});
 
-	// ActionTextTransform.tsx writes "normal", which is not a text-transform
-	// value, so Normal cannot clear an earlier uppercase. The file is outside
-	// S10's list; this documents the bug until it is approved for the fix.
-	it.fails("TextTransform", () => {
+	it("TextTransform: every option is valid and Normal clears Uppercase", () => {
+		const getVars = mount(ActionTextTransform, "text", {});
+		fireEvent.click(screen.getByRole("button", { name: "Uppercase" }));
+		expect(getVars()["--text-transform"]).toBe("uppercase");
+		fireEvent.click(screen.getByRole("button", { name: "Normal" }));
+		expect(getVars()["--text-transform"]).toBe("none");
+		cleanup();
 		const values = toggleValues(
 			ActionTextTransform,
 			"text",
@@ -525,5 +530,110 @@ describe("no control writes a var that is neither rendered nor internal", () => 
 			const owner = key.startsWith("--text-shadow-") ? "--text-shadow" : key;
 			expect(supported, key).toContain(owner);
 		}
+	});
+});
+
+describe("TextShadow trigger label", () => {
+	it("shows none, then the shadow parts, not the decoration", () => {
+		const get = mount(ActionTextShadow, "text", {
+			"--text-decoration": "underline",
+		});
+		const label = () =>
+			screen.getByText("Shadow").closest("[data-slot=action]")?.textContent;
+		expect(label()).toContain("none");
+		openPopover("Shadow");
+		fireEvent.change(numericInput("Offset X"), { target: { value: "2" } });
+		expect(get()["--text-shadow-offset-x"]).toBe("2px");
+		expect(label()).toContain("2px 0 0");
+		expect(label()).not.toContain("underline");
+	});
+});
+
+// Every var a control in a panel pane writes. Layer, Layout and Color panes
+// show for every layer type; Typography shows for text only.
+const PANE_VARS = {
+	shared: [
+		"--width",
+		"--height",
+		"--min-width",
+		"--max-width",
+		"--min-height",
+		"--max-height",
+		"position",
+		"top",
+		"right",
+		"bottom",
+		"left",
+		"--opacity",
+		"--border-top-left-radius",
+		"--border-top-right-radius",
+		"--border-bottom-left-radius",
+		"--border-bottom-right-radius",
+		"--display",
+		"--grid-template-columns",
+		"--grid-template-rows",
+		"--justify-content",
+		"--align-items",
+		"--flex-direction",
+		"--flex-wrap",
+		"--row-gap",
+		"--column-gap",
+		"--padding-block-start",
+		"--padding-inline-end",
+		"--padding-block-end",
+		"--padding-inline-start",
+		"--margin-block-start",
+		"--margin-inline-end",
+		"--margin-block-end",
+		"--margin-inline-start",
+		"--background-color",
+		"--color",
+		"--border-color",
+		"--border-width",
+	],
+	text: [
+		"--font-family",
+		"--font-size",
+		"--line-height",
+		"--letter-spacing",
+		"--text-align",
+		"--font-style",
+		"--text-decoration-line",
+		"--text-decoration-color",
+		"--text-decoration-thickness",
+		"--text-decoration-style",
+		"--text-transform",
+		"--text-shadow",
+	],
+};
+
+describe("every control the panel shows for a layer type renders", () => {
+	it.each([
+		["frame", frameLayerType, PANE_VARS.shared],
+		["text", textLayerType, [...PANE_VARS.shared, ...PANE_VARS.text]],
+		["image", imageLayerType, PANE_VARS.shared],
+		["input", inputLayerType, PANE_VARS.shared],
+	] as const)("%s", (_name, layerType, vars) => {
+		for (const v of vars) {
+			const supported = layerType.supportedCssProperties as string[];
+			expect(supported, `${layerType.type} ${v}`).toContain(v);
+			const css = applyCssVars({ [v]: "1" }, layerType.supportedCssProperties);
+			expect(Object.keys(css), `${layerType.type} ${v}`).toHaveLength(1);
+		}
+	});
+
+	it("image renders display, padding, background and border from the panel", () => {
+		const el = renderLayer(imageLayerType, {
+			"--display": "flex",
+			"--padding-block-start": "4px",
+			"--background-color": "red",
+			"--border-top-left-radius": "3px",
+			"--border-color": "blue",
+		});
+		expect(el.style.display).toBe("flex");
+		expect(el.style.paddingBlockStart).toBe("4px");
+		expect(el.style.backgroundColor).toBe("red");
+		expect(el.style.borderTopLeftRadius).toBe("3px");
+		expect(el.style.borderColor).toBe("blue");
 	});
 });

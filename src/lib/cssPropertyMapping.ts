@@ -80,7 +80,8 @@ const CSS_VAR_TO_PROPERTY_MAP: Record<string, keyof CSSProperties> = {
 
 /**
  * Internal panel vars that are never rendered directly. `applyCssVars`
- * combines them into `text-shadow`; an explicit `--text-shadow` wins.
+ * combines them into `text-shadow`; an explicit `--text-shadow` wins. Unset
+ * offsets and blur default to 0px and the colour to currentcolor.
  */
 const TEXT_SHADOW_PARTS = [
 	"--text-shadow-offset-x",

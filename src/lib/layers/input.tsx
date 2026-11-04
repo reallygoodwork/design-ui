@@ -45,6 +45,8 @@ export const inputLayerType = {
 		"--border-width",
 		"--border-style",
 		"--border-color",
+		"--background-color",
+		"--color",
 	],
 	defaultValues: {
 		name: "Input",

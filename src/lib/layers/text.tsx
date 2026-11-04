@@ -8,6 +8,12 @@ export const textLayerType = {
 	icon: <IconTypography />,
 	supportsChildren: false,
 	supportedCssProperties: [
+		"--width",
+		"--height",
+		"--max-width",
+		"--max-height",
+		"--min-width",
+		"--min-height",
 		"--font-size",
 		"--font-family",
 		"--font-weight",

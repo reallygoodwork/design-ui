@@ -82,6 +82,12 @@ describe("panel controls", () => {
 		).toEqual({ textShadow: "2px 3px 4px #f00" });
 	});
 
+	it("defaults unset shadow parts", () => {
+		expect(applyCssVars({ "--text-shadow-offset-x": "2px" })).toEqual({
+			textShadow: "2px 0px 0px currentcolor",
+		});
+	});
+
 	it("lets an explicit --text-shadow win, and respects supportedProperties", () => {
 		expect(
 			applyCssVars({

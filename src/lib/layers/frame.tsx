@@ -15,6 +15,7 @@ export const frameLayerType = {
 		"--min-width",
 		"--min-height",
 		"--background-color",
+		"--color",
 		"--padding-block-start",
 		"--padding-block-end",
 		"--padding-inline-start",
