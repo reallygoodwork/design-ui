@@ -2,6 +2,7 @@ import { Input } from "@base-ui/react/input";
 import {
 	IconChevronRight,
 	IconDeviceDesktop,
+	IconGripVertical,
 	IconLock,
 	IconLockOpen,
 } from "@tabler/icons-react";
@@ -110,6 +111,16 @@ const LayerTreeItemContent = ({ layer }: { layer: Layer }) => {
 					className="group/pane-layer-tree-item relative flex flex-1 items-center gap-1"
 					data-editing={isEditing}
 				>
+					{/* Drag handle: overlaid (absolute) just left of the lock button so it takes no layout space; shown on hover/focus. Disabled for locked layers, which cannot be dragged. */}
+					<Button
+						slot="drag"
+						aria-label={`Drag ${layer.name}`}
+						isDisabled={layer.isLocked}
+						className="absolute top-1/2 right-5 z-[5] flex size-4 -translate-y-1/2 items-center justify-center rounded bg-background text-muted-foreground opacity-0 hover:bg-accent focus-visible:opacity-100 group-focus-within/pane-layer-tree-item:opacity-100 group-hover/pane-layer-tree-item:opacity-100 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-0 data-[disabled]:group-hover/pane-layer-tree-item:opacity-40"
+					>
+						<IconGripVertical className="size-3" />
+					</Button>
+
 					{/* Chevron for expandable items */}
 					{hasChildItems ? (
 						<Button
