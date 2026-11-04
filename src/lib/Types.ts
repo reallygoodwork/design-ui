@@ -32,7 +32,7 @@ export type Layer = {
 
 export type LayerWithStyles = Layer & {
 	style: CSSProperties;
-	contentStyle: CSSProperties;
+	effectiveCssVars: CSSVars;
 };
 
 export type LayerType = {

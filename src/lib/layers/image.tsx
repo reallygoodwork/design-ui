@@ -31,7 +31,10 @@ export const imageLayerType = {
 			alt={layer.name}
 			style={{
 				display: "block",
-				...applyCssVars(layer.cssVars, imageLayerType.supportedCssProperties),
+				...applyCssVars(
+					layer.effectiveCssVars,
+					imageLayerType.supportedCssProperties
+				),
 			}}
 		/>
 	),

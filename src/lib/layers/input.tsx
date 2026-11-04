@@ -49,7 +49,10 @@ export const inputLayerType = {
 		<input
 			type="text"
 			value={layer.value}
-			style={applyCssVars(layer.cssVars, inputLayerType.supportedCssProperties)}
+			style={applyCssVars(
+				layer.effectiveCssVars,
+				inputLayerType.supportedCssProperties
+			)}
 		/>
 	),
 	elementType: "input",

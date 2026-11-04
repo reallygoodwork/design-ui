@@ -61,7 +61,7 @@ export const frameLayerType = {
 		return (
 			<Element
 				style={applyCssVars(
-					layer.cssVars,
+					layer.effectiveCssVars,
 					frameLayerType.supportedCssProperties
 				)}
 			>
