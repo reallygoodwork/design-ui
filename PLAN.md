@@ -42,6 +42,10 @@ Bugs 2–4 are one task (`H`) because they're a single history rewrite.
 - T0 also edits `biome.json` to exclude `*.md`. Biome 2.6 formats Markdown and fails `bun run lint`
   on `README.md`, and its formatter would break the YAML frontmatter in `.claude/agents/*.md`.
 - The shared fixture is `src/test/fixtures.tsx`, not `.ts`, because it contains JSX.
+- H: `getCoalesceKey(action, activeBreakpointId): string | null` takes the active breakpoint as a
+  second argument, which the `css:` key's fallback needs. `State` gains `lastCoalesceKey: string | null`
+  to track the current run. The user reviewed and kept the coalescing policy (keys as suggested; no
+  time-gap split).
 
 ### Dependency list
 
