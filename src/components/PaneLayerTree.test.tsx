@@ -1,7 +1,8 @@
 import { act, cleanup, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { useDesignerAction } from "../hooks/useDesignerAction";
+import { useDesignerContext } from "../hooks/useDesignerContext";
 import { makeLayer, renderInDesigner } from "../test/fixtures";
 import { PaneLayerTree } from "./PaneLayerTree";
 
@@ -147,5 +148,82 @@ describe("row click", () => {
 		await user.click(within(row("Other")).getByTitle("Lock layer"));
 		expect(within(row("Other")).getByTitle("Unlock layer")).toBeTruthy();
 		expect(row("Other").getAttribute("aria-selected")).not.toBe("true");
+	});
+});
+
+const SelectedBreakpoint = () => {
+	const { state } = useDesignerContext();
+	return (
+		<output data-testid="selected-bp">
+			{state.selectedBreakpointId ?? ""}
+		</output>
+	);
+};
+
+describe("section header", () => {
+	afterEach(cleanup);
+
+	const setupHeaders = () => {
+		renderInDesigner(
+			<>
+				<SelectedBreakpoint />
+				<PaneLayerTree />
+			</>,
+			{ layers: layers() }
+		);
+		return userEvent.setup();
+	};
+	const selectedBp = () => screen.getByTestId("selected-bp").textContent;
+	const treeQuery = () =>
+		screen.queryByRole("treegrid", { name: "Tablet layer tree" });
+	const toggle = () =>
+		screen.getByRole("button", {
+			name: /tablet.*(expand|collapse)|(expand|collapse).*tablet/i,
+		});
+	const selectTarget = () =>
+		screen.getByRole("button", { name: /^Tablet.*768/ });
+
+	it("does not nest a button in a button or log DOM nesting errors", () => {
+		const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+		try {
+			setupHeaders();
+			expect(document.querySelector("button button")).toBeNull();
+			const messages = spy.mock.calls.map((c) => c.map(String).join(" "));
+			expect(
+				messages.filter(
+					(m) =>
+						m.includes("validateDOMNesting") ||
+						m.includes("cannot be a descendant") ||
+						m.includes("cannot appear as a descendant")
+				)
+			).toEqual([]);
+		} finally {
+			spy.mockRestore();
+		}
+	});
+
+	it("clicking the select target selects the breakpoint", async () => {
+		const user = setupHeaders();
+		expect(selectedBp()).not.toBe("tablet");
+		await user.click(selectTarget());
+		expect(selectedBp()).toBe("tablet");
+	});
+
+	it("clicking the chevron toggles the section without selecting", async () => {
+		const user = setupHeaders();
+		expect(treeQuery()).not.toBeNull();
+		await user.click(toggle());
+		expect(treeQuery()).toBeNull();
+		expect(selectedBp()).not.toBe("tablet");
+		await user.click(toggle());
+		expect(treeQuery()).not.toBeNull();
+		expect(selectedBp()).not.toBe("tablet");
+	});
+
+	it("exposes both controls as named buttons", () => {
+		setupHeaders();
+		expect(toggle()).toBeTruthy();
+		expect(selectTarget()).toBeTruthy();
+		expect(toggle()).not.toBe(selectTarget());
 	});
 });

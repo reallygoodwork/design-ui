@@ -199,21 +199,18 @@ const BreakpointSectionHeader = ({
 	const isPrimary = isPrimaryBreakpoint(breakpoint.id, state.breakpoints);
 
 	return (
-		<button
-			type="button"
+		<div
 			className={cn(
-				"flex items-center gap-1.5 px-2 py-1.5 cursor-pointer select-none rounded-md w-full text-left",
+				"flex items-center gap-1.5 px-2 py-1.5 select-none rounded-md w-full",
 				isActive ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
 			)}
-			onClick={onClick}
 		>
 			<button
 				type="button"
+				aria-label={`${isExpanded ? "Collapse" : "Expand"} ${breakpoint.name}`}
+				aria-expanded={isExpanded}
 				className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent/50"
-				onClick={(e) => {
-					e.stopPropagation();
-					onToggle();
-				}}
+				onClick={onToggle}
 			>
 				<IconChevronRight
 					className={cn(
@@ -222,19 +219,25 @@ const BreakpointSectionHeader = ({
 					)}
 				/>
 			</button>
-			<IconDeviceDesktop className="size-3.5 text-muted-foreground" />
-			<span className="flex-1 text-xs font-medium truncate">
-				{breakpoint.name}
-			</span>
-			{isPrimary && (
-				<span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-					Primary
+			<button
+				type="button"
+				className="flex min-w-0 flex-1 items-center gap-1.5 cursor-pointer text-left"
+				onClick={onClick}
+			>
+				<IconDeviceDesktop className="size-3.5 text-muted-foreground" />
+				<span className="flex-1 text-xs font-medium truncate">
+					{breakpoint.name}
 				</span>
-			)}
-			<span className="text-[10px] text-muted-foreground tabular-nums">
-				{breakpoint.width}×{breakpoint.height}
-			</span>
-		</button>
+				{isPrimary && (
+					<span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+						Primary
+					</span>
+				)}
+				<span className="text-[10px] text-muted-foreground tabular-nums">
+					{breakpoint.width}×{breakpoint.height}
+				</span>
+			</button>
+		</div>
 	);
 };
 
