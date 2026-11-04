@@ -68,7 +68,7 @@ export const textLayerType = {
 		return (
 			<Element
 				style={applyCssVars(
-					layer.cssVars,
+					layer.effectiveCssVars,
 					textLayerType.supportedCssProperties
 				)}
 			>

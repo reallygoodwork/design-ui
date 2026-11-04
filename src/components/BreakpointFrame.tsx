@@ -57,9 +57,7 @@ const DesignerLayer = ({
 			...(hasWidth && { width: hasWidth }),
 			...(hasHeight && { height: hasHeight }),
 		},
-		contentStyle: {
-			...effectiveCssVars,
-		},
+		effectiveCssVars,
 	};
 
 	// Render nested children with the same breakpointId

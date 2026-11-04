@@ -356,9 +356,12 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 	const selectedLayersCSSVars = useMemo(() => {
 		if (selectedLayers.length === 0) return "";
 		return selectedLayers
-			.map((layer) => JSON.stringify(layer.cssVars ?? {}))
-			.join("|");
-	}, [selectedLayers]);
+			.map((layer) =>
+				JSON.stringify([layer.cssVars ?? {}, layer.breakpointCssVars ?? {}])
+			)
+			.join("|")
+			.concat(`|${state.activeBreakpointId ?? ""}`);
+	}, [selectedLayers, state.activeBreakpointId]);
 
 	// Update Moveable when selected layers' CSS vars change
 	// This ensures the control box updates immediately when any dimension-affecting CSS is updated
