@@ -35,7 +35,8 @@ export const ActionTextDecoration = () => {
 	const selectedLayers = useSelectedLayers();
 	const selectedLayer = selectedLayers[0];
 
-	const currentValue = selectedLayer?.cssVars?.["--text-decoration"] || "none";
+	const currentValue =
+		selectedLayer?.cssVars?.["--text-decoration-line"] || "none";
 	return (
 		<ColorActionPopover
 			cssProperty="--text-decoration-color"

@@ -33,7 +33,7 @@ export const ActionAlignItems = () => {
 				},
 				{
 					label: "Center",
-					value: "flex-center",
+					value: "center",
 					icon: <AlignItemsCenter />,
 				},
 				{

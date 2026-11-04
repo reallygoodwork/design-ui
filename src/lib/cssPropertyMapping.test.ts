@@ -43,3 +43,54 @@ describe("layout", () => {
 		});
 	});
 });
+
+describe("panel controls", () => {
+	it("maps flex-wrap, grid templates, text-decoration parts and position", () => {
+		expect(
+			applyCssVars({
+				"--flex-wrap": "wrap",
+				"--grid-template-columns": "repeat(2, 1fr)",
+				"--grid-template-rows": "repeat(3, 1fr)",
+				"--text-decoration-line": "underline",
+				"--text-decoration-color": "red",
+				"--text-decoration-thickness": "2px",
+				"--text-decoration-style": "wavy",
+				position: "absolute",
+				top: "4px",
+			})
+		).toEqual({
+			flexWrap: "wrap",
+			gridTemplateColumns: "repeat(2, 1fr)",
+			gridTemplateRows: "repeat(3, 1fr)",
+			textDecorationLine: "underline",
+			textDecorationColor: "red",
+			textDecorationThickness: "2px",
+			textDecorationStyle: "wavy",
+			position: "absolute",
+			top: "4px",
+		});
+	});
+
+	it("combines text-shadow parts into text-shadow", () => {
+		expect(
+			applyCssVars({
+				"--text-shadow-offset-x": "2px",
+				"--text-shadow-offset-y": "3px",
+				"--text-shadow-blur-radius": "4px",
+				"--text-shadow-color": "#f00",
+			})
+		).toEqual({ textShadow: "2px 3px 4px #f00" });
+	});
+
+	it("lets an explicit --text-shadow win, and respects supportedProperties", () => {
+		expect(
+			applyCssVars({
+				"--text-shadow": "1px 1px red",
+				"--text-shadow-color": "blue",
+			})
+		).toEqual({ textShadow: "1px 1px red" });
+		expect(
+			applyCssVars({ "--text-shadow-color": "blue" }, ["--color"])
+		).toEqual({});
+	});
+});
