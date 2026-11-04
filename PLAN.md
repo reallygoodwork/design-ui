@@ -25,7 +25,7 @@ Bugs 2–4 are one task (`H`) because they're a single history rewrite.
 
 | Task | Edits | Tests (new) |
 |---|---|---|
-| **T0** Test infra | `package.json`, `bun.lock`, `vite.config.ts`, `hooks/useDesigner.ts` (exports only), `test/fixtures.ts` | placeholder |
+| **T0** Test infra | `package.json`, `bun.lock`, `vite.config.ts`, `hooks/useDesigner.ts` (exports only), `test/fixtures.tsx`, `biome.json` (exclude `*.md`) | `test/fixtures.test.tsx` |
 | **B1** Insert duplication | `hooks/useDesigner.ts` | `hooks/useDesigner.test.ts` |
 | **H** Bugs 2+3+4 History | `hooks/useDesigner.ts`, `hooks/useHistory.ts`, `components/DesignerCanvas.tsx` (`DELETE_LAYERS`) | `hooks/useDesigner.test.ts` |
 | **B5** Breakpoint overrides | `lib/Types.ts`, `components/BreakpointFrame.tsx`, `lib/layers/{frame,text,image,input}.tsx`, `components/DesignerCanvas.tsx` (rect dependency) | `components/BreakpointFrame.test.tsx` |
@@ -37,6 +37,11 @@ Bugs 2–4 are one task (`H`) because they're a single history rewrite.
 
 (Paths are relative to `src/`. `B8` and `F` read `supportsChildren` in `DesignerCanvas.tsx`,
 `StructureAble.tsx` and `PaneLayerTree.tsx` but don't edit those files for it.)
+
+**Plan amendments (approved by the user, Nov 2026):**
+- T0 also edits `biome.json` to exclude `*.md`. Biome 2.6 formats Markdown and fails `bun run lint`
+  on `README.md`, and its formatter would break the YAML frontmatter in `.claude/agents/*.md`.
+- The shared fixture is `src/test/fixtures.tsx`, not `.ts`, because it contains JSX.
 
 ### Dependency list
 
@@ -190,7 +195,7 @@ There is no test runner today. Add Vitest, since it shares the Vite config and i
 - `vite.config.ts`: add `test: { environment: "jsdom" }` (with `/// <reference types="vitest" />`)
 - `package.json` scripts: `"test": "vitest run"`, `"test:watch": "vitest"`
 - Export `reducer` and `initialState` from `src/hooks/useDesigner.ts` so they can be unit-tested.
-- Shared fixture `src/test/fixtures.ts`: `makeLayer(id, children?)`, the 3 breakpoints from `App.tsx`,
+- Shared fixture `src/test/fixtures.tsx` (`.tsx` because it contains JSX): `makeLayer(id, children?)`, the 3 breakpoints from `App.tsx`,
   and a `renderInDesigner(ui, { layers, breakpoints })` helper wrapping `DesignerProvider` with the
   default layer types from `Designer.tsx`.
 
