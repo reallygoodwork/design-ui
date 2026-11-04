@@ -542,6 +542,7 @@ final integration check.
 - R4: PASS at `7ea81ef` after 2 retry rounds (CONCERNS: keyboard select lost, then the header became full width). In a real browser it matches the base visuals with 0 px difference and the same keyboard tab stops. New: drag by the name area works and doesn't select. Fixes the base bug where Enter on the header added a breakpoint. Merged as `397b29a`. Note: after a mouse click on the name, focus no longer lands on the select button.
 - R6: PASS at `882dc52` after 2 retry rounds (CONCERNS: a `FontLoader` gap from going breakpoint-aware, so the scope was amended and the user approved; then breakpoint-inherited fonts showed as explicit). All font-control states were checked in a real browser. Merged as `5babb86`.
 - R3: PASS at `9710e69` after 1 retry round (CONCERNS: the reserved handle space shifted rows 20px and misaligned rename, so the handle is now overlaid). In a real browser all 12 rows match the base at rest, the drag-handle warning count went from 24 to 0, and mouse drag, keyboard drag and row clicks all work. Merged as `e67901f`.
+- **Round 2 final integration check:** PASS at `93999dc`. Every R1–R6 criterion, including the R6 amendment, holds, and Round 1 spot-checks (F, B6, B7, B8) show no regressions. The console has no `validateDOMNesting` and no drag-slot warnings.
 
 ---
 
@@ -765,7 +766,10 @@ Selecto's `selectableTargets`, but no element has the class `designer-frame` (on
 - Layer-tree row click (above).
 - Typing a frame font by hand requests every prefix ("G", "Ge", ...), because the frame-styles input
   dispatches on each keystroke and `FontLoader` now loads the frame font. A comma list such as "Inter, system-ui"
-  builds a malformed font URL. Fix: debounce the input, or load only the first family. (R6 verifier note.) Also, the Typography panel shows "Arial" for text that inherits the frame font
+  builds a malformed font URL. Fix: debounce the input, or load only the first family. (R6 verifier note.)
+- After dragging a frame by its header, the Moveable selection outline stays at the old position, and a drag released
+  over a layer selects that layer through Selecto. (Round 2 final check; not yet triaged as pre-existing or new.)
+- The light-theme subtree tint is faint (about L97 against L96.5). Also, the Typography panel shows "Arial" for text that inherits the frame font
   (`ActionFontFamily.tsx` fallback).
 - Headless core package, `applyOps`, MCP server.
 - React 19 / Vite 7 upgrade; bundle split; README refresh.
