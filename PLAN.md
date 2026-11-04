@@ -514,6 +514,10 @@ At most 2 fixers run at once. Not in scope: lint warnings (including the `applyA
 warning), which aren't bugs, and the architecture follow-ups (iframe rendering, which fully fixes the
 Tailwind preflight leak, plus the flat node map and so on).
 
+**Rule added mid-round:** no agent may use `git stash`. The stash stack is shared by every worktree in
+the repo: R2's fixer popped another worktree's stash, and it was caught before anything was committed.
+To test against old code, use a scratch copy.
+
 ### Round 2 tasks and dependencies
 
 | Task | Edits (under `src/`) | Tests | Blocked by |
