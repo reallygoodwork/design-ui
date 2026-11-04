@@ -533,11 +533,12 @@ To test against old code, use a scratch copy.
 Order: R1 ∥ R4, then R2, R5, R6 and R7 as slots free up (R2 only after R1 merges), then R3, then a
 final integration check.
 
-- [x] R1 · [ ] R2 · [ ] R3 · [ ] R4 · [x] R5 · [ ] R6 · [~] R7 (dropped)
+- [x] R1 · [x] R2 · [ ] R3 · [ ] R4 · [x] R5 · [ ] R6 · [~] R7 (dropped)
 
 **Round 2 verdict log:**
 - R1: PASS at `8465ffc`, first round. In a real browser, clicks right of the name, in the padding, on the name and on the icon all select. Merged as `dd0a48c`. Shift-click wasn't compared with the base branch (the tree is single-select and the selection code is unchanged).
 - R5: PASS at `08acde1`, first round. In a real browser, in dark and light themes: plain text is `rgb(0,0,0)`, a new text layer follows the frame red, and explicit colours are kept. Merged as `bd12d9c`. Note: the `App.tsx` sample text layers still set an explicit `--color` (sample data). Port 5222 was double-assigned; from now on, ports are unique per verifier run.
+- R2: PASS at `4622b2f`, first round, with a browser and keyboard check; visuals match the base. Merged as `bc6ec0a`. Note: the header's 8px edge padding no longer selects on click.
 
 ---
 
