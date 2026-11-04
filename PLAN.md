@@ -78,7 +78,7 @@ Critical path: `T0 → B9 → B5 → H → B8 → F` (6 steps).
 HEAD (the fixer's own report never counts), it's merged into
 `fix/review-bugs`, the global gate is green on the merged branch, and its box is checked below.
 
-- [x] T0 · [x] B1 · [x] B9 · [x] B5 · [ ] H · [x] B6 · [ ] B7 · [ ] B8 · [ ] F
+- [x] T0 · [x] B1 · [x] B9 · [x] B5 · [x] H · [x] B6 · [ ] B7 · [ ] B8 · [ ] F
 
 **Verdict log:**
 - T0: PASS at `ad81b8b` after 2 retry rounds (CONCERNS ×2: `biome.json` scope and fixture name, both approved as amendments; then fixture helpers not exercised, fixed). Merged as `42a0b1c`.
@@ -86,6 +86,7 @@ HEAD (the fixer's own report never counts), it's merged into
 - B1: PASS at `d62a130`, first round (after the worktree-base restart). Merged as `ae9e825`.
 - B5: PASS at `9c00f71`, first round. The verifier confirmed all 4 new tests fail on the old source. Merged as `ee6cadf`.
 - B6: PASS at `5893f38`, first round. Merged as `d984a1e`. Verifier notes (non-blocking): the text default `--color: #000000` still shadows the frame colour for new text, and `FontLoader` ignores the frame font.
+- H: PASS at `c5f02b5` after 1 retry round. CONCERNS: controlled-mode `SET_LAYERS` echo broke coalescing (fixed); signature deviation (user approved the amendment). Merged as `c6409d3`. Adds 1 lint warning (`applyAction` complexity 17 > 15).
 
 ---
 
@@ -524,5 +525,8 @@ a lighter background, so it's obvious what the selection includes.
   The browser smoke test showed the editor's dark-theme text colour (`lab(98 0 0)`) is inherited by design
   content, so a text layer with no colour of its own renders white on white. Also, the text default
   `--color: #000000` shadows the frame colour (B6 verifier note).
+- Existing nested `<button>` warnings: `PaneLayerTree.tsx:256` (`BreakpointSectionHeader`) and
+  `BreakpointHeader.tsx:14`; React Aria warns that draggable tree items have no `slot="drag"` button.
+- `DesignerCanvas.tsx:526` selector `.designer-frame .designer-layer` never matches anything.
 - Headless core package, `applyOps`, MCP server.
 - React 19 / Vite 7 upgrade; bundle split; README refresh.
