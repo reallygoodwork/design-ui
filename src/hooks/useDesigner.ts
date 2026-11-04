@@ -3,6 +3,17 @@ import { isPrimaryBreakpoint } from "../lib/breakpointUtils";
 import type { Breakpoint, CSSVars, Layer, LayerType } from "../lib/Types";
 
 /**
+ * The undoable part of the state. Snapshots share structure with the live state.
+ */
+export type Doc = {
+	layers: Layer[];
+	breakpoints: Breakpoint[];
+	frameStyles: CSSVars;
+};
+
+const MAX_HISTORY = 200;
+
+/**
  * The state of the designer.
  */
 export type State = {
@@ -36,13 +47,13 @@ export type State = {
 	 */
 	frameStyles: CSSVars;
 	/**
-	 * The history of the designer state.
+	 * Undo and redo stacks of document snapshots.
 	 */
-	history: State[];
+	history: { past: Doc[]; future: Doc[] };
 	/**
-	 * The current index in the history.
+	 * Coalesce key of the last committed action, or null if the run is broken.
 	 */
-	historyIndex: number;
+	lastCoalesceKey: string | null;
 	/**
 	 * The zoom level of the canvas.
 	 */
@@ -136,8 +147,8 @@ export type Action =
 	  }
 	| { type: "CLOSE_ADD_LAYER_DIALOG" }
 	| {
-			type: "DELETE_LAYER";
-			payload: { layerId: string };
+			type: "DELETE_LAYERS";
+			payload: { layerIds: string[] };
 	  }
 	| {
 			type: "MOVE_LAYER";
@@ -291,15 +302,44 @@ const insertLayer = (
 	}
 };
 
-// Helper function to add current state to history
-const addHistoryEntry = (state: State, newState: Partial<State>): State => {
-	const newHistory = [...state.history.slice(0, state.historyIndex + 1), state];
-	return {
-		...state,
-		...newState,
-		history: newHistory,
-		historyIndex: newHistory.length - 1,
-	};
+const getDoc = ({ layers, breakpoints, frameStyles }: State): Doc => ({
+	layers,
+	breakpoints,
+	frameStyles,
+});
+
+// Helper function to commit an edit: push the current Doc to `past`, clear `future`
+const addHistoryEntry = (state: State, newState: Partial<State>): State => ({
+	...state,
+	...newState,
+	history: {
+		past: [...state.history.past, getDoc(state)].slice(-MAX_HISTORY),
+		future: [],
+	},
+});
+
+/**
+ * Edits with the same non-null key, one right after the other, share one undo step.
+ */
+export const getCoalesceKey = (
+	action: Action,
+	activeBreakpointId: string | null
+): string | null => {
+	switch (action.type) {
+		case "UPDATE_LAYER_NAME":
+			return `name:${action.payload.layerId}`;
+		case "UPDATE_LAYER_VALUE":
+			return `value:${action.payload.id}`;
+		case "UPDATE_LAYER_CSS": {
+			const { id, css, breakpointId } = action.payload;
+			const bp = breakpointId ?? activeBreakpointId;
+			return `css:${id}:${bp}:${Object.keys(css).sort().join(",")}`;
+		}
+		case "UPDATE_FRAME_STYLES":
+			return `frame:${Object.keys(action.payload.css).sort().join(",")}`;
+		default:
+			return null;
+	}
 };
 
 // Helper function to update layer CSS (handles primary vs breakpoint-specific)
@@ -436,31 +476,52 @@ const updateLayerProperty = (
 	return addHistoryEntry(state, { layers: newLayers });
 };
 
-// Helper function to handle undo
-const handleUndo = (state: State): State => {
-	if (state.history.length > 0 && state.historyIndex >= 0) {
-		const restoredState = state.history[state.historyIndex];
-		const newIndex = state.historyIndex - 1;
-		return {
-			...restoredState,
-			history: state.history,
-			historyIndex: newIndex,
-		};
-	}
-	return state;
+// Swap the Doc fields only, then drop selection/breakpoint ids that no longer exist
+const restoreDoc = (
+	state: State,
+	doc: Doc,
+	history: State["history"]
+): State => {
+	const ids = new Set<string>();
+	const collect = (layers: Layer[]) => {
+		for (const l of layers) {
+			ids.add(l.id);
+			if (l.children) collect(l.children);
+		}
+	};
+	collect(doc.layers);
+	const hasBp = (id: string | null) =>
+		id !== null && doc.breakpoints.some((bp) => bp.id === id);
+	return {
+		...state,
+		...doc,
+		history,
+		selectedLayers: state.selectedLayers.filter((id) => ids.has(id)),
+		selectedBreakpointId: hasBp(state.selectedBreakpointId)
+			? state.selectedBreakpointId
+			: null,
+		activeBreakpointId: hasBp(state.activeBreakpointId)
+			? state.activeBreakpointId
+			: (doc.breakpoints[0]?.id ?? null),
+	};
 };
 
-// Helper function to handle redo
+const handleUndo = (state: State): State => {
+	const { past, future } = state.history;
+	if (past.length === 0) return state;
+	return restoreDoc(state, past[past.length - 1], {
+		past: past.slice(0, -1),
+		future: [...future, getDoc(state)],
+	});
+};
+
 const handleRedo = (state: State): State => {
-	if (state.historyIndex < state.history.length - 1) {
-		const newIndex = state.historyIndex + 1;
-		return {
-			...state.history[newIndex],
-			history: state.history,
-			historyIndex: newIndex,
-		};
-	}
-	return state;
+	const { past, future } = state.history;
+	if (future.length === 0) return state;
+	return restoreDoc(state, future[future.length - 1], {
+		past: [...past, getDoc(state)].slice(-MAX_HISTORY),
+		future: future.slice(0, -1),
+	});
 };
 
 // Helper function to handle breakpoint updates with history
@@ -496,14 +557,14 @@ export const initialState: State = {
 	activeBreakpointId: null,
 	selectedBreakpointId: null,
 	frameStyles: {},
-	history: [],
-	historyIndex: -1,
+	history: { past: [], future: [] },
+	lastCoalesceKey: null,
 	zoom: 1,
 	pan: { x: 0, y: 0 },
 	centerRequestId: 0,
 };
 
-export const reducer = (state: State, action: Action): State => {
+const applyAction = (state: State, action: Action): State => {
 	switch (action.type) {
 		case "SET_LAYERS":
 			return { ...state, layers: action.payload };
@@ -530,12 +591,15 @@ export const reducer = (state: State, action: Action): State => {
 				...state,
 				selectedLayers: [],
 			};
-		case "DELETE_LAYER": {
-			const { layerId } = action.payload;
-			const newLayers = deleteLayer(state.layers, layerId);
+		case "DELETE_LAYERS": {
+			const { layerIds } = action.payload;
+			let newLayers = state.layers;
+			for (const id of layerIds) newLayers = deleteLayer(newLayers, id);
 			return addHistoryEntry(state, {
 				layers: newLayers,
-				selectedLayers: state.selectedLayers.filter((id) => id !== layerId),
+				selectedLayers: state.selectedLayers.filter(
+					(id) => !layerIds.includes(id)
+				),
 			});
 		}
 		case "MOVE_LAYER": {
@@ -670,6 +734,21 @@ export const reducer = (state: State, action: Action): State => {
 		default:
 			return state;
 	}
+};
+
+export const reducer = (state: State, action: Action): State => {
+	const next = applyAction(state, action);
+	if (next === state) return state;
+	const committed = next.history.past !== state.history.past;
+	const key = committed
+		? getCoalesceKey(action, state.activeBreakpointId)
+		: null;
+	if (committed && key !== null && key === state.lastCoalesceKey) {
+		// Same run: keep the earlier snapshot on top instead of pushing another
+		return { ...next, history: { past: state.history.past, future: [] } };
+	}
+	// Anything that is not a coalescable edit breaks the run
+	return { ...next, lastCoalesceKey: key };
 };
 
 /**

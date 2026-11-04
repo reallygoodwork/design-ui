@@ -390,11 +390,9 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 				!isInputField(target)
 			) {
 				e.preventDefault();
-				state.selectedLayers.forEach((layerId) => {
-					designerAction({
-						type: "DELETE_LAYER",
-						payload: { layerId },
-					});
+				designerAction({
+					type: "DELETE_LAYERS",
+					payload: { layerIds: state.selectedLayers },
 				});
 				return true;
 			}
