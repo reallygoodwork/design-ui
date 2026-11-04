@@ -3,6 +3,7 @@ import { useDesignerContext } from "../hooks/useDesignerContext";
 import { useLayers } from "../hooks/useLayers";
 import { getEffectiveStyles } from "../lib/breakpointUtils";
 import { cn } from "../lib/cn";
+import { applyCssVars } from "../lib/cssPropertyMapping";
 import type { Breakpoint, Layer, LayerWithStyles } from "../lib/Types";
 import { BreakpointHeader } from "./BreakpointHeader";
 
@@ -147,15 +148,15 @@ export const BreakpointFrame = ({
 				style={{
 					width: breakpoint.width,
 					height: breakpoint.height,
-					// Apply shared frame styles as CSS variables on the content container
-					// These inherit to all layers unless overridden
-					...frameStyleVars,
+					// Apply shared frame styles as real CSS properties so inheritable
+					// ones (font, color, line-height) cascade to layers natively
+					...applyCssVars(frameStyleVars),
 					backgroundColor: frameStyleVars?.["--background-color"] || "#ffffff",
 				}}
 				onClick={handleContentClick}
 				data-slot="designer-frame"
 			>
-				{/* Render layers - they inherit frame styles via CSS variables */}
+				{/* Render layers - they inherit frame styles via CSS inheritance */}
 				{layers.map((layer) => (
 					<DesignerLayer
 						key={layer.id}
