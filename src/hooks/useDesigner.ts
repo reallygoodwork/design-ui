@@ -537,10 +537,13 @@ const applyAction = (state: State, action: Action): State => {
 			return { ...state, ...normalize(action.payload) };
 		case "ADD_LAYER": {
 			const { layer, targetLayerId, position } = action.payload;
-			return addHistoryEntry(
-				state,
-				insertLayer(state, layer, targetLayerId, position)
-			);
+			const tree = insertLayer(state, layer, targetLayerId, position);
+			// Existing id: nothing inserted, so no history entry
+			if (tree === state) return state;
+			return addHistoryEntry(state, {
+				nodes: tree.nodes,
+				rootIds: tree.rootIds,
+			});
 		}
 		case "SELECT_LAYER": {
 			return handleSelectLayer(
@@ -593,12 +596,13 @@ const applyAction = (state: State, action: Action): State => {
 		case "UPDATE_LAYER_CSS": {
 			const { id, css, breakpointId } = action.payload;
 			const targetBreakpointId = breakpointId ?? state.activeBreakpointId;
-			return addHistoryEntry(
-				state,
-				updateNode(state, id, (layer) =>
-					updateLayerCss(layer, css, targetBreakpointId, state.breakpoints)
-				)
+			const tree = updateNode(state, id, (layer) =>
+				updateLayerCss(layer, css, targetBreakpointId, state.breakpoints)
 			);
+			return addHistoryEntry(state, {
+				nodes: tree.nodes,
+				rootIds: tree.rootIds,
+			});
 		}
 		case "UPDATE_LAYER_VALUE":
 			return updateLayerProperty(state, action.payload.id, (layer) => ({
@@ -655,9 +659,11 @@ const applyAction = (state: State, action: Action): State => {
 			const newBreakpoints = state.breakpoints.filter(
 				(bp) => bp.id !== action.payload.id
 			);
+			const stripped = stripBreakpointVars(state, action.payload.id);
 			return addHistoryEntry(state, {
 				breakpoints: newBreakpoints,
-				...stripBreakpointVars(state, action.payload.id),
+				nodes: stripped.nodes,
+				rootIds: stripped.rootIds,
 				activeBreakpointId:
 					state.activeBreakpointId === action.payload.id
 						? (newBreakpoints[0]?.id ?? null)

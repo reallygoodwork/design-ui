@@ -536,3 +536,38 @@ describe("delete breakpoint", () => {
 		expect(reducer(one, del("tablet"))).toBe(one);
 	});
 });
+
+describe("P4 regressions", () => {
+	const plain = () =>
+		withLayers(base(), [makeLayer("A", [makeLayer("a1")]), makeLayer("B")]);
+
+	it("DELETE_BREAKPOINT with no overrides for it still removes it, as one undo step", () => {
+		const before = plain();
+		const s = reducer(before, {
+			type: "DELETE_BREAKPOINT",
+			payload: { id: "tablet" },
+		});
+		expect(s.breakpoints.map((b) => b.id)).toEqual(["mobile", "desktop"]);
+		expect(s.history.past.length).toBe(before.history.past.length + 1);
+		const u = reducer(s, { type: "UNDO" });
+		expect(u.breakpoints.map((b) => b.id)).toEqual([
+			"mobile",
+			"tablet",
+			"desktop",
+		]);
+	});
+
+	it("ADD_LAYER with an existing id returns the identical state", () => {
+		const before = plain();
+		const s = reducer(before, {
+			type: "ADD_LAYER",
+			payload: {
+				layer: makeLayer("a1"),
+				targetLayerId: "B",
+				position: "after",
+			},
+		});
+		expect(s).toBe(before);
+		expect(s.history.past.length).toBe(before.history.past.length);
+	});
+});
