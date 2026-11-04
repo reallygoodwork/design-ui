@@ -544,6 +544,13 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 					".breakpoint-content .designer-layer",
 					".designer-frame .designer-layer",
 				]}
+				dragCondition={(e) => {
+					const target = e.inputEvent?.target;
+					return !(
+						target instanceof Element &&
+						target.closest("[data-breakpoint-header]")
+					);
+				}}
 				hitRate={0}
 				selectByClick={true}
 				selectFromInside={true}
