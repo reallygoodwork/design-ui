@@ -2,6 +2,8 @@ import { act, cleanup } from "@testing-library/react";
 import { Profiler, useEffect } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DesignerCanvas } from "../components/DesignerCanvas";
+import { PaneLayerTree } from "../components/PaneLayerTree";
+import { ZoomControl } from "../components/ZoomControl";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useDesignerContext } from "../hooks/useDesignerContext";
 import { useHistory } from "../hooks/useHistory";
@@ -243,6 +245,67 @@ describe("render counts", () => {
 				<Dispatcher />
 				<Profiler id="zoom" onRender={c.onRender}>
 					<ZoomReader />
+				</Profiler>
+			</>,
+			{ layers: [makeLayer("a")] }
+		);
+		const before = c.counts.commits;
+		for (let i = 0; i < 5; i++) {
+			act(() => {
+				unrelatedChange(i);
+			});
+		}
+		expect(c.counts.commits - before).toBe(0);
+	});
+
+	it("SET_ZOOM does not re-render the real PaneLayerTree or its rows", () => {
+		const c = counter();
+		renderInDesigner(
+			<>
+				<Dispatcher />
+				<Profiler id="tree" onRender={c.onRender}>
+					<PaneLayerTree />
+				</Profiler>
+			</>,
+			{ layers: [makeLayer("a", [makeLayer("b")]), makeLayer("c")] }
+		);
+		const before = c.counts.commits;
+		for (let i = 0; i < 5; i++) {
+			act(() => {
+				dispatch({ type: "SET_ZOOM", payload: 1 + (i + 1) / 10 });
+			});
+		}
+		expect(c.counts.commits - before).toBe(0);
+	});
+
+	it("PaneLayerTree does re-render when the selection changes", () => {
+		const c = counter();
+		renderInDesigner(
+			<>
+				<Dispatcher />
+				<Profiler id="tree" onRender={c.onRender}>
+					<PaneLayerTree />
+				</Profiler>
+			</>,
+			{ layers: [makeLayer("a"), makeLayer("c")] }
+		);
+		const before = c.counts.commits;
+		act(() => {
+			dispatch({
+				type: "SELECT_LAYER",
+				payload: { layerId: "a", shiftKey: false, breakpointId: "desktop" },
+			});
+		});
+		expect(c.counts.commits - before).toBeGreaterThan(0);
+	});
+
+	it("UPDATE_LAYER_CSS does not re-render the real ZoomControl", () => {
+		const c = counter();
+		renderInDesigner(
+			<>
+				<Dispatcher />
+				<Profiler id="zoomctl" onRender={c.onRender}>
+					<ZoomControl />
 				</Profiler>
 			</>,
 			{ layers: [makeLayer("a")] }

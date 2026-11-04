@@ -17,7 +17,7 @@ import {
 } from "react-aria-components";
 import { useOnClickOutside } from "usehooks-ts";
 import { useDesignerAction } from "../hooks/useDesignerAction";
-import { useDesignerContext } from "../hooks/useDesignerContext";
+import { useDesignerSelector } from "../hooks/useDesignerSelector";
 import { useLayers } from "../hooks/useLayers";
 import { useLayerTypes } from "../hooks/useLayerTypes";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
@@ -235,8 +235,8 @@ const BreakpointSectionHeader = ({
 	onToggle: () => void;
 	onClick: () => void;
 }) => {
-	const { state } = useDesignerContext();
-	const isPrimary = isPrimaryBreakpoint(breakpoint.id, state.breakpoints);
+	const breakpoints = useDesignerSelector((state) => state.breakpoints);
+	const isPrimary = isPrimaryBreakpoint(breakpoint.id, breakpoints);
 
 	return (
 		<div
@@ -282,7 +282,10 @@ const BreakpointSectionHeader = ({
 };
 
 export const PaneLayerTree = () => {
-	const { state } = useDesignerContext();
+	const breakpoints = useDesignerSelector((state) => state.breakpoints);
+	const activeBreakpointId = useDesignerSelector(
+		(state) => state.activeBreakpointId
+	);
 	const layers = useLayers();
 	const layerTypes = useLayerTypes();
 	const selectedLayers = useSelectedLayers();
@@ -290,7 +293,7 @@ export const PaneLayerTree = () => {
 
 	// Track expanded breakpoint sections
 	const [expandedBreakpoints, setExpandedBreakpoints] = useState<Set<string>>(
-		() => new Set(state.breakpoints.map((bp) => bp.id))
+		() => new Set(breakpoints.map((bp) => bp.id))
 	);
 
 	// Get all expanded keys (all layers with children)
@@ -436,7 +439,7 @@ export const PaneLayerTree = () => {
 	};
 
 	// Sort breakpoints by width (mobile-first)
-	const sortedBreakpoints = sortBreakpointsByWidth(state.breakpoints);
+	const sortedBreakpoints = sortBreakpointsByWidth(breakpoints);
 
 	// If no breakpoints, show flat layer tree (backwards compatibility)
 	if (sortedBreakpoints.length === 0) {
@@ -462,7 +465,7 @@ export const PaneLayerTree = () => {
 	return (
 		<div className="-m-1 flex flex-col gap-1 overflow-y-auto p-1">
 			{sortedBreakpoints.map((breakpoint) => {
-				const isActive = state.activeBreakpointId === breakpoint.id;
+				const isActive = activeBreakpointId === breakpoint.id;
 				const isExpanded = expandedBreakpoints.has(breakpoint.id);
 
 				return (
