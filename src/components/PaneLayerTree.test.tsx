@@ -259,6 +259,14 @@ describe("drag handle", () => {
 		}
 	});
 
+	it("overlays the handle so it takes no layout space", () => {
+		setup();
+		const tree = screen.getByRole("treegrid", { name: "Desktop layer tree" });
+		for (const handle of tree.querySelectorAll('[slot="drag"]')) {
+			expect(handle.classList.contains("absolute")).toBe(true);
+		}
+	});
+
 	it("still selects on a row click", async () => {
 		const { select } = setup();
 		select("Other");
