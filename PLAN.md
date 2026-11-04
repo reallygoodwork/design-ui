@@ -817,10 +817,7 @@ Paths are under `src/`. "→" means "blocked by".
 | 15 | **I2** Shadow-root style isolation | new `components/FrameShadowRoot.tsx`, `components/BreakpointFrame.tsx`, `hooks/useFrameRegistry.tsx`, `BreakpointFrame.test.tsx` (route queries through a shadow helper) | `components/FrameShadowRoot.test.tsx` | I1, S11 |
 | 17 | **S10** Every panel control affects the canvas | `lib/cssPropertyMapping.ts`, `lib/layers/{frame,text,image,input}.tsx` (`supportedCssProperties`), panel action components only if a sub-value must be combined (`components/actions/Action{FlexWrap,GridLayout,Margin,TextDecoration,TextShadow,TextStyle,AlignItems,TextTransform}.tsx`) | new `lib/panelControls.test.tsx`, `lib/cssPropertyMapping.test.ts` | S6 |
 | 18 | **S11** Border control writes a border style | `components/actions/ActionBorder.tsx`, `lib/layers/*.tsx` (only if `--border-style` is missing), `lib/cssPropertyMapping.ts` (only if needed) | `lib/panelControls.test.tsx` | S10 |
-<<<<<<< HEAD
 | 19 | **S12** Opacity control writes invalid values | `components/actions/ActionOpacity.tsx` | new `components/actions/ActionOpacity.test.tsx` | — |
-=======
->>>>>>> task/s11
 | 16 | **L1** Zero lint warnings, enforced | `hooks/useDesigner.ts` (split `applyAction`), `components/PaneLayerTree.tsx`, `components/FrameStylesPanel.tsx`, `components/actions/{ActionElementType,ActionTextContent,ColorActionPopover}.tsx`, `package.json` (`lint` gets `--error-on-warnings`) | the gate itself | every other task |
 
 **Order** (at most 2 fixers at once): S1 ∥ S2 → S3 ∥ S5 → S6 ∥ S8 → S4 ∥ S9 → S7 → P1 → P2 → P3
@@ -1088,7 +1085,6 @@ nothing.
   `border-style` is set.
 
 **Test:** `bunx vitest run src/lib/panelControls.test.tsx -t "border"`, plus browser (port 5318).
-<<<<<<< HEAD
 
 ### S12 — The Opacity control writes `opacity: 50` (added by the user mid-round)
 
@@ -1111,8 +1107,6 @@ fades. Found by the P2 verifier.
 - Browser: the layer visibly fades, with computed `opacity: 0.5`.
 
 **Test:** `bunx vitest run src/components/actions/ActionOpacity.test.tsx`, plus browser (port 5319).
-=======
->>>>>>> task/s11
 
 ### P1 — Cheap re-render fixes
 
@@ -1279,7 +1273,7 @@ zoom and shortcuts still work.
 - React 19 / Vite 7 upgrade, bundle split, README refresh.
 - The `App.tsx` sample data's explicit colours.
 
-**Process fix (orchestrator):** the S10 merge conflicted in PLAN.md, and the conflict markers were committed in merge `0f939bb`, because `git merge … | tail` masked the exit code. They were resolved in the next commit. Merges now run without a pipe and stop the chain on a non-zero exit.
+**Process fix (orchestrator):** the S10 merge conflicted in PLAN.md, and the conflict markers were committed in merge `0f939bb`, because `git merge … | tail` masked the exit code. They were resolved in the next commit. Merges now run without a pipe and stop the chain on a non-zero exit. **That still failed for S11** (merge `33c1b4c`): the shell is zsh, and `! grep` guards are exempt from errexit. All merges now go through `scratchpad/merge-task.sh`, run with bash, which checks every exit code explicitly, runs `git merge --abort` on conflict, and refuses to continue if any conflict marker remains.
 
 ### Round 3 verdict log
 
