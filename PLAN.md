@@ -1190,7 +1190,7 @@ zoom and shortcuts still work.
 
 ### Round 3 verdict log
 
-- [x] S1 · [x] S2 · [x] S3 · [ ] S4 · [x] S5 · [ ] S6 · [ ] S7 · [x] S8 · [x] S9 · [ ] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [ ] S10 · [ ] L1
+- [x] S1 · [x] S2 · [x] S3 · [x] S4 · [x] S5 · [ ] S6 · [ ] S7 · [x] S8 · [x] S9 · [ ] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [ ] S10 · [ ] L1
 
 - S2: PASS at `29f5ad2`, first round. In the browser, a 20-step drag was undone by one Cmd+Z, and redo restored it. Merged as `d4e6002`. Note: the X/Y position inputs also coalesce with a drag on the same frame (by design).
 - S1: PASS at `8dfbf5b`, first round. The verdict was formatted as 'CONCERNS: none blocking / PASS' and treated as PASS. In the browser, typing Georgia gives 1 link and 'Inter, system-ui' loads Inter only. Merged as `d2bee72`. Notes: no test covers a layer-font change after mount (the code path is not debounced, confirmed in the browser); `preloadFont` skips `primaryFontFamily` (hover only).
@@ -1198,6 +1198,7 @@ zoom and shortcuts still work.
 - S3: PASS at `f82e348`, first round. In the browser at zoom 50%, 100% and 200%, the outline follows frame drags, offset only by half the stroke width. Merged as `9d1b3a1`.
 - S8: PASS at `2147510`, first round. In the browser at zoom 0.5, 0.7 and 2, the readout equals the Tablet `offsetWidth` and updates live. Merged as `e1f1b6b`. New follow-up: `ActionSize`'s Width/Height trigger labels use base `cssVars`, not the active breakpoint's override.
 - S9: PASS at `e7c1a83`, first round. In the browser: delete Tablet and its override disappears from Desktop; one Cmd+Z restores both. Merged as `d8c7465`.
+- S4: PASS at `c133278`, first round. In the browser, a header drag released over a layer keeps the selection; click, drill-down, marquee and '+' still work. Merged as `9aa38ab`. Note: the test's Selecto mock triggers a cosmetic forwardRef arity warning.
 
 ---
 
