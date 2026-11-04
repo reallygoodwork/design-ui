@@ -1238,6 +1238,12 @@ layer object and children array. Existing reducer tests must still pass unchange
 
 **Test:** `bunx vitest run src/hooks/useFrameRegistry.test.tsx`, plus browser.
 
+**Amendment (approved by the user after the I1 fixer stopped):** `useLayerDimensions` is used by
+`ActionSize` in the side panel, which is a sibling of the canvas. So the registry provider goes in
+`components/Designer.tsx` (`DesignerInner`, around `{children}`), scoped per Designer instance.
+`Designer.tsx` joins I1's files. The existing `useLayerDimensions.test.tsx` probe may gain a
+registration step, but no assertions may change.
+
 ### I2 — Shadow-root style isolation
 
 **Fix:**
