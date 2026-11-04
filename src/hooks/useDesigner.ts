@@ -564,7 +564,25 @@ export const initialState: State = {
 	centerRequestId: 0,
 };
 
+// True when `targetId` is a layer whose type is known and can't hold children
+const cannotHaveChildren = (state: State, targetId: string): boolean => {
+	const target = findLayer(state.layers, targetId);
+	if (!target) return false;
+	const type = state.layerTypes.find((t) => t.type === target.layer.type);
+	return !!type && !type.supportsChildren;
+};
+
 const applyAction = (state: State, action: Action): State => {
+	if (
+		(action.type === "ADD_LAYER" &&
+			action.payload.position === "inside" &&
+			cannotHaveChildren(state, action.payload.targetLayerId)) ||
+		(action.type === "MOVE_LAYER" &&
+			action.payload.position === "on" &&
+			cannotHaveChildren(state, action.payload.targetId))
+	) {
+		return state;
+	}
 	switch (action.type) {
 		case "SET_LAYERS":
 			if (action.payload === state.layers) return state;
