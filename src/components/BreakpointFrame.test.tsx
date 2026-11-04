@@ -300,3 +300,22 @@ describe("default colour", () => {
 		expect(vars["--color"]).toBeUndefined();
 	});
 });
+
+describe("layout", () => {
+	it("renders display, flex-direction and gap as inline styles on a frame", () => {
+		const frame = makeLayer("f", undefined, {
+			cssVars: {
+				"--display": "flex",
+				"--flex-direction": "column",
+				"--column-gap": "12px",
+			},
+		});
+		const { container } = renderInDesigner(<Frames />, { layers: [frame] });
+		for (const bp of ["mobile", "tablet", "desktop"]) {
+			const el = find(container, bp, "f").firstElementChild as HTMLElement;
+			expect(el.style.display).toBe("flex");
+			expect(el.style.flexDirection).toBe("column");
+			expect(el.style.columnGap).toBe("12px");
+		}
+	});
+});

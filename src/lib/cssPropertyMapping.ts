@@ -24,6 +24,12 @@ const CSS_VAR_TO_PROPERTY_MAP: Record<string, keyof CSSProperties> = {
 	"--max-height": "maxHeight",
 	"--min-width": "minWidth",
 	"--min-height": "minHeight",
+	"--display": "display",
+	"--flex-direction": "flexDirection",
+	"--align-items": "alignItems",
+	"--justify-content": "justifyContent",
+	"--column-gap": "columnGap",
+	"--row-gap": "rowGap",
 
 	// Spacing
 	"--padding-block-start": "paddingBlockStart",
