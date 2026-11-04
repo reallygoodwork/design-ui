@@ -12,6 +12,25 @@ import { useDesignerContext } from "../../hooks/useDesignerContext";
 import { breakpoints, defaultLayerTypes, makeLayer } from "../../test/fixtures";
 import { ActionFontFamily } from "./ActionFontFamily";
 
+const dispatched: unknown[] = [];
+vi.mock("../../hooks/useDesignerContext", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("../../hooks/useDesignerContext")>();
+	return {
+		...actual,
+		useDesignerContext: () => {
+			const ctx = actual.useDesignerContext();
+			return {
+				...ctx,
+				dispatch: (action: unknown) => {
+					dispatched.push(action);
+					(ctx.dispatch as (a: unknown) => void)(action);
+				},
+			};
+		},
+	};
+});
+
 type Dispatch = ReturnType<typeof useDesignerAction>;
 type Ctx = ReturnType<typeof useDesignerContext>;
 const ref: { dispatch: Dispatch | null; ctx: Ctx | null } = {
@@ -26,7 +45,8 @@ const Capture = () => {
 
 const setup = (
 	cssVars: Record<string, string> | undefined,
-	frameStyles?: Record<string, string>
+	frameStyles?: Record<string, string>,
+	breakpointId = "mobile"
 ) => {
 	render(
 		<DesignerProvider
@@ -44,7 +64,7 @@ const setup = (
 	act(() => {
 		ref.dispatch?.({
 			type: "SELECT_LAYER",
-			payload: { layerId: "T", shiftKey: false, breakpointId: "mobile" },
+			payload: { layerId: "T", shiftKey: false, breakpointId },
 		});
 	});
 	const trigger = screen.getByRole("button", {
@@ -77,6 +97,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+	dispatched.length = 0;
 	cleanup();
 	vi.unstubAllGlobals();
 });
@@ -110,5 +131,23 @@ describe("ActionFontFamily", () => {
 		fireEvent.click(item);
 		const layer = ref.ctx?.state.layers[0];
 		expect(layer?.cssVars?.["--font-family"]).toBe("Roboto");
+	});
+
+	it("writes a Tablet override, leaving base cssVars untouched", async () => {
+		const trigger = setup({ "--font-family": "Lato" }, undefined, "tablet");
+		expect(trigger.textContent).toBe("Lato");
+		fireEvent.click(trigger);
+		fireEvent.click(await screen.findByText("Roboto"));
+		expect(dispatched).toContainEqual({
+			type: "UPDATE_LAYER_CSS",
+			payload: {
+				id: "T",
+				css: { "--font-family": "Roboto" },
+				breakpointId: "tablet",
+			},
+		});
+		const layer = ref.ctx?.state.layers[0];
+		expect(layer?.breakpointCssVars?.tablet?.["--font-family"]).toBe("Roboto");
+		expect(layer?.cssVars?.["--font-family"]).toBe("Lato");
 	});
 });
