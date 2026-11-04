@@ -57,6 +57,21 @@ const isDescendantOf = (
 	return false;
 };
 
+// Helper function to collect the ancestor IDs of the given layers
+const getAncestorIds = (layers: Layer[], layerIds: string[]): Set<string> => {
+	const ancestors = new Set<string>();
+	const walk = (layerList: Layer[], path: string[]) => {
+		for (const layer of layerList) {
+			if (layerIds.includes(layer.id)) {
+				for (const id of path) ancestors.add(id);
+			}
+			if (layer.children) walk(layer.children, [...path, layer.id]);
+		}
+	};
+	walk(layers, []);
+	return ancestors;
+};
+
 const LayerTreeItemContent = ({ layer }: { layer: Layer }) => {
 	const ref = useRef<HTMLInputElement>(null);
 	const [isEditing, setIsEditing] = useState(false);
@@ -341,30 +356,55 @@ export const PaneLayerTree = () => {
 		});
 	};
 
-	const renderItem = (layer: Layer) => {
-		const hasChildren = layer.children && layer.children.length > 0;
+	// Parents of the selection get a lighter tint so the hierarchy is visible
+	const selectedAncestorIds = getAncestorIds(
+		layers,
+		selectedLayers.map((l) => l.id)
+	);
+	// React Aria caches items by identity; invalidate when the tint changes
+	const ancestorDependency = [...selectedAncestorIds].join(",");
 
-		return (
-			<TreeItem
-				key={layer.id}
-				id={layer.id}
-				textValue={layer.name}
-				className={({ isSelected, isFocusVisible, isHovered, isDropTarget }) =>
-					`flex cursor-default items-center gap-1 rounded-md pr-1 py-0.5 pl-[calc(calc(var(--tree-item-level)-1)*0.5rem)] text-sm outline-none h-7 ${
-						isSelected
-							? "bg-accent text-accent-foreground"
-							: isHovered
-								? "bg-accent/50"
-								: ""
-					} ${isFocusVisible ? "ring-2 ring-ring ring-offset-1" : ""} ${isDropTarget ? "bg-primary/20 ring-2 ring-primary" : ""}`
-				}
-			>
-				<LayerTreeItemContent layer={layer} />
-				{hasChildren && (
-					<Collection items={layer.children}>{renderItem}</Collection>
-				)}
-			</TreeItem>
-		);
+	const createRenderItem = (showAncestors: boolean) => {
+		const renderItem = (layer: Layer) => {
+			const hasChildren = layer.children && layer.children.length > 0;
+			const isSelectedAncestor =
+				showAncestors && selectedAncestorIds.has(layer.id);
+
+			return (
+				<TreeItem
+					key={layer.id}
+					id={layer.id}
+					textValue={layer.name}
+					className={({
+						isSelected,
+						isFocusVisible,
+						isHovered,
+						isDropTarget,
+					}) =>
+						`flex cursor-default items-center gap-1 rounded-md pr-1 py-0.5 pl-[calc(calc(var(--tree-item-level)-1)*0.5rem)] text-sm outline-none h-7 ${
+							isSelected
+								? "bg-accent text-accent-foreground"
+								: isHovered
+									? "bg-accent/50"
+									: isSelectedAncestor
+										? "bg-accent/30"
+										: ""
+						} ${isFocusVisible ? "ring-2 ring-ring ring-offset-1" : ""} ${isDropTarget ? "bg-primary/20 ring-2 ring-primary" : ""}`
+					}
+				>
+					<LayerTreeItemContent layer={layer} />
+					{hasChildren && (
+						<Collection
+							items={layer.children}
+							dependencies={[ancestorDependency]}
+						>
+							{renderItem}
+						</Collection>
+					)}
+				</TreeItem>
+			);
+		};
+		return renderItem;
 	};
 
 	// Sort breakpoints by width (mobile-first)
@@ -382,9 +422,10 @@ export const PaneLayerTree = () => {
 				onExpandedChange={(keys) => setExpandedKeys(keys as Set<string>)}
 				dragAndDropHooks={dragAndDropHooks}
 				items={layers}
+				dependencies={[ancestorDependency]}
 				className="-m-1 flex flex-col gap-0.5 overflow-y-auto p-1 outline-none"
 			>
-				{renderItem}
+				{createRenderItem(true)}
 			</Tree>
 		);
 	}
@@ -422,9 +463,10 @@ export const PaneLayerTree = () => {
 									}
 									dragAndDropHooks={dragAndDropHooks}
 									items={layers}
+									dependencies={[ancestorDependency, isActive]}
 									className="flex flex-col gap-0.5 outline-none"
 								>
-									{renderItem}
+									{createRenderItem(isActive)}
 								</Tree>
 							</div>
 						)}

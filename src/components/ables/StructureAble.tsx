@@ -35,6 +35,7 @@ export const StructureAble = {
 
 		// Add key (required)
 		// Add class prefix moveable-(required)
+		// biome-ignore lint/correctness/useHookAtTopLevel: Moveable's useCSS is a styled-component factory, not a React hook
 		const EditableViewer = moveable.useCSS(
 			"div",
 			`
