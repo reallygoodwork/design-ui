@@ -737,6 +737,433 @@ Selecto's `selectableTargets`, but no element has the class `designer-frame` (on
 
 ---
 
+## Round 3: open items, new bugs, re-render architecture, style isolation
+
+### Context
+
+Rounds 1 and 2 are merged on `fix/review-bugs`: 76 tests pass, lint has 0 errors and 6 warnings,
+and there's a full history in the repo's `PLAN.md`. This round covers:
+- the items left open after round 2: frame-font loading on every keystroke, the stale selection
+  outline after a frame drag, Selecto selecting on drag release, the faint light-theme tint, and the
+  lint warnings;
+- a bug found while planning: one frame drag creates one undo step per mousemove;
+- four bugs exploration found, which the user approved adding: layout controls that do nothing,
+  broken zoom handling around the selection box, a wrong size readout, and leftover styles after
+  deleting a breakpoint;
+- the two architecture items, implemented in stages: re-render performance up to a flat node map,
+  and isolating design content from the editor's CSS.
+
+**Decisions made by the user**
+- **Architecture:** implement both, in stages.
+- **Isolation:** use a **shadow root**, not an iframe. Exploration found that Moveable 0.56 can't
+  position its box across an iframe boundary, and Selecto, pan/zoom and the keyboard shortcuts all
+  lose events inside iframes. Per-frame `@media` through an iframe becomes a later item, tied to
+  HTML export.
+- **Light theme:** make the selected row stronger. In the light theme, selected uses a darker
+  neutral, and the tint uses today's accent colour.
+
+### Process (same as Rounds 1–2, including every rule they added)
+
+- **Worktrees:** the orchestrator creates each worktree from the current `fix/review-bugs` tip
+  (`git worktree add -b task/<id> <scratchpad>/wt-<id>`, then `bun install`).
+- **Fix:** a `bug-fixer` writes a failing test first, then makes the minimal fix, then runs the
+  gate (`bun run test && bun run lint && bun run build`), then commits.
+- **Verify:** a **fresh, blind** `verifier` gets only the entry name, the worktree path and the
+  diff command. For UI tasks it also runs real-browser checks with agent-browser. It confirms the
+  new tests fail on the old code, using a scratch copy.
+- **Read-only check:** the orchestrator records the worktree's `HEAD` and status before and after
+  each verifier run.
+- **Merge:** only on PASS for the current `HEAD`, then the gate runs on the merged branch.
+  CONCERNS or FAIL goes back to the same fixer, with at most 2 retries; after that the task is
+  blocked and goes to the user.
+- **Rules added during Round 2:**
+  - Nobody uses `git stash`; old-code checks use scratch copies.
+  - Every verifier gets its own port, `53NN`, where NN is the task number in the table below; base
+    comparisons use `53NN+50`.
+  - Each agent kills only its own servers.
+  - At most 2 fixers run at once.
+  - Plan deviations go to the user.
+- **Final step:** a fresh verifier runs a **Round 3 integration check**, re-running every test
+  command from all rounds and doing browser spot-checks of earlier criteria.
+
+Existing pieces to reuse:
+- `getCoalesceKey`, `addHistoryEntry`, `restoreDoc`, `updateLayerById` (`src/hooks/useDesigner.ts`)
+- `applyCssVars`, `CSS_VAR_TO_PROPERTY_MAP` (`src/lib/cssPropertyMapping.ts`)
+- `getEffectiveStyles`, `sortBreakpointsByWidth`, `isPrimaryBreakpoint` (`src/lib/breakpointUtils.ts`)
+- `useGoogleFonts.loadFont` and its `loadedFonts` dedupe (`src/hooks/useGoogleFonts.ts`)
+- the fixtures in `src/test/fixtures.tsx`; `@testing-library/user-event`
+- React 18's built-in `useSyncExternalStore`; no new state library
+
+### Tasks, files and dependencies
+
+Paths are under `src/`. "→" means "blocked by".
+
+| # | Task | Edits | New/extended tests | Blocked by |
+|---|---|---|---|---|
+| 01 | **S1** Frame-font loading on every keystroke; comma lists | `hooks/useGoogleFonts.ts`, `components/FontLoader.tsx`, new `lib/fontFamily.ts` | `lib/fontFamily.test.ts`, `FontLoader.test.tsx` | — |
+| 02 | **S2** A frame drag creates N undo steps | `hooks/useDesigner.ts` (`getCoalesceKey`) | `useDesigner.test.ts` | — |
+| 03 | **S3** Selection outline stale after a frame moves | `components/DesignerCanvas.tsx` | `DesignerCanvas.test.tsx` | — |
+| 04 | **S4** Releasing a header drag over a layer selects it | `components/DesignerCanvas.tsx` (Selecto `dragCondition`), `components/BreakpointHeader.tsx` (marker attribute) | `DesignerCanvas.test.tsx` | S3 |
+| 05 | **S5** Light-theme tint hierarchy | `components/PaneLayerTree.tsx` (row class helper) | `PaneLayerTree.test.tsx` | — |
+| 06 | **S6** Layout controls do nothing | `lib/cssPropertyMapping.ts` | `lib/cssPropertyMapping.test.ts`, `BreakpointFrame.test.tsx` | — |
+| 07 | **S7** Moveable zoom handling | `components/DesignerCanvas.tsx`, `components/ables/DimensionAble.tsx` | `DesignerCanvas.test.tsx` | S4 |
+| 08 | **S8** Size readout measures the wrong frame and zoomed px | `hooks/useLayerDimensions.ts`, `components/actions/ActionSize.tsx` (if needed) | `hooks/useLayerDimensions.test.tsx` | — |
+| 09 | **S9** Deleting a breakpoint leaves its overrides behind | `hooks/useDesigner.ts` | `useDesigner.test.ts` | S2 |
+| 10 | **P1** Cheap re-render fixes | `components/DesignerCanvas.tsx`, `hooks/useDesignerAction.ts`, `context/DesignerContext.tsx`, `hooks/useSelectedLayers.ts`, `hooks/useKeybindings.ts` | new `test/renderCounts.test.tsx` | S7 |
+| 11 | **P2** External store and selectors | `context/DesignerContext.tsx`, `hooks/useDesigner.ts` (store wrapper only), new `hooks/useDesignerSelector.ts`, `hooks/use{Layers,LayerTypes,History,SelectedLayers}.ts` | `test/renderCounts.test.tsx`, `hooks/useDesignerSelector.test.tsx` | P1, S9 |
+| 12 | **P3** Per-layer rendering and an id index | new `lib/layerIndex.ts`, new `hooks/useLayer.ts`, `components/BreakpointFrame.tsx`, `hooks/useSelectedLayers.ts`, `components/DesignerCanvas.tsx` (`getLayersAtPoint`), `components/PaneLayerTree.tsx` (lookup helpers) | `lib/layerIndex.test.ts`, `test/renderCounts.test.tsx` | P2, S5, S6 |
+| 13 | **P4** Flat normalized state behind the nested API | `hooks/useDesigner.ts`, `lib/Types.ts`, new `lib/layerTree.ts`, `lib/layerIndex.ts`, `hooks/useLayers.ts`, `components/PaneLayerTree.tsx`; test helpers in `useDesigner.test.ts`, `fixtures.test.tsx`, `ActionFontFamily.test.tsx` | `lib/layerTree.test.ts`, existing suites | P3 |
+| 14 | **I1** Frame-root registry (seam refactor; no behaviour change) | new `hooks/useFrameRegistry.tsx`, `components/BreakpointFrame.tsx`, `components/DesignerCanvas.tsx`, `hooks/useLayerDimensions.ts` | new `hooks/useFrameRegistry.test.tsx` | P3, S8 |
+| 15 | **I2** Shadow-root style isolation | new `components/FrameShadowRoot.tsx`, `components/BreakpointFrame.tsx`, `hooks/useFrameRegistry.tsx`, `BreakpointFrame.test.tsx` (route queries through a shadow helper) | `components/FrameShadowRoot.test.tsx` | I1 |
+| 16 | **L1** Zero lint warnings, enforced | `hooks/useDesigner.ts` (split `applyAction`), `components/PaneLayerTree.tsx`, `components/FrameStylesPanel.tsx`, `components/actions/{ActionElementType,ActionTextContent,ColorActionPopover}.tsx`, `package.json` (`lint` gets `--error-on-warnings`) | the gate itself | every other task |
+
+**Order** (at most 2 fixers at once): S1 ∥ S2 → S3 ∥ S5 → S6 ∥ S8 → S4 ∥ S9 → S7 → P1 → P2 → P3
+→ P4 ∥ I1 → I2 → L1 → Round 3 integration check. Start a task as soon as its blockers merge.
+P4 and I1 touch disjoint files, so they run in parallel.
+
+---
+
+### S1 — Typing a frame font requests every prefix; comma lists build a broken URL
+
+**Repro:**
+- In Document Styles, type "Georgia" into the font field. `FontLoader` calls `loadFont` for "G",
+  "Ge" … "Georgia", one Google Fonts `<link>` each, because the input dispatches on every keystroke.
+- Typing `Inter, system-ui` or `"Open Sans", serif` produces a `family=` URL for the whole string.
+
+**Fix:**
+- New `lib/fontFamily.ts` with `primaryFontFamily(value)`. It returns the first family name, with
+  quotes and whitespace stripped, or `null` for CSS generic families (`serif`, `sans-serif`,
+  `system-ui`, `monospace`, `cursive`, `fantasy`, `ui-*`, `math`, `emoji`, `inherit`, `initial` …).
+- `FontLoader` loads only primary families.
+- `FontLoader` debounces the **frame** font by 400ms. Layer fonts picked from the list stay immediate.
+- `loadFont` also runs its input through `primaryFontFamily`, so no caller can build a bad URL.
+
+**Acceptance:**
+- (fake timers) Dispatching the frame font as each prefix of "Georgia" within 400ms results in
+  exactly one `loadFont("Georgia")`.
+- `"Inter, system-ui"` loads "Inter" only; `'"Open Sans", serif'` loads "Open Sans";
+  `"system-ui"` loads nothing.
+- Layer and breakpoint-override fonts load without delay (R6 behaviour kept).
+- Browser: typing "Georgia" by hand results in exactly one Georgia `<link>` in `<head>`.
+
+**Test:** `bunx vitest run src/lib/fontFamily.test.ts src/components/FontLoader.test.tsx`, plus browser.
+
+### S2 — Dragging a frame header creates one undo step per mousemove
+
+**Repro:** `BreakpointHeader` dispatches `UPDATE_BREAKPOINT {position}` on every mousemove, and
+`getCoalesceKey` returns `null` for that action. A long drag can push the rest of history out of
+the 200-entry cap.
+
+**Fix:** In `getCoalesceKey`, `UPDATE_BREAKPOINT` whose `updates` only has `position` returns
+`bp-pos:<id>`. Other breakpoint updates (width, name) stay as they are.
+
+**Acceptance:**
+- 30 consecutive position updates for one breakpoint make 1 undo step, and one UNDO restores the
+  original position.
+- A width change between moves starts a new step.
+- Browser: drag a frame, press Cmd+Z once, and the frame returns to its original position.
+
+**Test:** `bunx vitest run src/hooks/useDesigner.test.ts -t "breakpoint drag"`, plus browser.
+
+### S3 — The selection outline stays at the old position after a frame moves
+
+**Repro:**
+1. Select a layer in Tablet.
+2. Drag the Tablet frame by its header.
+3. Moveable's outline stays where the layer was, because `updateRect` runs only when CSS vars or
+   zoom change.
+
+**Fix:** Also call `moveableRef.current.updateRect()` (in a rAF) when breakpoint positions or
+sizes change. Key the effect on a string built from `id:x:y:w:h` for each breakpoint.
+
+**Acceptance:**
+- Unit test (Moveable mock exposing `updateRect`): an `UPDATE_BREAKPOINT` position change triggers
+  `updateRect`.
+- Browser: after dragging the frame, the outline's box matches the selected layer's
+  `getBoundingClientRect` within 1px.
+
+**Test:** `bunx vitest run src/components/DesignerCanvas.test.tsx -t "outline follows frame"`, plus browser.
+
+### S4 — Releasing a header drag over a layer selects that layer
+
+**Repro:** Drag a frame by its header and release over a layer. Selecto treats the gesture as a
+canvas click and selects the layer under the pointer.
+
+**Fix:**
+- Add `data-breakpoint-header` to the header wrapper in `BreakpointHeader.tsx`.
+- Give Selecto a `dragCondition` that returns `false` when the input event's target is inside
+  `[data-breakpoint-header]`.
+
+**Acceptance:**
+- Unit test: the captured `dragCondition` returns `false` for an event whose target is inside a
+  header, and `true` for one on a layer.
+- Browser: a header drag released over a layer leaves selection unchanged. Canvas click, drill-down
+  and marquee still work.
+
+**Test:** `bunx vitest run src/components/DesignerCanvas.test.tsx -t "header drag"`, plus browser.
+
+### S5 — Light-theme subtree tint is near invisible
+
+**Repro:** In the light theme, accent is `#f5f5f5` (about L96.5) on a white panel. The selected
+row is barely darker than the panel, so a 30% tint is about L99 and doesn't read.
+
+**Fix (user decision):** Move the row-state classes into a small helper. In the **light** theme,
+selected uses a darker neutral (for example `bg-neutral-200`, about L90) and the subtree tint uses
+`bg-accent` (L96.5). Hover sits visibly between the two. The **dark** theme is unchanged:
+selected `bg-accent`, tint `bg-accent/30`, hover `bg-accent/50`. Use `dark:` variants.
+
+**Acceptance:**
+- Light theme, measured in a browser: lightness of none > tint > selected, with steps of at least
+  3 L, and hover distinguishable from both.
+- Dark theme computed colours equal round 2's.
+- F's tests (A–E), plus a test asserting the light and dark class sets per row state.
+
+**Test:** `bunx vitest run src/components/PaneLayerTree.test.tsx`, plus browser in both themes.
+
+### S6 — Layout controls (display, flex, gap) have no effect on the canvas
+
+**Repro:** `--display`, `--flex-direction`, `--align-items`, `--justify-content`, `--column-gap`
+and `--row-gap` appear in the layer types' `supportedCssProperties`, but they're missing from
+`CSS_VAR_TO_PROPERTY_MAP`, so `applyCssVars` drops them. Setting Display: Flex in the panel does
+nothing.
+
+**Fix:** Add the six mappings (`display`, `flexDirection`, `alignItems`, `justifyContent`,
+`columnGap`, `rowGap`). Also check every `supportedCssProperties` entry across `lib/layers/*.tsx`
+against the map, and add any other missing ones found.
+
+**Acceptance:**
+- Unit test: for every layer type, every supported property maps to a CSS property.
+- `BreakpointFrame` test: a frame with `--display: flex; --column-gap: 12px` renders those inline.
+- Browser: setting Display Flex and a gap in the panel changes the frame's children layout.
+
+**Test:** `bunx vitest run src/lib/cssPropertyMapping.test.ts src/components/BreakpointFrame.test.tsx -t "layout"`, plus browser.
+
+### S7 — Moveable's zoom handling is broken
+
+**Repro:**
+- `DesignerCanvas` calls `moveableRef.current.getElement()`, which doesn't exist in Moveable 0.56,
+  so the inverse-scale code never runs.
+- `props={{ zoom: state.zoom }}` overrides Moveable's own `zoom` prop. Inside the zoomed viewer
+  that should be `1 / zoom`, so handles and lines scale with the canvas zoom.
+
+**Fix:**
+- Delete the dead `getElement()` effect.
+- Pass `zoom={1 / state.zoom}` to Moveable.
+- Rename the custom able prop to `viewerZoom`, and update `DimensionAble` so its label shows
+  unzoomed sizes and stays at a constant screen size.
+
+**Acceptance:**
+- Unit test: Moveable receives `zoom === 1/state.zoom`; ables receive `viewerZoom`; no `getElement`
+  call remains.
+- Browser: at zoom 0.5, 1 and 2, the handles' and label's screen size is constant within 1px, and
+  the label text equals the layer's unzoomed CSS size.
+
+**Test:** `bunx vitest run src/components/DesignerCanvas.test.tsx -t "zoom"`, plus browser.
+
+### S8 — Size readout measures the wrong frame, in zoomed pixels
+
+**Repro:** `useLayerDimensions` queries `.designer-frame .designer-layer[...]`, which always matches
+the Mobile frame first. It reports `getBoundingClientRect` (zoom-scaled) and reads the DOM during
+render, so the value goes stale.
+
+**Fix:**
+- Measure the layer inside the **active** breakpoint's frame, using `offsetWidth`/`offsetHeight`
+  (or rect divided by zoom).
+- Measure in an effect, and keep it current with a `ResizeObserver`.
+
+**Acceptance:**
+- jsdom (mock rects/offsets): with Tablet active, the readout uses the Tablet element, the value is
+  unzoomed, and it updates on resize.
+- Browser: at zoom 0.5 and 2, the Size placeholders show the layer's CSS pixel size for the active
+  frame.
+
+**Test:** `bunx vitest run src/hooks/useLayerDimensions.test.tsx`, plus browser.
+
+### S9 — Deleting a breakpoint leaves its overrides on every layer
+
+**Repro:** `DELETE_BREAKPOINT` removes the breakpoint but leaves `breakpointCssVars[id]` on layers.
+
+**Fix:** In the same history step, strip `breakpointCssVars[id]` from every layer, and drop empty
+maps. UNDO restores both the breakpoint and the overrides.
+
+**Acceptance:**
+- After the delete, no layer has a key for that id.
+- One UNDO restores the breakpoint and every override exactly.
+- It is one undo step.
+
+**Test:** `bunx vitest run src/hooks/useDesigner.test.ts -t "delete breakpoint"`
+
+### P1 — Cheap re-render fixes
+
+**Repro:**
+- `SET_PAN` is dispatched on every scroll event, and nothing reads `state.pan`, so every scroll
+  re-renders about 45 context consumers, including every layer in all 3 frames.
+- `useDesignerAction` returns a new function on every render, so the canvas keydown listener is
+  re-attached constantly.
+- `useKeybindings` re-subscribes on every layer edit.
+- `useSelectedLayers` builds a new array and walks the whole tree on every call.
+
+**Fix:**
+- Stop dispatching `SET_PAN` from scroll. Keep the action and the field for API compatibility.
+- `useDesignerAction` returns the stable `dispatch`.
+- Memoise the provider value, and split it into a state context and a dispatch context
+  (`useDesignerContext` keeps working).
+- `useSelectedLayers` memoises on `[layers, selectedLayers]`.
+- `useKeybindings` reads the latest state through a ref.
+
+**Acceptance** (new `test/renderCounts.test.tsx`, React `Profiler` render counters):
+- A scroll on the canvas causes **0** commits of the layer components.
+- A component that only dispatches doesn't re-render on state changes.
+- The window keydown listener is added once across 20 state changes (spy on
+  `addEventListener`).
+- Every existing test passes.
+
+**Test:** `bunx vitest run src/test/renderCounts.test.tsx`, plus a browser check that scroll,
+zoom and shortcuts still work.
+
+### P2 — External store and selector hooks
+
+**Fix:**
+- Keep the reducer, and run it in a small store held in a ref, with `getState`, `dispatch` and
+  `subscribe`. The context value becomes stable.
+- Add `useDesignerSelector(selector, isEqual = Object.is)`, built on `useSyncExternalStore`.
+- Move `useLayers`, `useLayerTypes`, `useHistory`, `useSelectedLayers` and a new `useZoom` onto
+  selectors.
+- `useDesignerContext()` stays, subscribing to the whole state, for anything not yet moved.
+- Keep the controlled-mode effects (`SET_LAYERS` echo, `onLayersChange`) working.
+
+**Acceptance:**
+- A zoom change doesn't re-render layer-tree rows or the action controls.
+- An `UPDATE_LAYER_CSS` doesn't re-render the zoom control.
+- Selector equality prevents re-renders when the selected slice is unchanged.
+- Every existing test passes.
+
+**Test:** `bunx vitest run src/hooks/useDesignerSelector.test.tsx src/test/renderCounts.test.tsx`
+
+### P3 — Per-layer rendering and an id index
+
+**Fix:**
+- `lib/layerIndex.ts` builds `{byId, parentId, depth, order}`, memoised per layers array in a
+  WeakMap.
+- `useLayer(id)` is a selector that returns the layer object.
+- `DesignerLayer` becomes `memo({id, breakpointId})`, reading `useLayer(id)`, `layerTypes` and
+  sorted breakpoints (sorted once per breakpoints array). It no longer receives the whole `state`.
+- Replace the recursive lookups with index lookups: `findLayersById` in `useSelectedLayers`,
+  `findLayer` in `getLayersAtPoint`, and `findLayerById`/`isDescendantOf`/`getDescendantIds` in
+  `PaneLayerTree`.
+
+**Acceptance:**
+- `UPDATE_LAYER_CSS` on layer X re-renders only X and its ancestors' `DesignerLayer` instances (in
+  each frame). Siblings and other subtrees render 0 times.
+- Index lookups match the old recursive helpers on randomised trees (property test, 200 trees).
+- Every existing test, and the browser checks for selection and drill-down, still pass.
+
+**Test:** `bunx vitest run src/lib/layerIndex.test.ts src/test/renderCounts.test.tsx`, plus browser.
+
+### P4 — Flat normalized state behind the nested API
+
+**Fix:**
+- State holds `nodes: Record<id, Node>`, where `Node` is `Layer` minus `children`, plus
+  `childIds`, `parentId` and `rootIds`. `Doc` snapshots become `{nodes, rootIds, breakpoints,
+  frameStyles}`.
+- `lib/layerTree.ts` provides `normalize(Layer[])` and `denormalize(nodes, rootIds)`, memoised.
+- Convert at the edges: initial `layers`/`defaultLayers` and `SET_LAYERS` normalise on the way in.
+  `onLayersChange` and `useLayers()` return the memoised nested array. React Aria's `Tree` needs
+  nested `items`, so it keeps using that.
+- The `SET_LAYERS` echo check compares against the last emitted nested array.
+- Reducer operations become id-based, and `addHistoryEntry` stays the single commit point.
+
+**Acceptance:**
+- The public API is unchanged: nested `Layer[]` in, and `onLayersChange` gets nested `Layer[]` out.
+- `normalize`/`denormalize` round-trip is identity on randomised trees.
+- Every Round 1–2 reducer behaviour still passes. Test helpers may change to read through
+  `denormalize`, but **assertions may not**.
+- Editing node X leaves every other node object, and `rootIds`, `===` identical.
+- Browser: Round 1–2 spot-checks pass (insert inside, move, undo/redo, delete).
+
+**Test:** `bunx vitest run src/lib/layerTree.test.ts src/hooks/useDesigner.test.ts`, plus the full suite.
+
+### I1 — Frame-root registry (seam refactor, no behaviour change)
+
+**Fix:**
+- Add a `FrameRegistry` context: breakpoint id → frame root element (today, `.breakpoint-content`),
+  with `getFrameRoot(id)`, `queryLayer(bpId, layerId)` and `layersAtPoint(x, y)`.
+- Route every design-DOM query through it: `selectedLayerElements`, `getLayersAtPoint`
+  (`elementsFromPoint` on each root), `useLayerDimensions`, and Selecto `selectableTargets` (in its
+  function form).
+- Fix `StructureAble`'s `instanceof HTMLElement` check to a `nodeType === 1` check.
+
+**Acceptance:**
+- No `document.querySelector`/`elementsFromPoint` on design nodes remains outside the registry
+  (grep).
+- Registry unit tests pass.
+- All existing tests and the browser checks for selection, drill-down, marquee, Moveable and the
+  "+" buttons pass unchanged.
+
+**Test:** `bunx vitest run src/hooks/useFrameRegistry.test.tsx`, plus browser.
+
+### I2 — Shadow-root style isolation
+
+**Fix:**
+- `FrameShadowRoot` attaches an open shadow root to each frame host, and portals the design
+  content into it.
+- Its baseline stylesheet is `:host { all: initial; display: block; position: relative }`, plus a
+  root reset so the content gets UA defaults, not the editor's Tailwind preflight.
+- Frame styles and the `#fff`/`#000` fallbacks go on the shadow root's top-level container.
+- The registry returns the shadow root's container.
+- `getLayersAtPoint` uses `shadowRoot.elementsFromPoint`.
+- Update the `BreakpointFrame.test.tsx` queries through a `frameRoot(bpId)` test helper. Assertions
+  are unchanged.
+
+**Acceptance:**
+- Browser, inside a frame:
+  - an `h1` text layer computes the UA default `font-size` (2em) and margins;
+  - a layer with only `--border-width` shows no border (no preflight `border-style: solid`);
+  - no editor class or theme style reaches design nodes.
+- Browser: selection, drill-down, marquee, Moveable box alignment (±1px at zoom 0.5, 1 and 2),
+  the "+" buttons and keyboard shortcuts after clicking a layer all still work.
+- Fonts load inside frames.
+- Every Round 1–2 browser criterion that touches frames (B5, B6, B7, R5, R6) still holds.
+
+**Test:** `bunx vitest run src/components/FrameShadowRoot.test.tsx src/components/BreakpointFrame.test.tsx`, plus browser.
+
+### L1 — Zero lint warnings, enforced
+
+**Fix:**
+- Split `applyAction` into a per-action handler map (no behaviour change).
+- Extract `PaneLayerTree`'s row `className` function (this may already be gone after S5).
+- Apply the four `useOptionalChain` fixes.
+- Change the `lint` script to `biome check . --error-on-warnings`.
+
+**Acceptance:**
+- `bun run lint` exits 0 with **0 warnings**.
+- Every test passes unchanged.
+
+**Test:** `bun run lint && bun run test`
+
+### Verification (end to end)
+
+1. Each task: its test command, the gate, and the blind verifier, with browser checks for UI tasks.
+2. Round 3 integration check, by a fresh verifier on `fix/review-bugs`:
+   - every per-entry test command from Rounds 1, 2 and 3;
+   - `bun run lint` with 0 warnings;
+   - browser re-checks of the Round 3 criteria, plus spot-checks of R1–R6, F, B5–B9 and undo/redo.
+3. End-of-run report: verdicts, retry counts, blocked tasks, gate output and screenshots.
+   Nothing is pushed and no PR is opened unless asked.
+
+### Out of scope (logged)
+
+- Per-frame `@media` via iframe, and HTML export.
+- Headless core package, `applyOps`, MCP server.
+- React 19 / Vite 7 upgrade, bundle split, README refresh.
+- The `App.tsx` sample data's explicit colours.
+
+### Round 3 verdict log
+
+- [ ] S1 · [ ] S2 · [ ] S3 · [ ] S4 · [ ] S5 · [ ] S6 · [ ] S7 · [ ] S8 · [ ] S9 · [ ] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [ ] L1
+
+---
+
 ## Verification (end to end)
 
 1. `bun run test`: all suites green (`useDesigner.test.ts`, `BreakpointFrame.test.tsx`,
