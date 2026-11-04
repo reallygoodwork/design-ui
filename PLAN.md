@@ -1132,6 +1132,15 @@ zoom and shortcuts still work.
 
 **Test:** `bunx vitest run src/hooks/useDesignerSelector.test.tsx src/test/renderCounts.test.tsx`
 
+**Amendment (approved by the user after the P2 fixer's report):**
+1. `hooks/useDesignerContext.ts` joins P2's files. The context now holds the store, so this hook
+   derives a memoised `{state, dispatch}` from a whole-state selector, and every unmigrated caller
+   keeps working.
+2. One existing assertion changes, as an exception to "existing tests pass unchanged". P1's
+   `useSelectedLayers` reference test asserted that the probe *re-renders* after `SET_ZOOM`
+   (`seen.length > count`). That was only true because of the over-rendering P2 removes, so it is
+   inverted to `toBe(count)`. Its reference-stability assertion is unchanged.
+
 ### P3 — Per-layer rendering and an id index
 
 **Fix:**
