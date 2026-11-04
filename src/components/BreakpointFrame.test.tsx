@@ -1,7 +1,14 @@
-import { act } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { DesignerProvider } from "../context/DesignerContext";
 import { useDesignerContext } from "../hooks/useDesignerContext";
-import { breakpoints, makeLayer, renderInDesigner } from "../test/fixtures";
+import { textLayerType } from "../lib/layers/text";
+import {
+	breakpoints,
+	defaultLayerTypes,
+	makeLayer,
+	renderInDesigner,
+} from "../test/fixtures";
 import { BreakpointFrame } from "./BreakpointFrame";
 
 type Dispatch = ReturnType<typeof useDesignerContext>["dispatch"];
@@ -86,5 +93,75 @@ describe("breakpoint overrides", () => {
 		expect(width("mobile")).toBe("100px");
 		expect(width("tablet")).toBe("300px");
 		expect(width("desktop")).toBe("300px");
+	});
+});
+
+describe("frame styles", () => {
+	const frameStyles = {
+		"--font-family": "Georgia",
+		"--color": "#ff0000",
+		"--background-color": "#eeeeee",
+	};
+	const plain = makeLayer("plain", undefined, {
+		type: "text",
+		value: "Plain",
+		elementType: "p",
+		cssVars: { "--font-size": "16px" },
+	});
+	const explicit = makeLayer("explicit", undefined, {
+		type: "text",
+		value: "Explicit",
+		elementType: "p",
+		cssVars: { "--font-family": "Courier", "--color": "#0000ff" },
+	});
+	const renderWithFrame = () =>
+		render(
+			<DesignerProvider
+				defaultLayers={[plain, explicit]}
+				defaultLayerTypes={defaultLayerTypes}
+				breakpoints={breakpoints}
+				frameStyles={frameStyles}
+			>
+				<Frames />
+			</DesignerProvider>
+		);
+	const root = (c: HTMLElement, bp: string) =>
+		c.querySelector(
+			`.breakpoint-frame[data-breakpoint-id="${bp}"] .breakpoint-content`
+		) as HTMLElement;
+
+	it("applies frame styles as real properties on every frame root", () => {
+		const { container } = renderWithFrame();
+		for (const bp of ["mobile", "tablet", "desktop"]) {
+			const el = root(container, bp);
+			expect(el.style.fontFamily).toBe("Georgia");
+			expect(el.style.color).toBe("rgb(255, 0, 0)");
+			expect(el.style.backgroundColor).toBe("rgb(238, 238, 238)");
+		}
+	});
+
+	it("keeps the white background fallback", () => {
+		const { container } = renderInDesigner(<Frames />);
+		expect(root(container, "mobile").style.backgroundColor).toBe(
+			"rgb(255, 255, 255)"
+		);
+	});
+
+	it("text without explicit values inherits; explicit values are kept", () => {
+		const { container } = renderWithFrame();
+		for (const bp of ["mobile", "tablet", "desktop"]) {
+			const p = find(container, bp, "plain").firstElementChild as HTMLElement;
+			expect(p.style.fontFamily).toBe("");
+			expect(p.style.color).toBe("");
+			const e = find(container, bp, "explicit")
+				.firstElementChild as HTMLElement;
+			expect(e.style.fontFamily).toBe("Courier");
+			expect(e.style.color).toBe("rgb(0, 0, 255)");
+		}
+	});
+
+	it("new text layers do not hard-code a font family", () => {
+		const vars = textLayerType.defaultValues.cssVars as Record<string, string>;
+		expect(vars["--font-family"]).toBeUndefined();
 	});
 });

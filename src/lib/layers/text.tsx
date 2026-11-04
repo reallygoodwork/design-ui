@@ -56,7 +56,6 @@ export const textLayerType = {
 		cssVars: {
 			"--font-size": "16px",
 			"--color": "#000000",
-			"--font-family": "Arial",
 		},
 	},
 	render: (
