@@ -13,6 +13,7 @@ import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useDesignerContext } from "../hooks/useDesignerContext";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
 import { calculateBoundingBox } from "../lib/breakpointUtils";
+import { buildLayerIndex, getLayer } from "../lib/layerIndex";
 
 import { DimensionAble } from "./ables/DimensionAble";
 import { StructureAble } from "./ables/StructureAble";
@@ -48,25 +49,12 @@ const getLayersAtPoint = (
 		.map((el) => el.getAttribute("data-layer-id"))
 		.filter((id): id is string => id !== null);
 
-	// Helper to find a layer by ID recursively
-	const findLayer = (
-		layers: typeof state.layers,
-		id: string
-	): (typeof state.layers)[0] | null => {
-		for (const layer of layers) {
-			if (layer.id === id) return layer;
-			if (layer.children) {
-				const found = findLayer(layer.children, id);
-				if (found) return found;
-			}
-		}
-		return null;
-	};
+	const layerIndex = buildLayerIndex(state.layers);
 
 	// Filter out locked layers, then reverse so shallowest (parent) is first
 	const filteredLayerIds = layerIds
 		.filter((id) => {
-			const layer = findLayer(state.layers, id);
+			const layer = getLayer(layerIndex, id);
 			return layer && !layer.isLocked;
 		})
 		.reverse();

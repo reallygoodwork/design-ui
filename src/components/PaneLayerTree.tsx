@@ -26,52 +26,30 @@ import {
 	sortBreakpointsByWidth,
 } from "../lib/breakpointUtils";
 import { cn } from "../lib/cn";
+import {
+	buildLayerIndex,
+	getDescendantIds as collectDescendantIds,
+	getLayer,
+	isDescendant,
+} from "../lib/layerIndex";
 import type { Breakpoint, Layer } from "../lib/Types";
 
-// Helper function to find a layer by ID in a nested structure
-const findLayerById = (layers: Layer[], layerId: string): Layer | null => {
-	for (const layer of layers) {
-		if (layer.id === layerId) {
-			return layer;
-		}
-		if (layer.children) {
-			const found = findLayerById(layer.children, layerId);
-			if (found) return found;
-		}
-	}
-	return null;
-};
+const findLayerById = (layers: Layer[], layerId: string): Layer | null =>
+	getLayer(buildLayerIndex(layers), layerId);
 
-// Helper function to check if a layer is a descendant of another
 const isDescendantOf = (
 	layers: Layer[],
 	potentialDescendantId: string,
 	potentialAncestorId: string
-): boolean => {
-	const ancestor = findLayerById(layers, potentialAncestorId);
-	if (!ancestor?.children) return false;
+): boolean =>
+	isDescendant(
+		buildLayerIndex(layers),
+		potentialDescendantId,
+		potentialAncestorId
+	);
 
-	for (const child of ancestor.children) {
-		if (child.id === potentialDescendantId) return true;
-		if (isDescendantOf([child], potentialDescendantId, child.id)) return true;
-	}
-	return false;
-};
-
-// Helper function to collect every descendant ID of the given layers
-const getDescendantIds = (layers: Layer[], layerIds: string[]): Set<string> => {
-	const descendants = new Set<string>();
-	const collect = (children: Layer[] | undefined) => {
-		for (const child of children ?? []) {
-			descendants.add(child.id);
-			collect(child.children);
-		}
-	};
-	for (const id of layerIds) {
-		collect(findLayerById(layers, id)?.children);
-	}
-	return descendants;
-};
+const getDescendantIds = (layers: Layer[], layerIds: string[]): Set<string> =>
+	collectDescendantIds(buildLayerIndex(layers), layerIds);
 
 export interface RowState {
 	isSelected: boolean;

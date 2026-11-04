@@ -1,9 +1,11 @@
-import { act, cleanup } from "@testing-library/react";
+import { act, cleanup, render } from "@testing-library/react";
 import { Profiler, useEffect } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { BreakpointFrame } from "../components/BreakpointFrame";
 import { DesignerCanvas } from "../components/DesignerCanvas";
 import { PaneLayerTree } from "../components/PaneLayerTree";
 import { ZoomControl } from "../components/ZoomControl";
+import { DesignerProvider } from "../context/DesignerContext";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useDesignerContext } from "../hooks/useDesignerContext";
 import { useHistory } from "../hooks/useHistory";
@@ -11,7 +13,13 @@ import { useKeybindings } from "../hooks/useKeybindings";
 import { useLayers } from "../hooks/useLayers";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
 import { useZoom } from "../hooks/useZoom";
-import { makeLayer, renderInDesigner } from "./fixtures";
+import type { Layer, LayerType } from "../lib/Types";
+import {
+	breakpoints,
+	defaultLayerTypes,
+	makeLayer,
+	renderInDesigner,
+} from "./fixtures";
 
 const viewerProps = vi.hoisted(() => ({
 	current: null as Record<string, unknown> | null,
@@ -93,6 +101,12 @@ const LayerSliceReaders = () => {
 
 const ZoomReader = () => {
 	useZoom();
+	return null;
+};
+
+let latest: ReturnType<typeof useLayers> = [];
+const Capture = () => {
+	latest = useLayers();
 	return null;
 };
 
@@ -318,4 +332,110 @@ describe("render counts", () => {
 		}
 		expect(c.counts.commits - before).toBe(0);
 	});
+
+	describe("per-layer rendering", () => {
+		const renders: Record<string, number> = {};
+		const probeType: LayerType = {
+			type: "probe",
+			name: "Probe",
+			defaultValues: { name: "probe", value: "" },
+			supportsChildren: true,
+			render: (layer, children) => {
+				renders[layer.id] = (renders[layer.id] ?? 0) + 1;
+				return <div>{children}</div>;
+			},
+		};
+		const probe = (id: string, children?: Layer[]) =>
+			makeLayer(id, children, { type: "probe" });
+
+		const mountTree = () => {
+			for (const key of Object.keys(renders)) {
+				delete renders[key];
+			}
+			render(
+				<DesignerProvider
+					defaultLayers={[
+						probe("A", [probe("A1", [probe("A11")]), probe("A2")]),
+						probe("B", [probe("B1")]),
+					]}
+					defaultLayerTypes={[...defaultLayerTypes, probeType]}
+					breakpoints={breakpoints}
+				>
+					<Dispatcher />
+					{breakpoints.map((bp) => (
+						<BreakpointFrame
+							key={bp.id}
+							breakpoint={bp}
+							isActive={false}
+							isSelected={false}
+						/>
+					))}
+				</DesignerProvider>
+			);
+			for (const key of Object.keys(renders)) {
+				renders[key] = 0;
+			}
+		};
+
+		it("UPDATE_LAYER_CSS on A11 re-renders only A11, A1 and A, once per frame", () => {
+			mountTree();
+			act(() => {
+				dispatch({
+					type: "UPDATE_LAYER_CSS",
+					payload: { id: "A11", css: { color: "red" } },
+				});
+			});
+			const frames = breakpoints.length;
+			expect(renders.A11).toBe(frames);
+			expect(renders.A1).toBe(frames);
+			expect(renders.A).toBe(frames);
+			expect(renders.A2).toBe(0);
+			expect(renders.B).toBe(0);
+			expect(renders.B1).toBe(0);
+		});
+
+		it("SET_ZOOM re-renders no DesignerLayer", () => {
+			mountTree();
+			act(() => {
+				dispatch({ type: "SET_ZOOM", payload: 2 });
+			});
+			expect(Object.values(renders).reduce((a, b) => a + b, 0)).toBe(0);
+		});
+	});
+
+	it("UPDATE_LAYER_CSS only replaces the edited layer and its ancestors", () => {
+		const tree = () => [
+			makeLayer("A", [makeLayer("A1", [makeLayer("A11")]), makeLayer("A2")]),
+			makeLayer("B", [makeLayer("B1")]),
+		];
+		renderInDesigner(
+			<>
+				<Dispatcher />
+				<Capture />
+			</>,
+			{ layers: tree() }
+		);
+		const before = latest;
+		const [A, B] = before;
+		const [A1, A2] = A.children ?? [];
+		const A11 = A1.children?.[0];
+		act(() => {
+			unrelatedCssOn("A11");
+		});
+		const after = latest;
+		expect(after).not.toBe(before);
+		expect(after[0]).not.toBe(A);
+		expect(after[0].children?.[0]).not.toBe(A1);
+		expect(after[0].children?.[0].children?.[0]).not.toBe(A11);
+		expect(after[0].children?.[1]).toBe(A2);
+		expect(after[1]).toBe(B);
+		expect(after[1].children).toBe(B.children);
+	});
 });
+
+const unrelatedCssOn = (id: string) => {
+	dispatch({
+		type: "UPDATE_LAYER_CSS",
+		payload: { id, css: { color: "red" } },
+	});
+};
