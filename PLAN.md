@@ -1254,7 +1254,7 @@ zoom and shortcuts still work.
 
 ### Round 3 verdict log
 
-- [x] S1 · [x] S2 · [x] S3 · [x] S4 · [x] S5 · [x] S6 · [ ] S7 · [x] S8 · [x] S9 · [ ] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [x] S10 · [ ] S11 · [ ] L1
+- [x] S1 · [x] S2 · [x] S3 · [x] S4 · [x] S5 · [x] S6 · [x] S7 · [x] S8 · [x] S9 · [ ] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [x] S10 · [ ] S11 · [ ] L1
 
 - S2: PASS at `29f5ad2`, first round. In the browser, a 20-step drag was undone by one Cmd+Z, and redo restored it. Merged as `d4e6002`. Note: the X/Y position inputs also coalesce with a drag on the same frame (by design).
 - S1: PASS at `8dfbf5b`, first round. The verdict was formatted as 'CONCERNS: none blocking / PASS' and treated as PASS. In the browser, typing Georgia gives 1 link and 'Inter, system-ui' loads Inter only. Merged as `d2bee72`. Notes: no test covers a layer-font change after mount (the code path is not debounced, confirmed in the browser); `preloadFont` skips `primaryFontFamily` (hover only).
@@ -1265,6 +1265,7 @@ zoom and shortcuts still work.
 - S4: PASS at `c133278`, first round. In the browser, a header drag released over a layer keeps the selection; click, drill-down, marquee and '+' still work. Merged as `9aa38ab`. Note: the test's Selecto mock triggers a cosmetic forwardRef arity warning.
 - S6: PASS at `ff44dfe` after 1 retry round. CONCERNS: the children wrapper `<div>` blocked flex layout, so the scope was amended with user approval and the wrapper replaced by a fragment. In the browser, Row with a 24px gap measures 24.0 and Column with a 10px gap measures 10.0. Merged as `e773a06`.
 - S10: PASS at `34f6546` (the user decided 3 open points mid-task; the verdict was formatted as 'CONCERNS: none (PASS)'). Every control was browser-checked: wrap, grid, margins, align center, transform, decoration, shadow, position and image styles. 50 tests fail on the old code. Merged as `741e50c`. Notes: the TextShadow label shows '0 0 0' when only a colour is set; the colour input needs a leading '#'.
+- S7: PASS at `178b64c` after 1 retry round. FAIL: the plan's premise was wrong (Moveable renders in screen space), so the orchestrator corrected the fix text. Handle 12×12, line 1px and label 67×19 are constant at zoom 0.5, 1 and 2, against a base range of 6–24px. Control-box clicks are ignored properly. Merged as `a39bd12`.
 
 ---
 
