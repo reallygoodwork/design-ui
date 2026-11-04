@@ -5,6 +5,7 @@ import {
 	render,
 	screen,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { DesignerProvider } from "../../context/DesignerContext";
 import { useDesignerAction } from "../../hooks/useDesignerAction";
@@ -27,11 +28,14 @@ const Capture = () => {
 
 const setup = (
 	cssVars: Record<string, string> | undefined,
-	breakpointId = "mobile"
+	breakpointId = "mobile",
+	breakpointCssVars?: Record<string, Record<string, string>>
 ) => {
 	render(
 		<DesignerProvider
-			defaultLayers={[makeLayer("L", undefined, { cssVars })]}
+			defaultLayers={[
+				makeLayer("L", undefined, { cssVars, breakpointCssVars }),
+			]}
 			defaultLayerTypes={defaultLayerTypes}
 			breakpoints={breakpoints}
 		>
@@ -107,5 +111,46 @@ describe("ActionOpacity", () => {
 		expect(layer()?.breakpointCssVars?.tablet?.["--opacity"]).toBe("0.5");
 		expect(layer()?.cssVars?.["--opacity"]).toBe("1");
 		expect(input.value).toBe("50");
+	});
+
+	it("writes from the slider path as a valid opacity", () => {
+		setup({ "--opacity": "1" });
+		const thumb = screen.getByRole("slider");
+		fireEvent.keyDown(thumb, { key: "ArrowLeft" });
+		expect(layer()?.cssVars?.["--opacity"]).toBe("0.99");
+		fireEvent.keyDown(thumb, { key: "End" });
+		expect(layer()?.cssVars?.["--opacity"]).toBe("1");
+		fireEvent.keyDown(thumb, { key: "Home" });
+		expect(layer()?.cssVars?.["--opacity"]).toBe("0");
+	});
+
+	it("marks a value inherited from Tablet on Desktop", async () => {
+		const input = setup({}, "desktop", { tablet: { "--opacity": "0.3" } });
+		expect(input.value).toBe("");
+		expect(input.placeholder).toBe("30");
+		expect(screen.getByRole("slider").getAttribute("aria-valuenow") ?? "").toBe(
+			"30"
+		);
+		expect(screen.getByText("Opacity")).toBeTruthy();
+		expect(screen.queryByText("Opacity \u2022")).toBeNull();
+		const buttons = screen.getAllByRole("button");
+		expect((buttons[buttons.length - 1] as HTMLButtonElement).disabled).toBe(
+			true
+		);
+		await userEvent.hover(input);
+		expect(await screen.findByText("Inherited from Tablet")).toBeTruthy();
+	});
+
+	it("marks an explicit Tablet value as an override (tooltip names the source breakpoint)", async () => {
+		const input = setup({ "--opacity": "1" }, "tablet");
+		fireEvent.change(input, { target: { value: "30" } });
+		expect(input.value).toBe("30");
+		expect(screen.getByText("Opacity \u2022")).toBeTruthy();
+		const buttons = screen.getAllByRole("button");
+		expect((buttons[buttons.length - 1] as HTMLButtonElement).disabled).toBe(
+			false
+		);
+		await userEvent.hover(input);
+		expect(await screen.findByText("Overrides Tablet")).toBeTruthy();
 	});
 });
