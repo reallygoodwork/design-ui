@@ -35,9 +35,16 @@ export const BreakpointHeader = ({
 		posY: number;
 	} | null>(null);
 
+	const movedRef = useRef(false);
+
 	const isPrimary = isPrimaryBreakpoint(breakpoint.id, state.breakpoints);
 
 	const handleHeaderClick = () => {
+		// The click that follows a drag's mouseup must not select
+		if (movedRef.current) {
+			movedRef.current = false;
+			return;
+		}
 		// Only select if not dragging
 		if (!isDragging) {
 			dispatch({
@@ -53,6 +60,7 @@ export const BreakpointHeader = ({
 
 		e.preventDefault();
 		setIsDragging(true);
+		movedRef.current = false;
 		dragStartRef.current = {
 			x: e.clientX,
 			y: e.clientY,
@@ -62,6 +70,13 @@ export const BreakpointHeader = ({
 
 		const handleMouseMove = (moveEvent: MouseEvent) => {
 			if (!dragStartRef.current) return;
+
+			if (
+				moveEvent.clientX !== dragStartRef.current.x ||
+				moveEvent.clientY !== dragStartRef.current.y
+			) {
+				movedRef.current = true;
+			}
 
 			const zoom = state.zoom;
 			const deltaX = (moveEvent.clientX - dragStartRef.current.x) / zoom;
@@ -84,6 +99,11 @@ export const BreakpointHeader = ({
 		const handleMouseUp = () => {
 			setIsDragging(false);
 			dragStartRef.current = null;
+			// The click event fires synchronously after mouseup; clear afterwards
+			// so a later keyboard click isn't swallowed if mouseup left the button.
+			setTimeout(() => {
+				movedRef.current = false;
+			}, 0);
 			document.removeEventListener("mousemove", handleMouseMove);
 			document.removeEventListener("mouseup", handleMouseUp);
 		};
@@ -142,7 +162,7 @@ export const BreakpointHeader = ({
 		// biome-ignore lint/a11y/noStaticElementInteractions: mouse-only drag surface; keyboard users select via the inner select button
 		<div
 			className={cn(
-				"breakpoint-header flex items-center gap-2 px-2 py-1 text-xs select-none",
+				"breakpoint-header flex w-fit items-center gap-2 px-2 py-1 text-xs select-none",
 				isActive || isSelected ? "text-primary" : "text-muted-foreground",
 				isSelected && "bg-primary/10 rounded-t",
 				isDragging ? "cursor-grabbing" : "cursor-grab"
@@ -151,7 +171,7 @@ export const BreakpointHeader = ({
 		>
 			<button
 				type="button"
-				className="flex min-w-0 flex-1 cursor-[inherit] items-center gap-2"
+				className="flex cursor-[inherit] items-center gap-2"
 				onClick={handleHeaderClick}
 			>
 				{/* Drag grip handle */}

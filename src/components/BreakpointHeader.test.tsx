@@ -89,4 +89,26 @@ describe("BreakpointHeader", () => {
 		fireEvent.mouseUp(document);
 		expect(pos()).toBe("455,10");
 	});
+
+	it("shrink-wraps its content instead of spanning the frame", () => {
+		const { container, getByRole } = renderInDesigner(<Probe />);
+		const header = container.querySelector(".breakpoint-header") as HTMLElement;
+		expect(header.classList.contains("w-fit")).toBe(true);
+		const select = getByRole("button", { name: /Tablet/ });
+		expect(select.className).not.toMatch(/flex-1|w-full/);
+	});
+
+	it("does not select after a drag but selects on a plain click", () => {
+		const { getByRole, getByTestId } = renderInDesigner(<Probe />);
+		const select = getByRole("button", { name: /Tablet/ });
+		fireEvent.mouseDown(select, { clientX: 0, clientY: 0 });
+		fireEvent.mouseMove(document, { clientX: 30, clientY: 10 });
+		fireEvent.mouseUp(document);
+		fireEvent.click(select);
+		expect(getByTestId("selected").textContent).toBe("");
+		fireEvent.mouseDown(select, { clientX: 5, clientY: 5 });
+		fireEvent.mouseUp(document);
+		fireEvent.click(select);
+		expect(getByTestId("selected").textContent).toBe("tablet");
+	});
 });
