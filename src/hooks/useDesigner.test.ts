@@ -1,8 +1,14 @@
 import { act, screen } from "@testing-library/react";
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
+import { textLayerType } from "../lib/layers/text";
 import type { Layer } from "../lib/Types";
-import { breakpoints, makeLayer, renderInDesigner } from "../test/fixtures";
+import {
+	breakpoints,
+	defaultLayerTypes,
+	makeLayer,
+	renderInDesigner,
+} from "../test/fixtures";
 import {
 	type Action,
 	getCoalesceKey,
@@ -313,5 +319,55 @@ describe("delete", () => {
 			{ type: "DELETE_LAYERS", payload: { layerIds: ["X"] } }
 		);
 		expect(s.selectedLayers).toEqual(["Y"]);
+	});
+});
+
+describe("supportsChildren", () => {
+	const base: State = {
+		...initialState,
+		layerTypes: defaultLayerTypes,
+		layers: [
+			makeLayer("T", undefined, { type: "text" }),
+			makeLayer("F", []),
+			makeLayer("X"),
+		],
+	};
+
+	it("text layer type does not support children", () => {
+		expect(textLayerType.supportsChildren).toBe(false);
+	});
+
+	it("ADD_LAYER inside a text layer returns the identical state", () => {
+		const next = reducer(base, {
+			type: "ADD_LAYER",
+			payload: {
+				layer: makeLayer("NEW"),
+				targetLayerId: "T",
+				position: "inside",
+			},
+		});
+		expect(next).toBe(base);
+		expect(next.history.past).toBe(base.history.past);
+	});
+
+	it("MOVE_LAYER on a text layer returns the identical state", () => {
+		const next = reducer(base, {
+			type: "MOVE_LAYER",
+			payload: { layerIds: ["X"], targetId: "T", position: "on" },
+		});
+		expect(next).toBe(base);
+	});
+
+	it("ADD_LAYER inside a frame still works", () => {
+		const next = reducer(base, {
+			type: "ADD_LAYER",
+			payload: {
+				layer: makeLayer("NEW"),
+				targetLayerId: "F",
+				position: "inside",
+			},
+		});
+		expect(flatIds(next.layers)).toEqual(["T", "F", "NEW", "X"]);
+		expect(next.history.past.length).toBe(1);
 	});
 });

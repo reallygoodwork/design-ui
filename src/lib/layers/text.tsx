@@ -6,7 +6,7 @@ export const textLayerType = {
 	type: "text",
 	name: "Text",
 	icon: <IconTypography />,
-	supportsChildren: true,
+	supportsChildren: false,
 	supportedCssProperties: [
 		"--font-size",
 		"--font-family",
