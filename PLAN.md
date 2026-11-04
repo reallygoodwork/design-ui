@@ -1303,7 +1303,7 @@ plan's own `Doc` shape. No other assertion may change.
 
 ### Round 3 verdict log
 
-- [x] S1 · [x] S2 · [x] S3 · [x] S4 · [x] S5 · [x] S6 · [x] S7 · [x] S8 · [x] S9 · [x] P1 · [x] P2 · [x] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [x] S10 · [x] S11 · [x] S12 · [ ] L1
+- [x] S1 · [x] S2 · [x] S3 · [x] S4 · [x] S5 · [x] S6 · [x] S7 · [x] S8 · [x] S9 · [x] P1 · [x] P2 · [x] P3 · [x] P4 · [ ] I1 · [ ] I2 · [x] S10 · [x] S11 · [x] S12 · [ ] L1
 
 - S2: PASS at `29f5ad2`, first round. In the browser, a 20-step drag was undone by one Cmd+Z, and redo restored it. Merged as `d4e6002`. Note: the X/Y position inputs also coalesce with a drag on the same frame (by design).
 - S1: PASS at `8dfbf5b`, first round. The verdict was formatted as 'CONCERNS: none blocking / PASS' and treated as PASS. In the browser, typing Georgia gives 1 link and 'Inter, system-ui' loads Inter only. Merged as `d2bee72`. Notes: no test covers a layer-font change after mount (the code path is not debounced, confirmed in the browser); `preloadFont` skips `primaryFontFamily` (hover only).
@@ -1320,6 +1320,7 @@ plan's own `Doc` shape. No other assertion may change.
 - P2: PASS at `ed26156` after 1 retry round. CONCERNS: the render-count proof was hook-level only, so the user approved migrating `ZoomControl` and `PaneLayerTree`. Two amendments were approved (`useDesignerContext.ts`; one inverted P1 assertion). In the browser, zoom causes 0 `PaneLayerTree` re-renders. Merged as `ce31087`. Note: a newly added breakpoint's tree section starts collapsed (pre-existing).
 - S12: PASS at `d0f91d1` after 1 retry round. CONCERNS: an inherited value displayed as explicit, now marked like `NumericActionControl`. In the browser, computed opacity is 0.5 with a visible fade, the Tablet override works, and the inherited tooltip shows. Merged as `bb94d46`. Note: legacy '1' reads as 100% (documented).
 - P3: PASS at `b18b973`, first verification. The fixer stopped on a wrong plan premise (`updateLayerById` sharing); the user approved adding the reducer fix. The cascade matches `getEffectiveStyles` on 2000 random cases, and sharing is correct on 300 random trees. In the browser, one edit re-renders only its ancestry. Merged as `4cd85ee`. Note: layer move/reorder was not browser-exercised, so it must be covered in P4's verification.
+- P4: PASS at `05413f1` after 1 retry round. CONCERNS: DELETE_BREAKPOINT became a no-op without overrides (found by a differential fuzz); ADD_LAYER with a duplicate id pushed history. Doc-keys assertion change approved by the user. Final differential: 0 divergences over 2400 random trees × 25 ops. Browser: delete breakpoint, insert, move on/before/after, undo/redo all good. Merged as `e8c8a0c`. Notes: `state.layers` is a derived non-enumerable accessor; reducer complexity is 23.
 
 ---
 
