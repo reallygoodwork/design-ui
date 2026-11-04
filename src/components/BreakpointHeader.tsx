@@ -35,9 +35,16 @@ export const BreakpointHeader = ({
 		posY: number;
 	} | null>(null);
 
+	const movedRef = useRef(false);
+
 	const isPrimary = isPrimaryBreakpoint(breakpoint.id, state.breakpoints);
 
 	const handleHeaderClick = () => {
+		// The click that follows a drag's mouseup must not select
+		if (movedRef.current) {
+			movedRef.current = false;
+			return;
+		}
 		// Only select if not dragging
 		if (!isDragging) {
 			dispatch({
@@ -48,11 +55,12 @@ export const BreakpointHeader = ({
 	};
 
 	const handleDragStart = (e: React.MouseEvent) => {
-		// Only start drag from the grip handle or header area (not buttons)
-		if ((e.target as HTMLElement).closest("button")) return;
+		// Start drag from anywhere in the header except the add button
+		if ((e.target as HTMLElement).closest("[data-header-action]")) return;
 
 		e.preventDefault();
 		setIsDragging(true);
+		movedRef.current = false;
 		dragStartRef.current = {
 			x: e.clientX,
 			y: e.clientY,
@@ -62,6 +70,13 @@ export const BreakpointHeader = ({
 
 		const handleMouseMove = (moveEvent: MouseEvent) => {
 			if (!dragStartRef.current) return;
+
+			if (
+				moveEvent.clientX !== dragStartRef.current.x ||
+				moveEvent.clientY !== dragStartRef.current.y
+			) {
+				movedRef.current = true;
+			}
 
 			const zoom = state.zoom;
 			const deltaX = (moveEvent.clientX - dragStartRef.current.x) / zoom;
@@ -84,6 +99,11 @@ export const BreakpointHeader = ({
 		const handleMouseUp = () => {
 			setIsDragging(false);
 			dragStartRef.current = null;
+			// The click event fires synchronously after mouseup; clear afterwards
+			// so a later keyboard click isn't swallowed if mouseup left the button.
+			setTimeout(() => {
+				movedRef.current = false;
+			}, 0);
 			document.removeEventListener("mousemove", handleMouseMove);
 			document.removeEventListener("mouseup", handleMouseUp);
 		};
@@ -139,50 +159,56 @@ export const BreakpointHeader = ({
 	};
 
 	return (
-		<button
-			type="button"
+		// biome-ignore lint/a11y/noStaticElementInteractions: mouse-only drag surface; keyboard users select via the inner select button
+		<div
 			className={cn(
-				"breakpoint-header flex items-center gap-2 px-2 py-1 text-xs select-none",
+				"breakpoint-header flex w-fit items-center gap-2 px-2 py-1 text-xs select-none",
 				isActive || isSelected ? "text-primary" : "text-muted-foreground",
 				isSelected && "bg-primary/10 rounded-t",
 				isDragging ? "cursor-grabbing" : "cursor-grab"
 			)}
-			onClick={handleHeaderClick}
 			onMouseDown={handleDragStart}
 		>
-			{/* Drag grip handle */}
-			<IconGripVertical className="size-3.5 opacity-50 hover:opacity-100" />
+			<button
+				type="button"
+				className="flex cursor-[inherit] items-center gap-2"
+				onClick={handleHeaderClick}
+			>
+				{/* Drag grip handle */}
+				<IconGripVertical className="size-3.5 opacity-50 hover:opacity-100" />
 
-			{/* Play/preview icon */}
-			<IconPlayerPlay className="size-3.5 fill-current" />
+				{/* Play/preview icon */}
+				<IconPlayerPlay className="size-3.5 fill-current" />
 
-			{/* Breakpoint name */}
-			<span className="font-medium">{breakpoint.name}</span>
+				{/* Breakpoint name */}
+				<span className="font-medium">{breakpoint.name}</span>
 
-			{/* Primary badge */}
-			{isPrimary && (
-				<span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-					Primary
+				{/* Primary badge */}
+				{isPrimary && (
+					<span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+						Primary
+					</span>
+				)}
+
+				{/* Spacer */}
+				<span className="flex-1" />
+
+				{/* Dimensions */}
+				<span className="text-muted-foreground tabular-nums">
+					{breakpoint.width} × {breakpoint.height}
 				</span>
-			)}
-
-			{/* Spacer */}
-			<span className="flex-1" />
-
-			{/* Dimensions */}
-			<span className="text-muted-foreground tabular-nums">
-				{breakpoint.width} × {breakpoint.height}
-			</span>
+			</button>
 
 			{/* Add breakpoint button */}
 			<button
 				type="button"
+				data-header-action
 				className="flex size-5 items-center justify-center rounded hover:bg-accent/50"
 				onClick={handleAddBreakpoint}
 				title="Add breakpoint"
 			>
 				<IconPlus className="size-3.5" />
 			</button>
-		</button>
+		</div>
 	);
 };
