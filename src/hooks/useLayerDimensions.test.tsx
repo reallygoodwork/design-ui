@@ -1,7 +1,8 @@
-import { act } from "@testing-library/react";
+import { act, cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { makeLayer, renderInDesigner } from "../test/fixtures";
 import { useDesignerContext } from "./useDesignerContext";
+import { FrameRegistryProvider, useFrameRegistry } from "./useFrameRegistry";
 import { useLayerDimensions } from "./useLayerDimensions";
 
 class FakeResizeObserver {
@@ -24,9 +25,10 @@ const layer = makeLayer("a");
 let ctx: ReturnType<typeof useDesignerContext>;
 let result: { width: number; height: number } | null;
 
-const Probe = () => {
+const Frames = () => {
 	ctx = useDesignerContext();
 	result = useLayerDimensions(layer);
+	const registry = useFrameRegistry();
 	return (
 		<>
 			{["mobile", "tablet"].map((bp) => (
@@ -34,6 +36,11 @@ const Probe = () => {
 					key={bp}
 					className="designer-frame breakpoint-frame"
 					data-breakpoint-id={bp}
+					ref={(frame) => {
+						if (frame) {
+							registry.register(bp, frame);
+						}
+					}}
 				>
 					<div
 						className="designer-layer"
@@ -45,6 +52,12 @@ const Probe = () => {
 		</>
 	);
 };
+
+const Probe = () => (
+	<FrameRegistryProvider>
+		<Frames />
+	</FrameRegistryProvider>
+);
 
 const el = (bp: string) =>
 	document.querySelector(
@@ -85,6 +98,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+	cleanup();
 	vi.unstubAllGlobals();
 	vi.restoreAllMocks();
 	// biome-ignore lint/performance/noDelete: restore jsdom default

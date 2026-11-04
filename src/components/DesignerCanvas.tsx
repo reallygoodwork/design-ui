@@ -11,6 +11,10 @@ import Moveable, { type MoveableRefTargetType } from "react-moveable";
 import Selecto from "react-selecto";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useDesignerContext } from "../hooks/useDesignerContext";
+import {
+	type FrameRegistry,
+	useFrameRegistry,
+} from "../hooks/useFrameRegistry";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
 import { calculateBoundingBox } from "../lib/breakpointUtils";
 import { buildLayerIndex, getLayer } from "../lib/layerIndex";
@@ -18,54 +22,30 @@ import { buildLayerIndex, getLayer } from "../lib/layerIndex";
 import { DimensionAble } from "./ables/DimensionAble";
 import { StructureAble } from "./ables/StructureAble";
 
-// Helper to get all layers at a specific point, ordered from shallowest (parent) to deepest (nested child)
-// This enables Figma-style selection: first click selects parent, subsequent clicks drill down
-// Also returns the breakpoint ID of the clicked element
+// Lock filtering for layers under a point. The registry returns unfiltered ids,
+// shallowest (parent) first, which enables Figma-style drill-down selection.
 const getLayersAtPoint = (
+	registry: FrameRegistry,
 	x: number,
 	y: number,
 	state: ReturnType<typeof useDesignerContext>["state"]
 ): { layerIds: string[]; breakpointId: string | null } => {
-	// Get all elements at this point (document.elementsFromPoint returns front-to-back, i.e. deepest first)
-	const elements = document.elementsFromPoint(x, y);
-
-	// Find the breakpoint frame that was clicked
-	let breakpointId: string | null = null;
-	for (const el of elements) {
-		const bpFrame = el.closest("[data-breakpoint-id]");
-		if (bpFrame) {
-			breakpointId = bpFrame.getAttribute("data-breakpoint-id");
-			break;
-		}
-	}
-
-	// Filter to only designer layers and extract layer IDs
-	const layerIds = elements
-		.filter(
-			(el) =>
-				el.classList.contains("designer-layer") &&
-				el.hasAttribute("data-layer-id")
-		)
-		.map((el) => el.getAttribute("data-layer-id"))
-		.filter((id): id is string => id !== null);
-
+	const { layerIds, breakpointId } = registry.layersAtPoint(x, y);
 	const layerIndex = buildLayerIndex(state.layers);
-
-	// Filter out locked layers, then reverse so shallowest (parent) is first
-	const filteredLayerIds = layerIds
-		.filter((id) => {
+	return {
+		layerIds: layerIds.filter((id) => {
 			const layer = getLayer(layerIndex, id);
 			return layer && !layer.isLocked;
-		})
-		.reverse();
-
-	return { layerIds: filteredLayerIds, breakpointId };
+		}),
+		breakpointId,
+	};
 };
 
 export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 	const { state } = useDesignerContext();
 	const selectedLayers = useSelectedLayers();
 	const designerAction = useDesignerAction();
+	const registry = useFrameRegistry();
 	const viewerRef = useRef<InfiniteViewer>(null);
 	const selectoRef = useRef<Selecto>(null);
 	const moveableRef = useRef<Moveable>(null);
@@ -130,6 +110,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 
 		// Get all layers at this point (ordered shallowest/parent first) and the breakpoint
 		const { layerIds: layersAtPoint, breakpointId } = getLayersAtPoint(
+			registry,
 			clickX,
 			clickY,
 			state
@@ -201,18 +182,9 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 
 	// Query selected layers within the active breakpoint
 	// This ensures Moveable targets the correct layer instance
-	const selectedLayerElements = selectedLayers.map((layer) => {
-		// If we have an active breakpoint, target layers within that specific frame
-		if (state.activeBreakpointId) {
-			return document.querySelector(
-				`.breakpoint-frame[data-breakpoint-id="${state.activeBreakpointId}"] .designer-layer[data-layer-id="${layer.id}"]`
-			);
-		}
-		// Fallback to any matching layer (backwards compatibility)
-		return document.querySelector(
-			`.breakpoint-content .designer-layer[data-layer-id="${layer.id}"]`
-		);
-	});
+	const selectedLayerElements = selectedLayers.map((layer) =>
+		registry.queryLayer(state.activeBreakpointId, layer.id)
+	);
 
 	// Sync zoom changes from keyboard/controls to InfiniteViewer
 	useEffect(() => {
@@ -484,10 +456,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 			<Selecto
 				ref={selectoRef}
 				dragContainer={"[data-slot='designer-canvas']"}
-				selectableTargets={[
-					".breakpoint-content .designer-layer",
-					".designer-frame .designer-layer",
-				]}
+				selectableTargets={[() => registry.getAllLayerElements()]}
 				dragCondition={(e) => {
 					const target = e.inputEvent?.target;
 					return !(
