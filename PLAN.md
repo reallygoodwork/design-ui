@@ -1219,6 +1219,11 @@ layer object and children array. Existing reducer tests must still pass unchange
 
 **Test:** `bunx vitest run src/lib/layerTree.test.ts src/hooks/useDesigner.test.ts`, plus the full suite.
 
+**Amendment (approved by the user after the P4 fixer's report):** one existing assertion changes,
+as an exception to "assertions may not change". The history test's expected `Doc` keys go from
+`[breakpoints, frameStyles, layers]` to `[breakpoints, frameStyles, nodes, rootIds]`, which is the
+plan's own `Doc` shape. No other assertion may change.
+
 ### I1 — Frame-root registry (seam refactor, no behaviour change)
 
 **Fix:**
