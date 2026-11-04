@@ -567,6 +567,7 @@ export const initialState: State = {
 const applyAction = (state: State, action: Action): State => {
 	switch (action.type) {
 		case "SET_LAYERS":
+			if (action.payload === state.layers) return state;
 			return { ...state, layers: action.payload };
 		case "ADD_LAYER": {
 			const { layer, targetLayerId, position } = action.payload;

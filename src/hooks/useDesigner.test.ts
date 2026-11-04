@@ -263,6 +263,24 @@ describe("coalesce", () => {
 		expect(s.history.past.length).toBe(3);
 	});
 
+	it("echoing SET_LAYERS with the same array is a no-op that keeps the run", () => {
+		let s = base();
+		for (const n of ["a", "b", "c"]) {
+			s = reducer(s, rename("X", n));
+			const echoed = reducer(s, { type: "SET_LAYERS", payload: s.layers });
+			expect(echoed).toBe(s);
+			s = echoed;
+		}
+		expect(s.history.past.length).toBe(1);
+	});
+
+	it("SET_LAYERS with a different array still breaks the run", () => {
+		let s = reducer(base(), rename("X", "a"));
+		s = reducer(s, { type: "SET_LAYERS", payload: [...s.layers] });
+		s = reducer(s, rename("X", "b"));
+		expect(s.history.past.length).toBe(2);
+	});
+
 	it("getCoalesceKey is null for non-coalescing actions", () => {
 		expect(getCoalesceKey({ type: "UNDO" }, null)).toBeNull();
 		expect(getCoalesceKey(rename("X", "a"), null)).toBe("name:X");
