@@ -817,6 +817,7 @@ Paths are under `src/`. "→" means "blocked by".
 | 15 | **I2** Shadow-root style isolation | new `components/FrameShadowRoot.tsx`, `components/BreakpointFrame.tsx`, `hooks/useFrameRegistry.tsx`, `BreakpointFrame.test.tsx` (route queries through a shadow helper) | `components/FrameShadowRoot.test.tsx` | I1, S11 |
 | 17 | **S10** Every panel control affects the canvas | `lib/cssPropertyMapping.ts`, `lib/layers/{frame,text,image,input}.tsx` (`supportedCssProperties`), panel action components only if a sub-value must be combined (`components/actions/Action{FlexWrap,GridLayout,Margin,TextDecoration,TextShadow,TextStyle,AlignItems,TextTransform}.tsx`) | new `lib/panelControls.test.tsx`, `lib/cssPropertyMapping.test.ts` | S6 |
 | 18 | **S11** Border control writes a border style | `components/actions/ActionBorder.tsx`, `lib/layers/*.tsx` (only if `--border-style` is missing), `lib/cssPropertyMapping.ts` (only if needed) | `lib/panelControls.test.tsx` | S10 |
+| 19 | **S12** Opacity control writes invalid values | `components/actions/ActionOpacity.tsx` | new `components/actions/ActionOpacity.test.tsx` | — |
 | 16 | **L1** Zero lint warnings, enforced | `hooks/useDesigner.ts` (split `applyAction`), `components/PaneLayerTree.tsx`, `components/FrameStylesPanel.tsx`, `components/actions/{ActionElementType,ActionTextContent,ColorActionPopover}.tsx`, `package.json` (`lint` gets `--error-on-warnings`) | the gate itself | every other task |
 
 **Order** (at most 2 fixers at once): S1 ∥ S2 → S3 ∥ S5 → S6 ∥ S8 → S4 ∥ S9 → S7 → P1 → P2 → P3
@@ -1085,6 +1086,28 @@ nothing.
 
 **Test:** `bunx vitest run src/lib/panelControls.test.tsx -t "border"`, plus browser (port 5318).
 
+### S12 — The Opacity control writes `opacity: 50` (added by the user mid-round)
+
+**Repro:** Setting Opacity 50 in the panel stores `--opacity: 50`, which renders `opacity: 50`. CSS
+opacity takes 0–1 (or a percentage), so the browser clamps it to fully opaque and the layer never
+fades. Found by the P2 verifier.
+
+**Fix:**
+- Keep the 0–100 UI, but write a valid value (`0.5`, or `50%`; choose one and report it).
+- Display stored values correctly, including any legacy values above 1 written by the old control,
+  read as a percentage.
+- Stay within `ActionOpacity.tsx` (S11 is editing the CSS mapping concurrently).
+
+**Acceptance:**
+- Driving the real control to 50 stores a valid CSS opacity, and a rendered layer gets an inline
+  opacity that computes to 0.5.
+- 0 and 100 map to 0 and 1.
+- The control displays 50 for both the new value and a legacy `50`.
+- It is breakpoint-aware like other controls, if it already was.
+- Browser: the layer visibly fades, with computed `opacity: 0.5`.
+
+**Test:** `bunx vitest run src/components/actions/ActionOpacity.test.tsx`, plus browser (port 5319).
+
 ### P1 — Cheap re-render fixes
 
 **Repro:**
@@ -1254,7 +1277,7 @@ zoom and shortcuts still work.
 
 ### Round 3 verdict log
 
-- [x] S1 · [x] S2 · [x] S3 · [x] S4 · [x] S5 · [x] S6 · [x] S7 · [x] S8 · [x] S9 · [x] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [x] S10 · [ ] S11 · [ ] L1
+- [x] S1 · [x] S2 · [x] S3 · [x] S4 · [x] S5 · [x] S6 · [x] S7 · [x] S8 · [x] S9 · [x] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [x] S10 · [ ] S11 · [ ] S12 · [ ] L1
 
 - S2: PASS at `29f5ad2`, first round. In the browser, a 20-step drag was undone by one Cmd+Z, and redo restored it. Merged as `d4e6002`. Note: the X/Y position inputs also coalesce with a drag on the same frame (by design).
 - S1: PASS at `8dfbf5b`, first round. The verdict was formatted as 'CONCERNS: none blocking / PASS' and treated as PASS. In the browser, typing Georgia gives 1 link and 'Inter, system-ui' loads Inter only. Merged as `d2bee72`. Notes: no test covers a layer-font change after mount (the code path is not debounced, confirmed in the browser); `preloadFont` skips `primaryFontFamily` (hover only).
