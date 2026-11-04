@@ -1,6 +1,4 @@
-import { useDesignerContext } from "./useDesignerContext";
+import { useDesignerSelector } from "./useDesignerSelector";
 
-export const useLayerTypes = () => {
-	const { state } = useDesignerContext();
-	return state.layerTypes;
-};
+export const useLayerTypes = () =>
+	useDesignerSelector((state) => state.layerTypes);

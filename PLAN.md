@@ -1155,6 +1155,21 @@ zoom and shortcuts still work.
 
 **Test:** `bunx vitest run src/hooks/useDesignerSelector.test.tsx src/test/renderCounts.test.tsx`
 
+**Amendment (approved by the user after the P2 fixer's report):**
+1. `hooks/useDesignerContext.ts` joins P2's files. The context now holds the store, so this hook
+   derives a memoised `{state, dispatch}` from a whole-state selector, and every unmigrated caller
+   keeps working.
+2. One existing assertion changes, as an exception to "existing tests pass unchanged". P1's
+   `useSelectedLayers` reference test asserted that the probe *re-renders* after `SET_ZOOM`
+   (`seen.length > count`). That was only true because of the over-rendering P2 removes, so it is
+   inverted to `toBe(count)`. Its reference-stability assertion is unchanged.
+3. **(After the P2 verifier's CONCERNS, approved by the user)** `components/ZoomControl.tsx` and
+   `components/PaneLayerTree.tsx` join P2. Both switch from whole-state `useDesignerContext()` to
+   selector hooks (`useZoom`, `useLayers`, `useSelectedLayers`, `useLayerTypes`, and breakpoint and
+   active-breakpoint selectors as needed), and so do the tree rows. The two render-count bullets
+   must be proven on the **real** components: a zoom change causes 0 commits of `PaneLayerTree` and
+   its rows, and an `UPDATE_LAYER_CSS` causes 0 commits of `ZoomControl`.
+
 ### P3 — Per-layer rendering and an id index
 
 **Fix:**

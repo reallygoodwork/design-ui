@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { isPrimaryBreakpoint } from "../lib/breakpointUtils";
 import type { Breakpoint, CSSVars, Layer, LayerType } from "../lib/Types";
 
@@ -839,6 +839,36 @@ type UseDesignerProps = {
 };
 
 /**
+ * A minimal external store around the reducer. `dispatch` and `subscribe` are
+ * referentially stable for the lifetime of the store.
+ */
+export type DesignerStore = {
+	getState: () => State;
+	dispatch: React.Dispatch<Action>;
+	subscribe: (listener: () => void) => () => void;
+};
+
+export const createDesignerStore = (initial: State): DesignerStore => {
+	let state = initial;
+	const listeners = new Set<() => void>();
+	return {
+		getState: () => state,
+		dispatch: (action) => {
+			const next = reducer(state, action);
+			if (next === state) return;
+			state = next;
+			for (const listener of [...listeners]) listener();
+		},
+		subscribe: (listener) => {
+			listeners.add(listener);
+			return () => {
+				listeners.delete(listener);
+			};
+		},
+	};
+};
+
+/**
  * The core hook for the designer state management.
  */
 export const useDesigner = ({
@@ -865,21 +895,27 @@ export const useDesigner = ({
 				]
 			: []);
 
-	const [state, dispatch] = useReducer(reducer, {
-		...initialState,
-		layers: defaultLayers || layers || [],
-		layerTypes: layerTypes || [],
-		frameSize,
-		breakpoints: initialBreakpoints,
-		activeBreakpointId: initialBreakpoints[0]?.id ?? null,
-		frameStyles: frameStyles ?? {},
-	});
+	const storeRef = useRef<DesignerStore | null>(null);
+	if (!storeRef.current) {
+		storeRef.current = createDesignerStore({
+			...initialState,
+			layers: defaultLayers || layers || [],
+			layerTypes: layerTypes || [],
+			frameSize,
+			breakpoints: initialBreakpoints,
+			activeBreakpointId: initialBreakpoints[0]?.id ?? null,
+			frameStyles: frameStyles ?? {},
+		});
+	}
+	const store = storeRef.current;
+	const { dispatch } = store;
+	const state = useSyncExternalStore(store.subscribe, store.getState);
 
 	useEffect(() => {
 		if (layers) {
 			dispatch({ type: "SET_LAYERS", payload: layers });
 		}
-	}, [layers]);
+	}, [layers, dispatch]);
 
 	useEffect(() => {
 		if (onLayersChange) {
@@ -887,5 +923,5 @@ export const useDesigner = ({
 		}
 	}, [state.layers, onLayersChange]);
 
-	return { state, dispatch };
+	return { state, dispatch, store };
 };
