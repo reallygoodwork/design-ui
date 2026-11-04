@@ -139,8 +139,8 @@ export const BreakpointHeader = ({
 	};
 
 	return (
-		<button
-			type="button"
+		// biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: a wrapper div avoids nesting the add button inside a button; keyboard users select a breakpoint from its section header in the layer tree
+		<div
 			className={cn(
 				"breakpoint-header flex items-center gap-2 px-2 py-1 text-xs select-none",
 				isActive || isSelected ? "text-primary" : "text-muted-foreground",
@@ -183,6 +183,6 @@ export const BreakpointHeader = ({
 			>
 				<IconPlus className="size-3.5" />
 			</button>
-		</button>
+		</div>
 	);
 };
