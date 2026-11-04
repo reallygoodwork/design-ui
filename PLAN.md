@@ -506,6 +506,202 @@ a lighter background, so it's obvious what the selection includes.
 
 ---
 
+## Round 2: remaining bugs (requested by the user after round 1)
+
+Same process as round 1: one `bug-fixer` per task in an orchestrator-made worktree, a fresh blind
+`verifier` with real-browser checks, merge only on PASS, and a final integration check at the end.
+At most 2 fixers run at once. Not in scope: lint warnings (including the `applyAction` complexity
+warning), which aren't bugs, and the architecture follow-ups (iframe rendering, which fully fixes the
+Tailwind preflight leak, plus the flat node map and so on).
+
+### Round 2 tasks and dependencies
+
+| Task | Edits (under `src/`) | Tests | Blocked by |
+|---|---|---|---|
+| **R1** Row click | `components/PaneLayerTree.tsx`; may add `@testing-library/user-event` to `package.json`/`bun.lock` | `components/PaneLayerTree.test.tsx` | — |
+| **R2** Section-header nested button | `components/PaneLayerTree.tsx` | `components/PaneLayerTree.test.tsx` | R1 (same file) |
+| **R3** Tree drag-handle warning | `components/PaneLayerTree.tsx` | `components/PaneLayerTree.test.tsx` | R2 (same file) |
+| **R4** Frame-header nested button | `components/BreakpointHeader.tsx` | new `components/BreakpointHeader.test.tsx` | — |
+| **R5** Editor colour leaks into design | `components/BreakpointFrame.tsx`, `lib/layers/text.tsx` (defaults) | `components/BreakpointFrame.test.tsx` | — |
+| **R6** Font control shows "Arial" for inherited font | `components/actions/ActionFontFamily.tsx` | new `components/actions/ActionFontFamily.test.tsx` | — |
+| **R7** Dead canvas selector | `components/DesignerCanvas.tsx` | `components/DesignerCanvas.test.tsx` | — |
+
+Order: R1 ∥ R4, then R2, R5, R6 and R7 as slots free up (R2 only after R1 merges), then R3, then a
+final integration check.
+
+- [ ] R1 · [ ] R2 · [ ] R3 · [ ] R4 · [ ] R5 · [ ] R6 · [ ] R7
+
+---
+
+## R1 — Clicking most of a layer-tree row doesn't select it
+
+**Repro:** In the layer tree, click a row to the right of its name, or in the padding between icon and
+name. Nothing is selected. Only clicks landing exactly on the name `<span>`, the icon or the spacer
+select. `elementFromPoint` at those dead spots returns the inner `<button type="button"
+onDoubleClick>`, which swallows React Aria's press on the row. This was already broken on `main` (final
+integration check). The verifier confirmed that changing that `<button>` to a non-interactive element
+makes every click select.
+
+**Suspected files:** `src/components/PaneLayerTree.tsx` (`LayerTreeItemContent`, the "Layer icon
+and name" `<button>`, around lines 128–132).
+
+**Fix:** Make the icon and name wrapper non-interactive (`<div>` or `<span>`), and keep
+`onDoubleClick` for inline rename. Don't nest interactive elements inside the row except the
+chevron (`slot="chevron"`) and lock buttons.
+
+**Acceptance:**
+- In a real browser, a mouse click anywhere on a row's name area (on the name, right of it, or in
+  the padding) selects that layer in the active breakpoint section.
+- Double-clicking the name still opens inline rename, and Enter or Escape closes it.
+- The chevron still expands and collapses, and the lock button still toggles the lock without selecting.
+- Shift-click behaviour is unchanged from before.
+- jsdom: a pointer click (via `@testing-library/user-event`) on the row's name wrapper outside the
+  name text selects the layer. This test fails on the old code.
+
+**Test:** `bunx vitest run src/components/PaneLayerTree.test.tsx -t "row click"`, plus the browser check.
+
+---
+
+## R2 — Breakpoint section header nests a `<button>` inside a `<button>`
+
+**Repro:** The console logs `validateDOMNesting: <button> cannot appear as a descendant of <button>`
+from `BreakpointSectionHeader` in `PaneLayerTree.tsx` (around line 202): the chevron toggle
+`<button>` is inside the header `<button>`. That's invalid HTML, and the two click targets overlap.
+
+**Suspected files:** `src/components/PaneLayerTree.tsx` (`BreakpointSectionHeader`).
+
+**Fix:** Make the chevron toggle and the header-select button siblings inside a non-interactive
+wrapper. Keep the visuals: same row, active background and hover state.
+
+**Acceptance:**
+- No `<button>` inside a `<button>` in the section header. A jsdom render logs no `validateDOMNesting`
+  error, and the structural assertion `header.querySelector("button button")` is `null`.
+- Clicking the header selects the breakpoint (`SELECT_BREAKPOINT`).
+- Clicking the chevron toggles expand and collapse without selecting.
+- The browser console no longer shows this warning.
+
+**Test:** `bunx vitest run src/components/PaneLayerTree.test.tsx -t "section header"`, plus the browser check.
+
+---
+
+## R3 — React Aria warns that draggable tree items have no drag handle
+
+**Repro:** For every row, the console logs `Draggable items in a Tree must contain a <Button
+slot="drag">`. The tree uses `useDragAndDrop`, but `TreeItemContent` has no drag-slot button, so
+keyboard and screen-reader users can't start a drag.
+
+**Suspected files:** `src/components/PaneLayerTree.tsx` (`LayerTreeItemContent`).
+
+**Fix:** Add a React Aria `<Button slot="drag">` with a grip icon (for example `IconGripVertical`) to
+each row. Show it on row hover or focus, so the row looks the same at rest, and give it an
+`aria-label`. Mouse drag on the row keeps working.
+
+**Acceptance:**
+- Rendering the tree logs no "must contain a <Button slot=\"drag\">" warning (jsdom spy).
+- Every row has exactly one `[slot="drag"]` button with an accessible name.
+- In a real browser, mouse drag of a row onto a frame still nests it (as in the B8 check), and row
+  click selection from R1 still works.
+
+**Test:** `bunx vitest run src/components/PaneLayerTree.test.tsx -t "drag handle"`, plus the browser check.
+
+---
+
+## R4 — Breakpoint frame header nests a `<button>` inside a `<button>`
+
+**Repro:** In jsdom test output and the browser console, `validateDOMNesting` reports a `<button>`
+inside a `<button>` from `BreakpointHeader` (`src/components/BreakpointHeader.tsx`, the outer
+`<button>` around line 142 contains another around line 178).
+
+**Suspected files:** `src/components/BreakpointHeader.tsx`.
+
+**Fix:** Restructure so the two click targets are siblings in a non-interactive wrapper. Keep the
+header's existing select, drag-start (the `closest("button")` guard around line 52) and inner-button
+behaviours, and keep the visuals.
+
+**Acceptance:**
+- `querySelector("button button")` inside the header is `null`, and no `validateDOMNesting` error is
+  logged on render.
+- Clicking the header still selects its breakpoint, and the inner button still does its action
+  without triggering the header's.
+- Dragging the header to move the frame works as before, in the browser.
+
+**Test:** `bunx vitest run src/components/BreakpointHeader.test.tsx`, plus the browser check.
+
+---
+
+## R5 — Editor text colour leaks into the design; new text ignores the frame colour
+
+**Repro:**
+- In a real browser, the frame root's computed `color` is `lab(98 0 0)`, which is the editor's
+  dark-theme foreground. A text layer with no `--color` of its own renders white on white.
+- Separately, the text layer default `--color: #000000` shadows the frame colour, so setting a frame
+  colour never reaches newly added text (B6 verifier note).
+
+**Suspected files:** `src/components/BreakpointFrame.tsx` (the root `style`), `src/lib/layers/text.tsx`
+(`defaultValues`).
+
+**Fix:**
+- Give the frame root a default `color` of `#000000` when `frameStyles` has no `--color`, mirroring
+  the existing `#ffffff` background fallback, so the design never inherits editor colours.
+- Remove `--color` from the text layer's `defaultValues`.
+- Out of scope: Tailwind preflight resets (`h1` and `p` margins) inside designs. Those belong to the
+  iframe follow-up.
+
+**Acceptance:**
+- With no frame colour, a text layer with no `--color` computes `rgb(0, 0, 0)` in every frame, in
+  both light and dark editor themes (real browser).
+- With frame `--color: #ff0000`, a newly added text layer computes `rgb(255, 0, 0)`, and a layer
+  with an explicit colour keeps it.
+- jsdom: the root carries `color: #000000` (or the frame colour), and `textLayerType.defaultValues`
+  has no `--color`. The B5, B6 and B7 tests still pass.
+
+**Test:** `bunx vitest run src/components/BreakpointFrame.test.tsx -t "default colour"`, plus the browser check.
+
+---
+
+## R6 — Font control shows "Arial" for text that inherits the frame font
+
+**Repro:** Set the frame font to Georgia and select a text layer with no `--font-family`. The
+Typography font control shows "Arial", but the text renders in Georgia.
+`ActionFontFamily.tsx` uses `selectedLayer?.cssVars?.["--font-family"] || "Arial"`.
+
+**Suspected files:** `src/components/actions/ActionFontFamily.tsx`.
+
+**Fix:** When the layer has no font of its own, show the font it actually inherits: the frame's
+`--font-family` from `state.frameStyles`, marked as inherited (for example, muted or placeholder
+styling like the other inherited-value controls). If no frame font is set, show a neutral "Default"
+label instead of "Arial". Selecting a font still sets the layer's own `--font-family`.
+
+**Acceptance:**
+- A layer with no font plus frame Georgia shows "Georgia", visibly marked as inherited.
+- A layer with no font and no frame font shows "Default", not "Arial".
+- A layer with an explicit font shows that font, unmarked.
+- Choosing a font still dispatches `UPDATE_LAYER_CSS` with `--font-family`.
+
+**Test:** `bunx vitest run src/components/actions/ActionFontFamily.test.tsx`, plus a browser check of the panel.
+
+---
+
+## R7 — Canvas Selecto target `.designer-frame .designer-layer` never matches
+
+**Repro:** `DesignerCanvas.tsx` (around line 524) passes `".designer-frame .designer-layer"` to
+Selecto's `selectableTargets`, but no element has the class `designer-frame` (only
+`data-slot="designer-frame"`), so the selector is dead. The live target is
+`.breakpoint-content .designer-layer`.
+
+**Suspected files:** `src/components/DesignerCanvas.tsx`.
+
+**Fix:** Remove the dead selector. Leave the live one.
+
+**Acceptance:**
+- `selectableTargets` is exactly `[".breakpoint-content .designer-layer"]` (assert via the existing
+  `react-selecto` mock in `DesignerCanvas.test.tsx`).
+- Canvas click selection, drill-down and marquee behave as before (browser).
+
+**Test:** `bunx vitest run src/components/DesignerCanvas.test.tsx -t "selectable targets"`, plus the browser check.
+
+---
+
 ## Verification (end to end)
 
 1. `bun run test`: all suites green (`useDesigner.test.ts`, `BreakpointFrame.test.tsx`,
