@@ -1,7 +1,8 @@
-import { act, render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, fireEvent, render } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { DesignerProvider } from "../context/DesignerContext";
 import { useDesignerContext } from "../hooks/useDesignerContext";
+import { inputLayerType } from "../lib/layers/input";
 import { textLayerType } from "../lib/layers/text";
 import {
 	breakpoints,
@@ -163,5 +164,77 @@ describe("frame styles", () => {
 	it("new text layers do not hard-code a font family", () => {
 		const vars = textLayerType.defaultValues.cssVars as Record<string, string>;
 		expect(vars["--font-family"]).toBeUndefined();
+	});
+});
+
+const Selected = () => {
+	const { state } = useDesignerContext();
+	return <output data-testid="sel">{state.selectedBreakpointId ?? ""}</output>;
+};
+
+describe("frame root", () => {
+	const nested = makeLayer("outer", undefined, {
+		type: "frame",
+		children: [
+			makeLayer("inner", undefined, {
+				type: "text",
+				value: "Hi",
+				elementType: "p",
+			}),
+		],
+	});
+	const content = (c: HTMLElement, bp: string) =>
+		c.querySelector(
+			`.breakpoint-frame[data-breakpoint-id="${bp}"] .breakpoint-content`
+		) as HTMLElement;
+
+	it(".breakpoint-content is a DIV", () => {
+		const { container } = renderInDesigner(<Frames />);
+		expect(content(container, "mobile").tagName).toBe("DIV");
+	});
+
+	it("logs no DOM nesting error for nested block layers", () => {
+		const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+		const input = makeLayer("in", undefined, { type: "input", value: "x" });
+		const { container } = render(
+			<DesignerProvider
+				defaultLayers={[nested, input]}
+				defaultLayerTypes={[...defaultLayerTypes, inputLayerType]}
+				breakpoints={breakpoints}
+			>
+				<Frames />
+			</DesignerProvider>
+		);
+		const layerEls = container.querySelectorAll(
+			".breakpoint-content .designer-layer"
+		);
+		expect(layerEls.length).toBeGreaterThan(0);
+		for (const el of layerEls) {
+			expect(el.closest("button")).toBeNull();
+		}
+		const bad = spy.mock.calls
+			.map((a) => a.map(String).join(" "))
+			.filter(
+				(m) =>
+					m.includes("validateDOMNesting") ||
+					/cannot be a (descendant|child) of/.test(m)
+			);
+		spy.mockRestore();
+		expect(bad).toEqual([]);
+	});
+
+	it("selects the breakpoint on empty space click, not on layer click", () => {
+		const { container, getByTestId } = renderInDesigner(
+			<>
+				<Frames />
+				<Selected />
+			</>,
+			{ layers: [nested] }
+		);
+		const before = getByTestId("sel").textContent;
+		fireEvent.click(find(container, "tablet", "inner"));
+		expect(getByTestId("sel").textContent).toBe(before);
+		fireEvent.click(content(container, "tablet"));
+		expect(getByTestId("sel").textContent).toBe("tablet");
 	});
 });

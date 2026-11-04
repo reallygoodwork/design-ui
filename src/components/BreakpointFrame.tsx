@@ -139,8 +139,8 @@ export const BreakpointFrame = ({
 				isActive={isActive}
 				isSelected={isSelected}
 			/>
-			<button
-				type="button"
+			{/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: keyboard users select a breakpoint from its section header in the layer tree */}
+			<div
 				className={cn(
 					"breakpoint-content relative",
 					isActive && !isSelected && "ring-1 ring-primary/30"
@@ -165,7 +165,7 @@ export const BreakpointFrame = ({
 						state={state}
 					/>
 				))}
-			</button>
+			</div>
 		</div>
 	);
 };
