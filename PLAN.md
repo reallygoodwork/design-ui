@@ -74,7 +74,10 @@ Critical path: `T0 → B9 → B5 → H → B8 → F` (6 steps).
 HEAD (the fixer's own report never counts), it's merged into
 `fix/review-bugs`, the global gate is green on the merged branch, and its box is checked below.
 
-- [ ] T0 · [ ] B1 · [ ] B9 · [ ] B5 · [ ] H · [ ] B6 · [ ] B7 · [ ] B8 · [ ] F
+- [x] T0 · [ ] B1 · [ ] B9 · [ ] B5 · [ ] H · [ ] B6 · [ ] B7 · [ ] B8 · [ ] F
+
+**Verdict log:**
+- T0: PASS at `ad81b8b` after 2 retry rounds (CONCERNS ×2: `biome.json` scope and fixture name, both approved as amendments; then fixture helpers not exercised, fixed). Merged as `42a0b1c`.
 
 ---
 
