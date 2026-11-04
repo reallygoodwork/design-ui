@@ -1,25 +1,74 @@
 import type React from "react";
+import { memo } from "react";
 import { useDesignerContext } from "../hooks/useDesignerContext";
+import { useDesignerSelector } from "../hooks/useDesignerSelector";
+import { useLayer } from "../hooks/useLayer";
 import { useLayers } from "../hooks/useLayers";
-import { getEffectiveStyles } from "../lib/breakpointUtils";
+import { useLayerTypes } from "../hooks/useLayerTypes";
+import { sortBreakpointsByWidth } from "../lib/breakpointUtils";
 import { cn } from "../lib/cn";
 import { applyCssVars } from "../lib/cssPropertyMapping";
-import type { Breakpoint, Layer, LayerWithStyles } from "../lib/Types";
+import type { Breakpoint, CSSVars, Layer, LayerWithStyles } from "../lib/Types";
 import { BreakpointHeader } from "./BreakpointHeader";
 
+const sortedCache = new WeakMap<Breakpoint[], Breakpoint[]>();
+
+/** Breakpoints sorted by width, computed once per breakpoints array. */
+const selectSortedBreakpoints = (state: {
+	breakpoints: Breakpoint[];
+}): Breakpoint[] => {
+	let sorted = sortedCache.get(state.breakpoints);
+	if (!sorted) {
+		sorted = sortBreakpointsByWidth(state.breakpoints);
+		sortedCache.set(state.breakpoints, sorted);
+	}
+	return sorted;
+};
+
 /**
- * Renders a single layer with breakpoint-specific styles.
+ * Mobile-first cascade, same as `getEffectiveStyles` but over breakpoints that
+ * are already sorted.
  */
-const DesignerLayer = ({
-	layer,
+const getEffectiveStylesSorted = (
+	layer: Layer,
+	breakpointId: string,
+	sorted: Breakpoint[]
+): CSSVars => {
+	const targetIndex = sorted.findIndex((bp) => bp.id === breakpointId);
+	let effective: CSSVars = { ...layer.cssVars };
+	if (targetIndex === -1) {
+		return effective;
+	}
+	for (let i = 1; i <= targetIndex; i++) {
+		const overrides = layer.breakpointCssVars?.[sorted[i].id];
+		if (overrides) {
+			effective = { ...effective, ...overrides };
+		}
+	}
+	return effective;
+};
+
+/**
+ * Renders a single layer with breakpoint-specific styles. Memoised over
+ * `{id, breakpointId}` and subscribed to its own layer, so editing one layer
+ * only re-renders it and its ancestors.
+ */
+const DesignerLayer = memo(function DesignerLayerView({
+	id,
 	breakpointId,
-	state,
 }: {
-	layer: Layer;
+	id: string;
 	breakpointId: string;
-	state: ReturnType<typeof useDesignerContext>["state"];
-}) => {
-	const layerType = state.layerTypes.find((lt) => lt.type === layer.type);
+}) {
+	const layer = useLayer(id);
+	const layerTypes = useLayerTypes();
+	const sortedBreakpoints = useDesignerSelector(selectSortedBreakpoints);
+
+	if (!layer) {
+		return null;
+	}
+
+	const layerType = layerTypes.find((lt) => lt.type === layer.type);
 
 	if (!layerType) {
 		return null;
@@ -30,8 +79,8 @@ const DesignerLayer = ({
 
 	// Get effective styles for this layer at this breakpoint (mobile-first cascade)
 	const effectiveCssVars =
-		state.breakpoints.length > 0
-			? getEffectiveStyles(layer, breakpointId, state.breakpoints)
+		sortedBreakpoints.length > 0
+			? getEffectiveStylesSorted(layer, breakpointId, sortedBreakpoints)
 			: (layer.cssVars ?? {});
 
 	// Determine if layer has explicit dimensions
@@ -61,16 +110,15 @@ const DesignerLayer = ({
 		effectiveCssVars,
 	};
 
-	// Render nested children with the same breakpointId
+	// Render nested children by id with the same breakpointId
 	const children =
 		layer.children && layer.children.length > 0 ? (
 			<>
 				{layer.children.map((child) => (
 					<DesignerLayer
 						key={child.id}
-						layer={child}
+						id={child.id}
 						breakpointId={breakpointId}
-						state={state}
 					/>
 				))}
 			</>
@@ -87,7 +135,7 @@ const DesignerLayer = ({
 			{layerType.render(layerWithStyles, children, elementType)}
 		</div>
 	);
-};
+});
 
 export type BreakpointFrameProps = {
 	breakpoint: Breakpoint;
@@ -161,9 +209,8 @@ export const BreakpointFrame = ({
 				{layers.map((layer) => (
 					<DesignerLayer
 						key={layer.id}
-						layer={layer}
+						id={layer.id}
 						breakpointId={breakpoint.id}
-						state={state}
 					/>
 				))}
 			</div>

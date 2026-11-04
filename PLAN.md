@@ -1190,6 +1190,12 @@ zoom and shortcuts still work.
 
 **Test:** `bunx vitest run src/lib/layerIndex.test.ts src/test/renderCounts.test.tsx`, plus browser.
 
+**Correction and amendment (approved by the user after the P3 fixer stopped):** the plan wrongly
+assumed `updateLayerById` keeps untouched subtrees' identity. It rebuilds every layer that has
+children, so editing A11 also gives the unrelated layer B a new object. `hooks/useDesigner.ts`
+(`updateLayerById` only) joins P3: when nothing in a layer's subtree changed, return the original
+layer object and children array. Existing reducer tests must still pass unchanged.
+
 ### P4 — Flat normalized state behind the nested API
 
 **Fix:**

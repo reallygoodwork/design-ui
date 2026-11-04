@@ -235,19 +235,25 @@ const updateLayerById = (
 	layerId: string,
 	updater: (layer: Layer) => Layer
 ): Layer[] => {
-	return layers.map((layer) => {
+	let changed = false;
+	const next = layers.map((layer) => {
 		if (layer.id === layerId) {
+			changed = true;
 			return updater(layer);
 		}
 		// Recursively update children if they exist
 		if (layer.children && layer.children.length > 0) {
-			return {
-				...layer,
-				children: updateLayerById(layer.children, layerId, updater),
-			};
+			const children = updateLayerById(layer.children, layerId, updater);
+			// Untouched subtrees keep their identity
+			if (children === layer.children) {
+				return layer;
+			}
+			changed = true;
+			return { ...layer, children };
 		}
 		return layer;
 	});
+	return changed ? next : layers;
 };
 
 // Helper function to insert a layer at a specific position
