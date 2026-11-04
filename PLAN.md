@@ -90,6 +90,7 @@ HEAD (the fixer's own report never counts), it's merged into
 - B7: PASS at `b2c10c0` after 1 retry round, with a browser check. CONCERNS: the DOM-nesting test didn't discriminate, so a no-`button`-ancestor assertion was added. Merged as `3f55114`.
 - B8: PASS at `3d05d65`, first round, with a browser check (no 'inside' button on text; a tree drop onto text only reorders). Merged as `3295606`. Note: the guard raises the `applyAction` complexity warning from 17 to 21; no test yet that a blocked action preserves a coalescing run.
 - F: PASS at `1e81006`, first round, with a browser check in light and dark themes. Merged as `5f61fdd`. Notes: a mouse click on a tree row didn't select it under agent-browser (the same happens at 4dedb87, before F; keyboard selection works); the light-theme tint is faint (about L99 against L100).
+- **Final integration check:** PASS at `601eb4a` (`main...fix/review-bugs`). Every acceptance criterion holds, and no shared-file reverts were found. The browser re-checked B1, H, B5, B6 and B9. It found that a mouse click on most of a layer-tree row doesn't select it. This was already broken on `main`, and the cause is the inner `<button onDoubleClick>` in `TreeItemContent` (`PaneLayerTree.tsx:128-132`).
 
 ---
 
@@ -531,5 +532,7 @@ a lighter background, so it's obvious what the selection includes.
 - Existing nested `<button>` warnings: `PaneLayerTree.tsx:256` (`BreakpointSectionHeader`) and
   `BreakpointHeader.tsx:14`; React Aria warns that draggable tree items have no `slot="drag"` button.
 - `DesignerCanvas.tsx:526` selector `.designer-frame .designer-layer` never matches anything.
+- Layer-tree row click (above). Also, the Typography panel shows "Arial" for text that inherits the frame font
+  (`ActionFontFamily.tsx` fallback).
 - Headless core package, `applyOps`, MCP server.
 - React 19 / Vite 7 upgrade; bundle split; README refresh.
