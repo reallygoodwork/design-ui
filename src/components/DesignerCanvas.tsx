@@ -600,15 +600,9 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 					ables={[DimensionAble, StructureAble]}
 					ref={moveableRef}
 					target={selectedLayerElements as MoveableRefTargetType}
-					draggable={true}
-					throttleDrag={1}
+					draggable={false}
 					edgeDraggable={false}
-					startDragRotate={0}
 					// scrollable={true}
-					throttleDragRotate={0}
-					onDrag={(e) => {
-						e.target.style.transform = e.transform;
-					}}
 					props={{
 						dimensionViewable: true,
 						structureViewable: true,
