@@ -18,18 +18,16 @@ export const DimensionAble = {
 	) {
 		const rect = moveable.getRect();
 		const isLocked = moveable.props.isLocked ?? false;
-		// The label lives inside InfiniteViewer's scaled viewport, so it is scaled by
-		// viewerZoom on screen. Counter-scale by 1/viewerZoom (and divide the offsets)
-		// to keep it a constant screen size. rect.offsetWidth/Height are unzoomed CSS px.
-		const inverse = 1 / (moveable.props.viewerZoom || 1);
+		// Moveable's control box renders in screen space (outside the scaled viewport),
+		// so the label is already a constant screen size. viewerZoom is declared for
+		// ables but intentionally unused here. rect.offsetWidth/Height are unzoomed CSS px.
 
 		// Add key (required)
 		// Add class prefix moveable-(required)
 		const style: CSSProperties = {
-			"--left": `${2 * inverse}px`,
-			"--top": `${rect.height + 4 * inverse}px`,
-			transform: `scale(${inverse})`,
-			transformOrigin: "left top",
+			"--left": `2px`,
+			"--top": `${rect.height + 4}px`,
+			transformOrigin: "center top",
 		} as CSSProperties;
 
 		return (

@@ -595,8 +595,6 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 					ables={[DimensionAble, StructureAble]}
 					ref={moveableRef}
 					target={selectedLayerElements as MoveableRefTargetType}
-					// Moveable renders inside the scaled viewer, so invert the zoom to keep handles a constant screen size
-					zoom={1 / state.zoom}
 					draggable={false}
 					edgeDraggable={false}
 					// scrollable={true}

@@ -163,7 +163,7 @@ describe("header drag", () => {
 		header.appendChild(inner);
 		container.appendChild(header);
 		const layer = document.createElement("div");
-		layer.className = "designer-layer";
+		layer.className = "designer-layer moveable-dimension";
 		const layerChild = document.createElement("span");
 		layer.appendChild(layerChild);
 		container.appendChild(layer);
@@ -202,11 +202,12 @@ describe("zoom", () => {
 		);
 	});
 
-	it("gives Moveable zoom === 1 / state.zoom", () => {
-		setZoom(2);
-		expect(moveableProps.current?.zoom).toBe(0.5);
-		setZoom(0.5);
-		expect(moveableProps.current?.zoom).toBe(2);
+	it("does not override Moveable's own zoom at any canvas zoom", () => {
+		for (const z of [0.5, 1, 2]) {
+			setZoom(z);
+			const mz = moveableProps.current?.zoom;
+			expect(mz === undefined || mz === 1).toBe(true);
+		}
 	});
 
 	it("passes viewerZoom to the ables and no custom zoom key", () => {
@@ -224,8 +225,8 @@ describe("zoom", () => {
 		);
 	});
 
-	it("DimensionAble shows the unzoomed size, counter-scaled", () => {
-		const renderLabel = (viewerZoom: number) => {
+	it("DimensionAble shows the unzoomed size with no zoom-dependent transform", () => {
+		for (const viewerZoom of [0.5, 1, 2]) {
 			const el = DimensionAble.render(
 				{
 					getRect: () => ({ height: 100, offsetWidth: 120, offsetHeight: 80 }),
@@ -233,19 +234,14 @@ describe("zoom", () => {
 				} as never,
 				{} as never
 			);
-			return render(el as ReactElement).container;
-		};
-		const at2 = renderLabel(2);
-		expect(at2.textContent).toBe("120 x 80");
-		expect(
-			(at2.querySelector(".moveable-dimension") as HTMLElement).style.transform
-		).toBe("scale(0.5)");
-		cleanup();
-		const at05 = renderLabel(0.5);
-		expect(at05.textContent).toBe("120 x 80");
-		expect(
-			(at05.querySelector(".moveable-dimension") as HTMLElement).style.transform
-		).toBe("scale(2)");
+			const { container } = render(el as ReactElement);
+			const label = container.querySelector(
+				".moveable-dimension"
+			) as HTMLElement;
+			expect(container.textContent).toBe("120 x 80");
+			expect(label.style.transform).toBe("");
+			cleanup();
+		}
 	});
 });
 
@@ -277,7 +273,7 @@ describe("moveable control clicks", () => {
 		handle = document.createElement("span");
 		box.appendChild(handle);
 		layer = document.createElement("div");
-		layer.className = "designer-layer";
+		layer.className = "designer-layer moveable-dimension";
 		container.append(box, layer);
 		controlBox.current = box;
 		act(() => {
