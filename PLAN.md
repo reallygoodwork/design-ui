@@ -815,7 +815,7 @@ Paths are under `src/`. "→" means "blocked by".
 | 13 | **P4** Flat normalized state behind the nested API | `hooks/useDesigner.ts`, `lib/Types.ts`, new `lib/layerTree.ts`, `lib/layerIndex.ts`, `hooks/useLayers.ts`, `components/PaneLayerTree.tsx`; test helpers in `useDesigner.test.ts`, `fixtures.test.tsx`, `ActionFontFamily.test.tsx` | `lib/layerTree.test.ts`, existing suites | P3 |
 | 14 | **I1** Frame-root registry (seam refactor; no behaviour change) | new `hooks/useFrameRegistry.tsx`, `components/BreakpointFrame.tsx`, `components/DesignerCanvas.tsx`, `hooks/useLayerDimensions.ts` | new `hooks/useFrameRegistry.test.tsx` | P3, S8 |
 | 15 | **I2** Shadow-root style isolation | new `components/FrameShadowRoot.tsx`, `components/BreakpointFrame.tsx`, `hooks/useFrameRegistry.tsx`, `BreakpointFrame.test.tsx` (route queries through a shadow helper) | `components/FrameShadowRoot.test.tsx` | I1 |
-| 17 | **S10** Every panel control affects the canvas | `lib/cssPropertyMapping.ts`, `lib/layers/{frame,text,image,input}.tsx` (`supportedCssProperties`), panel action components only if a sub-value must be combined (`components/actions/Action{FlexWrap,GridLayout,Margin,TextDecoration,TextShadow,TextStyle,AlignItems}.tsx`) | new `lib/panelControls.test.tsx`, `lib/cssPropertyMapping.test.ts` | S6 |
+| 17 | **S10** Every panel control affects the canvas | `lib/cssPropertyMapping.ts`, `lib/layers/{frame,text,image,input}.tsx` (`supportedCssProperties`), panel action components only if a sub-value must be combined (`components/actions/Action{FlexWrap,GridLayout,Margin,TextDecoration,TextShadow,TextStyle,AlignItems,TextTransform}.tsx`) | new `lib/panelControls.test.tsx`, `lib/cssPropertyMapping.test.ts` | S6 |
 | 16 | **L1** Zero lint warnings, enforced | `hooks/useDesigner.ts` (split `applyAction`), `components/PaneLayerTree.tsx`, `components/FrameStylesPanel.tsx`, `components/actions/{ActionElementType,ActionTextContent,ColorActionPopover}.tsx`, `package.json` (`lint` gets `--error-on-warnings`) | the gate itself | every other task |
 
 **Order** (at most 2 fixers at once): S1 ∥ S2 → S3 ∥ S5 → S6 ∥ S8 → S4 ∥ S9 → S7 → P1 → P2 → P3
@@ -1033,6 +1033,17 @@ maps. UNDO restores both the breakpoint and the overrides.
 - **(Amended per the user, from the S6 verifier.)** Every value a control writes is valid CSS for its property. For example, Align "Center" currently writes `flex-center`; the table-driven test checks this with `CSS.supports` (or an allowlist where jsdom lacks it). `components/actions/ActionAlignItems.tsx` joins S10's files.
 
 **Test:** `bunx vitest run src/lib/panelControls.test.tsx src/lib/cssPropertyMapping.test.ts`, plus browser (port 5317).
+
+**Amendment (user decisions after the S10 fixer's audit):**
+1. Text Transform "Normal" writes `none` (valid CSS). `ActionTextTransform.tsx` joins S10's files,
+   and the expected-fail test becomes a normal test.
+2. **Accepted:** the text-shadow parts (`--text-shadow-offset-x/-y/-blur-radius/-color`) are
+   combined into `text-shadow` inside `applyCssVars` at render time, not at dispatch. An explicit
+   `--text-shadow` wins. The parts are documented as internal panel vars.
+3. **Included:** the image layer supports every control the panel shows for it (Display, Padding,
+   Background, Border and the corner radii, among others), or the panel hides controls a layer type
+   doesn't support. Choose one consistent rule and report it. Also, the TextShadow trigger label
+   reads the shadow vars, not `--text-decoration`, so `ActionTextShadow.tsx` is in scope.
 
 ### P1 — Cheap re-render fixes
 
