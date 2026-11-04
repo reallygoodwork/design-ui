@@ -533,13 +533,14 @@ To test against old code, use a scratch copy.
 Order: R1 ∥ R4, then R2, R5, R6 and R7 as slots free up (R2 only after R1 merges), then R3, then a
 final integration check.
 
-- [x] R1 · [x] R2 · [ ] R3 · [x] R4 · [x] R5 · [ ] R6 · [~] R7 (dropped)
+- [x] R1 · [x] R2 · [ ] R3 · [x] R4 · [x] R5 · [x] R6 · [~] R7 (dropped)
 
 **Round 2 verdict log:**
 - R1: PASS at `8465ffc`, first round. In a real browser, clicks right of the name, in the padding, on the name and on the icon all select. Merged as `dd0a48c`. Shift-click wasn't compared with the base branch (the tree is single-select and the selection code is unchanged).
 - R5: PASS at `08acde1`, first round. In a real browser, in dark and light themes: plain text is `rgb(0,0,0)`, a new text layer follows the frame red, and explicit colours are kept. Merged as `bd12d9c`. Note: the `App.tsx` sample text layers still set an explicit `--color` (sample data). Port 5222 was double-assigned; from now on, ports are unique per verifier run.
 - R2: PASS at `4622b2f`, first round, with a browser and keyboard check; visuals match the base. Merged as `bc6ec0a`. Note: the header's 8px edge padding no longer selects on click.
 - R4: PASS at `7ea81ef` after 2 retry rounds (CONCERNS: keyboard select lost, then the header became full width). In a real browser it matches the base visuals with 0 px difference and the same keyboard tab stops. New: drag by the name area works and doesn't select. Fixes the base bug where Enter on the header added a breakpoint. Merged as `397b29a`. Note: after a mouse click on the name, focus no longer lands on the select button.
+- R6: PASS at `882dc52` after 2 retry rounds (CONCERNS: a `FontLoader` gap from going breakpoint-aware, so the scope was amended and the user approved; then breakpoint-inherited fonts showed as explicit). All font-control states were checked in a real browser. Merged as `5babb86`.
 
 ---
 
@@ -760,7 +761,10 @@ Selecto's `selectableTargets`, but no element has the class `designer-frame` (on
 - Existing nested `<button>` warnings: `PaneLayerTree.tsx:256` (`BreakpointSectionHeader`) and
   `BreakpointHeader.tsx:14`; React Aria warns that draggable tree items have no `slot="drag"` button.
 - ~~`DesignerCanvas.tsx:526` selector never matches~~ (wrong: it's redundant, not dead; see R7).
-- Layer-tree row click (above). Also, the Typography panel shows "Arial" for text that inherits the frame font
+- Layer-tree row click (above).
+- Typing a frame font by hand requests every prefix ("G", "Ge", ...), because the frame-styles input
+  dispatches on each keystroke and `FontLoader` now loads the frame font. A comma list such as "Inter, system-ui"
+  builds a malformed font URL. Fix: debounce the input, or load only the first family. (R6 verifier note.) Also, the Typography panel shows "Arial" for text that inherits the frame font
   (`ActionFontFamily.tsx` fallback).
 - Headless core package, `applyOps`, MCP server.
 - React 19 / Vite 7 upgrade; bundle split; README refresh.
