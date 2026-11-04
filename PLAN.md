@@ -1292,7 +1292,7 @@ zoom and shortcuts still work.
 
 ### Round 3 verdict log
 
-- [x] S1 · [x] S2 · [x] S3 · [x] S4 · [x] S5 · [x] S6 · [x] S7 · [x] S8 · [x] S9 · [x] P1 · [x] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [x] S10 · [x] S11 · [ ] S12 · [ ] L1
+- [x] S1 · [x] S2 · [x] S3 · [x] S4 · [x] S5 · [x] S6 · [x] S7 · [x] S8 · [x] S9 · [x] P1 · [x] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [x] S10 · [x] S11 · [x] S12 · [ ] L1
 
 - S2: PASS at `29f5ad2`, first round. In the browser, a 20-step drag was undone by one Cmd+Z, and redo restored it. Merged as `d4e6002`. Note: the X/Y position inputs also coalesce with a drag on the same frame (by design).
 - S1: PASS at `8dfbf5b`, first round. The verdict was formatted as 'CONCERNS: none blocking / PASS' and treated as PASS. In the browser, typing Georgia gives 1 link and 'Inter, system-ui' loads Inter only. Merged as `d2bee72`. Notes: no test covers a layer-font change after mount (the code path is not debounced, confirmed in the browser); `preloadFont` skips `primaryFontFamily` (hover only).
@@ -1307,6 +1307,7 @@ zoom and shortcuts still work.
 - P1: PASS at `4559eea`, first round. Old code vs new: scroll 1→0 commits, dispatch-only 5→0, keydown adds 42→2. In the browser, scroll causes 0 React commits, and shortcuts act on the latest state. Merged as `b9c4975`.
 - S11: PASS at `f74362c` after 1 retry round. CONCERNS: a Tablet style was overwritten, and the X-clear left a stray style; fixed with a render-time `solid` default plus a breakpoint-aware Style select. Browser with preflight simulated off: borders visible, and cleared borders draw nothing. One S10 assertion changed (border-width renders 2 keys), judged a necessary consequence. Merged as `f6b3f11`. Note: the `ActionBorder` trigger label reads base cssVars (pre-existing).
 - P2: PASS at `ed26156` after 1 retry round. CONCERNS: the render-count proof was hook-level only, so the user approved migrating `ZoomControl` and `PaneLayerTree`. Two amendments were approved (`useDesignerContext.ts`; one inverted P1 assertion). In the browser, zoom causes 0 `PaneLayerTree` re-renders. Merged as `ce31087`. Note: a newly added breakpoint's tree section starts collapsed (pre-existing).
+- S12: PASS at `d0f91d1` after 1 retry round. CONCERNS: an inherited value displayed as explicit, now marked like `NumericActionControl`. In the browser, computed opacity is 0.5 with a visible fade, the Tablet override works, and the inherited tooltip shows. Merged as `bb94d46`. Note: legacy '1' reads as 100% (documented).
 
 ---
 
