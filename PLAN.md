@@ -805,7 +805,7 @@ Paths are under `src/`. "→" means "blocked by".
 | 03 | **S3** Selection outline stale after a frame moves | `components/DesignerCanvas.tsx` | `DesignerCanvas.test.tsx` | — |
 | 04 | **S4** Releasing a header drag over a layer selects it | `components/DesignerCanvas.tsx` (Selecto `dragCondition`), `components/BreakpointHeader.tsx` (marker attribute) | `DesignerCanvas.test.tsx` | S3 |
 | 05 | **S5** Light-theme tint hierarchy | `components/PaneLayerTree.tsx` (row class helper) | `PaneLayerTree.test.tsx` | — |
-| 06 | **S6** Layout controls do nothing | `lib/cssPropertyMapping.ts` | `lib/cssPropertyMapping.test.ts`, `BreakpointFrame.test.tsx` | — |
+| 06 | **S6** Layout controls do nothing | `lib/cssPropertyMapping.ts`, `components/BreakpointFrame.tsx` (children wrapper; amended) | `lib/cssPropertyMapping.test.ts`, `BreakpointFrame.test.tsx` | — |
 | 07 | **S7** Moveable zoom handling | `components/DesignerCanvas.tsx`, `components/ables/DimensionAble.tsx` | `DesignerCanvas.test.tsx` | S4 |
 | 08 | **S8** Size readout measures the wrong frame and zoomed px | `hooks/useLayerDimensions.ts`, `components/actions/ActionSize.tsx` (if needed) | `hooks/useLayerDimensions.test.tsx` | — |
 | 09 | **S9** Deleting a breakpoint leaves its overrides behind | `hooks/useDesigner.ts` | `useDesigner.test.ts` | S2 |
@@ -937,6 +937,17 @@ against the map, and add any other missing ones found.
 - Browser: setting Display Flex and a gap in the panel changes the frame's children layout.
 
 **Test:** `bunx vitest run src/lib/cssPropertyMapping.test.ts src/components/BreakpointFrame.test.tsx -t "layout"`, plus browser.
+
+**Amendment (approved by the user after the S6 verifier's CONCERNS):** `BreakpointFrame.tsx`'s
+`DesignerLayer` wraps a layer's rendered children in an extra plain `<div>`. That wrapper becomes
+the only flex or grid item, so Display Flex and the gaps can't lay out the real children. S6's
+scope now includes `components/BreakpointFrame.tsx`: remove that wrapper, or make it
+`display: contents`, so each child's `.designer-layer` is a direct flex or grid item of the
+container element.
+- Extra acceptance (jsdom): each child's `.designer-layer` is a direct child of the parent layer's
+  rendered element.
+- Extra acceptance (browser): with Display Flex and direction Row, a frame's two children sit side
+  by side, separated by the column gap.
 
 ### S7 — Moveable's zoom handling is broken
 
