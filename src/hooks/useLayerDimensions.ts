@@ -1,30 +1,9 @@
 import { useLayoutEffect, useState } from "react";
 import type { Layer } from "../lib/Types";
 import { useDesignerContext } from "./useDesignerContext";
+import { useFrameRegistry } from "./useFrameRegistry";
 
 type Dimensions = { width: number; height: number };
-
-/**
- * Find a layer's element inside a breakpoint frame (the active one, or the
- * first frame if there is none). Kept as one function so the DOM lookup can
- * later be routed through a frame registry.
- */
-const findLayerElement = (
-	layerId: string,
-	breakpointId: string | null
-): HTMLElement | null => {
-	const frame =
-		(breakpointId &&
-			document.querySelector(
-				`.breakpoint-frame[data-breakpoint-id="${breakpointId}"]`
-			)) ||
-		document.querySelector(".breakpoint-frame");
-	return (
-		frame?.querySelector<HTMLElement>(
-			`.designer-layer[data-layer-id="${layerId}"]`
-		) ?? null
-	);
-};
 
 /**
  * Hook to get the layout dimensions of a layer element in the active
@@ -36,6 +15,7 @@ const findLayerElement = (
  */
 export const useLayerDimensions = (layer: Layer | undefined) => {
 	const { state } = useDesignerContext();
+	const registry = useFrameRegistry();
 	const layerId = layer?.id;
 	const { activeBreakpointId, zoom } = state;
 	const [dimensions, setDimensions] = useState<Dimensions | null>(null);
@@ -43,7 +23,7 @@ export const useLayerDimensions = (layer: Layer | undefined) => {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: zoom triggers a re-measure
 	useLayoutEffect(() => {
 		const element = layerId
-			? findLayerElement(layerId, activeBreakpointId)
+			? registry.queryLayer(activeBreakpointId, layerId)
 			: null;
 		if (!element) {
 			setDimensions(null);
@@ -70,7 +50,7 @@ export const useLayerDimensions = (layer: Layer | undefined) => {
 		const observer = new ResizeObserver(measure);
 		observer.observe(element);
 		return () => observer.disconnect();
-	}, [layerId, activeBreakpointId, zoom]);
+	}, [layerId, activeBreakpointId, zoom, registry]);
 
 	return layerId ? dimensions : null;
 };

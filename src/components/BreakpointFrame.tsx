@@ -1,7 +1,8 @@
 import type React from "react";
-import { memo } from "react";
+import { memo, useCallback, useRef } from "react";
 import { useDesignerContext } from "../hooks/useDesignerContext";
 import { useDesignerSelector } from "../hooks/useDesignerSelector";
+import { useFrameRegistry } from "../hooks/useFrameRegistry";
 import { useLayer } from "../hooks/useLayer";
 import { useLayers } from "../hooks/useLayers";
 import { useLayerTypes } from "../hooks/useLayerTypes";
@@ -154,6 +155,25 @@ export const BreakpointFrame = ({
 }: BreakpointFrameProps) => {
 	const { state, dispatch } = useDesignerContext();
 	const layers = useLayers();
+	const registry = useFrameRegistry();
+	const breakpointId = breakpoint.id;
+
+	// Register the content root so design-DOM queries go through the registry.
+	// React 18 ref callbacks have no cleanup, so remember the element to unregister.
+	const registeredRef = useRef<HTMLElement | null>(null);
+	const contentRef = useCallback(
+		(el: HTMLDivElement | null) => {
+			if (registeredRef.current) {
+				registry.unregister(breakpointId, registeredRef.current);
+				registeredRef.current = null;
+			}
+			if (el) {
+				registry.register(breakpointId, el);
+				registeredRef.current = el;
+			}
+		},
+		[registry, breakpointId]
+	);
 
 	// Frame styles are shared across all breakpoints (like <body> styles)
 	const frameStyleVars = state.frameStyles;
@@ -202,6 +222,7 @@ export const BreakpointFrame = ({
 					backgroundColor: frameStyleVars?.["--background-color"] || "#ffffff",
 					color: frameStyleVars?.["--color"] || "#000000",
 				}}
+				ref={contentRef}
 				onClick={handleContentClick}
 				data-slot="designer-frame"
 			>

@@ -29,8 +29,10 @@ export const StructureAble = {
 		const targets = moveable.getTargets();
 		const target = targets[0];
 		const layerId =
-			target instanceof HTMLElement
-				? target.closest("[data-layer-id]")?.getAttribute("data-layer-id") || ""
+			target?.nodeType === 1
+				? (target as Element)
+						.closest("[data-layer-id]")
+						?.getAttribute("data-layer-id") || ""
 				: "";
 
 		// Add key (required)

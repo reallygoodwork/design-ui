@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { DesignerProvider } from "../context/DesignerContext";
+import { FrameRegistryProvider } from "../hooks/useFrameRegistry";
 import { useKeybindings } from "../hooks/useKeybindings";
 import { frameLayerType } from "../lib/layers/frame";
 import { imageLayerType } from "../lib/layers/image";
@@ -54,7 +55,7 @@ const DesignerInner = ({ children }: { children: ReactNode }) => {
 	useKeybindings();
 
 	return (
-		<>
+		<FrameRegistryProvider>
 			<FontLoader />
 			<div
 				data-slot="designer"
@@ -68,7 +69,7 @@ const DesignerInner = ({ children }: { children: ReactNode }) => {
 				</div>
 				<AddLayerDialog />
 			</div>
-		</>
+		</FrameRegistryProvider>
 	);
 };
 
