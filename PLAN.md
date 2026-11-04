@@ -523,7 +523,7 @@ Tailwind preflight leak, plus the flat node map and so on).
 | **R3** Tree drag-handle warning | `components/PaneLayerTree.tsx` | `components/PaneLayerTree.test.tsx` | R2 (same file) |
 | **R4** Frame-header nested button | `components/BreakpointHeader.tsx` | new `components/BreakpointHeader.test.tsx` | — |
 | **R5** Editor colour leaks into design | `components/BreakpointFrame.tsx`, `lib/layers/text.tsx` (defaults) | `components/BreakpointFrame.test.tsx` | — |
-| **R6** Font control shows "Arial" for inherited font | `components/actions/ActionFontFamily.tsx` | new `components/actions/ActionFontFamily.test.tsx` | — |
+| **R6** Font control shows "Arial" for inherited font | `components/actions/ActionFontFamily.tsx`, `components/FontLoader.tsx` (amended) | new `components/actions/ActionFontFamily.test.tsx` | — |
 | **R7** Dead canvas selector | `components/DesignerCanvas.tsx` | `components/DesignerCanvas.test.tsx` | — |
 
 Order: R1 ∥ R4, then R2, R5, R6 and R7 as slots free up (R2 only after R1 merges), then R3, then a
@@ -679,6 +679,21 @@ label instead of "Arial". Selecting a font still sets the layer's own `--font-fa
 - Choosing a font still dispatches `UPDATE_LAYER_CSS` with `--font-family`.
 
 **Test:** `bunx vitest run src/components/actions/ActionFontFamily.test.tsx`, plus a browser check of the panel.
+
+**Amendment (approved by the user after the R6 verifier's CONCERNS):**
+- The font control is **breakpoint-aware**, like the other style controls: choosing a font while a
+  non-primary breakpoint is active writes a breakpoint override for that breakpoint and larger ones,
+  not the base font.
+- R6's scope extends to `src/components/FontLoader.tsx`. It must load every font a layer can render
+  with: base `cssVars`, every `breakpointCssVars[*]["--font-family"]`, and the frame's
+  `frameStyles["--font-family"]`.
+- Extra acceptance:
+  - A font chosen on Tablet is stored in `breakpointCssVars.tablet` and renders in Tablet and
+    Desktop but not Mobile.
+  - `FontLoader` requests fonts set as a breakpoint override and as the frame font, in documents
+    supplied as initial layers, with no user selection.
+  - The select test asserts the `UPDATE_LAYER_CSS` payload, including `breakpointId` when a
+    non-primary breakpoint is active.
 
 ---
 
