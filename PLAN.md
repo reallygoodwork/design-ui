@@ -140,6 +140,20 @@ Nothing is graded by the agent that wrote it. The only thing that unlocks a merg
   - It can't merge a task branch without a recorded PASS for that branch's **current HEAD**. Any
     commit after the PASS needs a new verification.
 
+### Real-browser checks (approved by the user; added after B6)
+
+Verifiers for UI tasks (B7, B8, F) and the final integration cross-check also check in a real browser
+with the `agent-browser` CLI (vercel-labs, Apache-2.0, v0.41.2, installed globally with its own Chrome).
+- The verifier starts `bunx vite --port <unique> --strictPort` from the task worktree in the
+  background, and uses a dedicated session for every command: `agent-browser --session verify-<task> …`.
+- It checks with `eval` (real `getComputedStyle` and layout), clicks, `console` and `errors`, and
+  saves screenshots under `<scratchpad>/shots/`.
+- It closes its session and kills only its own dev server afterwards.
+- Read-only still applies; the before/after worktree check covers it.
+- B6 and B9 merged before this existed. The final integration cross-check re-checks them in the
+  browser: B6 inheritance via computed `font-family`/`color`; B9 drag, click, drill-down, marquee and
+  the + buttons.
+
 ### Per-task loop (B1, B9, B5, H, B6, B7, B8, F)
 
 1. **Fix:** the orchestrator creates the task's worktree itself with
@@ -503,5 +517,8 @@ a lighter background, so it's obvious what the selection includes.
 - Stop writing `SET_PAN` on every scroll.
 - Make `useDesignerAction` stable.
 - Iframe and generated-stylesheet rendering, which also fixes the Tailwind preflight leak.
+  The browser smoke test showed the editor's dark-theme text colour (`lab(98 0 0)`) is inherited by design
+  content, so a text layer with no colour of its own renders white on white. Also, the text default
+  `--color: #000000` shadows the frame colour (B6 verifier note).
 - Headless core package, `applyOps`, MCP server.
 - React 19 / Vite 7 upgrade; bundle split; README refresh.
