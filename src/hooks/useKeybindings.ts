@@ -1,12 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDesignerContext } from "./useDesignerContext";
 
 export const useKeybindings = () => {
 	const { state, dispatch } = useDesignerContext();
 
+	const stateRef = useRef(state);
+	stateRef.current = state;
+
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			// Layer type shortcuts
+			const state = stateRef.current;
 			state.layerTypes.forEach((layerType) => {
 				if (layerType.keybinding && e.key === layerType.keybinding.key) {
 					dispatch({
@@ -29,5 +33,5 @@ export const useKeybindings = () => {
 		return () => {
 			window.removeEventListener("keydown", handleKeyDown);
 		};
-	}, [state.layerTypes, state.layers, dispatch]);
+	}, [dispatch]);
 };

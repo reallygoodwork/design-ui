@@ -6,10 +6,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import InfiniteViewer, {
-	type OnPinch,
-	type OnScroll,
-} from "react-infinite-viewer";
+import InfiniteViewer, { type OnPinch } from "react-infinite-viewer";
 import Moveable, { type MoveableRefTargetType } from "react-moveable";
 import Selecto from "react-selecto";
 import { useDesignerAction } from "../hooks/useDesignerAction";
@@ -103,17 +100,10 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		});
 	};
 
-	const handleScroll = (e: OnScroll) => {
+	const handleScroll = () => {
 		selectoRef.current?.checkScroll();
-		// Track scroll position for reference
-		// InfiniteViewer handles the actual scrolling internally
-		designerAction({
-			type: "SET_PAN",
-			payload: {
-				x: e.scrollLeft,
-				y: e.scrollTop,
-			},
-		});
+		// InfiniteViewer owns scrolling; dispatching SET_PAN here re-rendered every
+		// context consumer on each scroll event and nothing reads `state.pan`.
 	};
 
 	// Helper function to check if an element is within Moveable's control area
