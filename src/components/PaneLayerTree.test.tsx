@@ -1,4 +1,5 @@
 import { act, cleanup, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { makeLayer, renderInDesigner } from "../test/fixtures";
@@ -109,5 +110,42 @@ describe("subtree tint", () => {
 		expect(tinted(rowsIn("Desktop")("Child"))).toBe(true);
 		expect(hasTintClass(rowsIn("Mobile")("Child"))).toBe(false);
 		expect(hasTintClass(rowsIn("Tablet")("Grandchild"))).toBe(false);
+	});
+});
+
+describe("row click", () => {
+	afterEach(cleanup);
+
+	// The name wrapper is the parent of the name text span
+	const nameWrapper = (row: HTMLElement, name: string) => {
+		const span = within(row).getByText(name);
+		const wrapper = span.parentElement;
+		if (!wrapper) throw new Error("no wrapper");
+		return wrapper;
+	};
+
+	it("clicking the name wrapper (not the text) selects the layer", async () => {
+		setup();
+		const user = userEvent.setup();
+		const row = rowsIn("Desktop");
+		await user.click(nameWrapper(row("Other"), "Other"));
+		expect(row("Other").getAttribute("aria-selected")).toBe("true");
+	});
+
+	it("double-clicking the name opens the rename input", async () => {
+		setup();
+		const user = userEvent.setup();
+		const row = rowsIn("Desktop");
+		await user.dblClick(nameWrapper(row("Other"), "Other"));
+		expect(within(row("Other")).getByRole("textbox")).toBeTruthy();
+	});
+
+	it("clicking the lock button toggles the lock without selecting", async () => {
+		setup();
+		const user = userEvent.setup();
+		const row = rowsIn("Desktop");
+		await user.click(within(row("Other")).getByTitle("Lock layer"));
+		expect(within(row("Other")).getByTitle("Unlock layer")).toBeTruthy();
+		expect(row("Other").getAttribute("aria-selected")).not.toBe("true");
 	});
 });

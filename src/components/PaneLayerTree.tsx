@@ -125,8 +125,8 @@ const LayerTreeItemContent = ({ layer }: { layer: Layer }) => {
 					)}
 
 					{/* Layer icon and name */}
-					<button
-						type="button"
+					{/* biome-ignore lint/a11y/noStaticElementInteractions: must stay non-interactive so the row press is not swallowed */}
+					<div
 						className="flex flex-1 cursor-default items-center gap-2 truncate bg-transparent border-none p-0 text-left"
 						onDoubleClick={handleDoubleClick}
 					>
@@ -138,7 +138,7 @@ const LayerTreeItemContent = ({ layer }: { layer: Layer }) => {
 						>
 							{layer.name}
 						</span>
-					</button>
+					</div>
 
 					{/* Inline rename input */}
 					{isEditing && (
