@@ -530,6 +530,32 @@ const handleRedo = (state: State): State => {
 	});
 };
 
+// Remove one breakpoint's overrides from every layer at every depth.
+// Layers with nothing to strip keep their identity.
+const stripBreakpointVars = (layers: Layer[], id: string): Layer[] => {
+	let changed = false;
+	const next = layers.map((layer) => {
+		const children = layer.children
+			? stripBreakpointVars(layer.children, id)
+			: undefined;
+		const hasVars = layer.breakpointCssVars
+			? id in layer.breakpointCssVars
+			: false;
+		if (children === layer.children && !hasVars) return layer;
+		changed = true;
+		const { breakpointCssVars, ...rest } = layer;
+		const { [id]: _removed, ...remaining } = breakpointCssVars ?? {};
+		return {
+			...rest,
+			...(children && { children }),
+			...(Object.keys(remaining).length > 0 && {
+				breakpointCssVars: remaining,
+			}),
+		};
+	});
+	return changed ? next : layers;
+};
+
 // Helper function to handle breakpoint updates with history
 const updateBreakpoints = (
 	state: State,
@@ -715,6 +741,7 @@ const applyAction = (state: State, action: Action): State => {
 			);
 			return addHistoryEntry(state, {
 				breakpoints: newBreakpoints,
+				layers: stripBreakpointVars(state.layers, action.payload.id),
 				activeBreakpointId:
 					state.activeBreakpointId === action.payload.id
 						? (newBreakpoints[0]?.id ?? null)
