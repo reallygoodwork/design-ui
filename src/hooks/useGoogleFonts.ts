@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import { primaryFontFamily } from "../lib/fontFamily";
 
 const loadedFonts = new Set<string>();
 const fontLinkElements = new Map<string, HTMLLinkElement>();
@@ -13,7 +14,9 @@ interface UseGoogleFontsOptions {
  */
 export const useGoogleFonts = () => {
 	const loadFont = useCallback(
-		(fontFamily: string, options?: UseGoogleFontsOptions) => {
+		(rawFontFamily: string, options?: UseGoogleFontsOptions) => {
+			const fontFamily = primaryFontFamily(rawFontFamily);
+			if (!fontFamily) return;
 			const { weights = [400, 500, 600, 700], display = "swap" } =
 				options || {};
 
