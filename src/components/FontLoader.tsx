@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDesignerContext } from "../hooks/useDesignerContext";
 import { useGoogleFonts } from "../hooks/useGoogleFonts";
 import { useLayers } from "../hooks/useLayers";
+import { primaryFontFamily } from "../lib/fontFamily";
 import type { Layer } from "../lib/Types";
 
 /**
@@ -10,7 +11,17 @@ import type { Layer } from "../lib/Types";
 export const FontLoader = () => {
 	const layers = useLayers();
 	const { loadFont } = useGoogleFonts();
-	const frameFont = useDesignerContext().state.frameStyles?.["--font-family"];
+	const rawFrameFont =
+		useDesignerContext().state.frameStyles?.["--font-family"];
+
+	// The frame font is a free-text input that dispatches per keystroke, so
+	// only load it once typing has paused.
+	const [frameFont, setFrameFont] = useState(rawFrameFont);
+	useEffect(() => {
+		if (rawFrameFont === frameFont) return;
+		const timer = setTimeout(() => setFrameFont(rawFrameFont), 400);
+		return () => clearTimeout(timer);
+	}, [rawFrameFont, frameFont]);
 
 	useEffect(() => {
 		// Extract all unique font families from layers
@@ -41,7 +52,12 @@ export const FontLoader = () => {
 		}
 
 		// Load all fonts
+		const primaries = new Set<string>();
 		fonts.forEach((font) => {
+			const primary = primaryFontFamily(font);
+			if (primary) primaries.add(primary);
+		});
+		primaries.forEach((font) => {
 			loadFont(font);
 		});
 	}, [layers, frameFont, loadFont]);
