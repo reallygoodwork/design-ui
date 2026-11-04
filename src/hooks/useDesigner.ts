@@ -337,6 +337,12 @@ export const getCoalesceKey = (
 		}
 		case "UPDATE_FRAME_STYLES":
 			return `frame:${Object.keys(action.payload.css).sort().join(",")}`;
+		case "UPDATE_BREAKPOINT": {
+			const keys = Object.keys(action.payload.updates);
+			return keys.length === 1 && keys[0] === "position"
+				? `bp-pos:${action.payload.id}`
+				: null;
+		}
 		default:
 			return null;
 	}

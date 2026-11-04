@@ -371,3 +371,71 @@ describe("supportsChildren", () => {
 		expect(next.history.past.length).toBe(1);
 	});
 });
+
+describe("breakpoint drag", () => {
+	const move = (id: string, x: number): Action => ({
+		type: "UPDATE_BREAKPOINT",
+		payload: { id, updates: { position: { x, y: 0 } } },
+	});
+	const resize = (id: string, width: number): Action => ({
+		type: "UPDATE_BREAKPOINT",
+		payload: { id, updates: { width } },
+	});
+	const posOf = (s: State, id: string) =>
+		s.breakpoints.find((b) => b.id === id)?.position;
+
+	it("30 position updates for one breakpoint make 1 undo step; UNDO restores the original", () => {
+		let s = base();
+		const original = posOf(s, "tablet");
+		for (let i = 1; i <= 30; i++) s = reducer(s, move("tablet", 425 + i));
+		expect(s.history.past.length).toBe(1);
+		expect(posOf(s, "tablet")).toEqual({ x: 455, y: 0 });
+		expect(posOf(reducer(s, { type: "UNDO" }), "tablet")).toEqual(original);
+	});
+
+	it("a width update between moves starts a new step, and the next move another", () => {
+		let s = run(base(), move("tablet", 1), move("tablet", 2));
+		expect(s.history.past.length).toBe(1);
+		s = reducer(s, resize("tablet", 800));
+		expect(s.history.past.length).toBe(2);
+		s = reducer(s, move("tablet", 3));
+		expect(s.history.past.length).toBe(3);
+	});
+
+	it("position updates for two breakpoints in alternation do not merge", () => {
+		const s = run(
+			base(),
+			move("tablet", 1),
+			move("desktop", 1),
+			move("tablet", 2),
+			move("desktop", 2)
+		);
+		expect(s.history.past.length).toBe(4);
+	});
+
+	it("getCoalesceKey is null for non-position breakpoint updates", () => {
+		expect(getCoalesceKey(resize("tablet", 800), null)).toBeNull();
+		expect(
+			getCoalesceKey(
+				{
+					type: "UPDATE_BREAKPOINT",
+					payload: { id: "tablet", updates: { name: "T" } },
+				},
+				null
+			)
+		).toBeNull();
+		expect(
+			getCoalesceKey(
+				{
+					type: "UPDATE_BREAKPOINT",
+					payload: {
+						id: "tablet",
+						updates: { width: 1, position: { x: 1, y: 1 } },
+					},
+				},
+				null
+			)
+		).toBeNull();
+		expect(getCoalesceKey(move("tablet", 1), null)).toBe("bp-pos:tablet");
+	});
+});
