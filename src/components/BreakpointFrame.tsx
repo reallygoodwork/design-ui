@@ -64,7 +64,7 @@ const DesignerLayer = ({
 	// Render nested children with the same breakpointId
 	const children =
 		layer.children && layer.children.length > 0 ? (
-			<div>
+			<>
 				{layer.children.map((child) => (
 					<DesignerLayer
 						key={child.id}
@@ -73,7 +73,7 @@ const DesignerLayer = ({
 						state={state}
 					/>
 				))}
-			</div>
+			</>
 		) : undefined;
 
 	return (

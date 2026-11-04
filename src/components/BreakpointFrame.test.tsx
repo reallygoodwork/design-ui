@@ -318,4 +318,22 @@ describe("layout", () => {
 			expect(el.style.columnGap).toBe("12px");
 		}
 	});
+
+	it("children are direct children of the parent layer's rendered element", () => {
+		const frame = makeLayer(
+			"p",
+			[makeLayer("a"), makeLayer("b", [makeLayer("c"), makeLayer("d")])],
+			{ cssVars: { "--display": "flex", "--column-gap": "12px" } }
+		);
+		const { container } = renderInDesigner(<Frames />, { layers: [frame] });
+		for (const bp of ["mobile", "tablet", "desktop"]) {
+			const parent = find(container, bp, "p").firstElementChild as HTMLElement;
+			expect(parent.style.display).toBe("flex");
+			expect(find(container, bp, "a").parentElement).toBe(parent);
+			expect(find(container, bp, "b").parentElement).toBe(parent);
+			const b = find(container, bp, "b").firstElementChild as HTMLElement;
+			expect(find(container, bp, "c").parentElement).toBe(b);
+			expect(find(container, bp, "d").parentElement).toBe(b);
+		}
+	});
 });
