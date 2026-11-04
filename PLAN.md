@@ -815,6 +815,7 @@ Paths are under `src/`. "→" means "blocked by".
 | 13 | **P4** Flat normalized state behind the nested API | `hooks/useDesigner.ts`, `lib/Types.ts`, new `lib/layerTree.ts`, `lib/layerIndex.ts`, `hooks/useLayers.ts`, `components/PaneLayerTree.tsx`; test helpers in `useDesigner.test.ts`, `fixtures.test.tsx`, `ActionFontFamily.test.tsx` | `lib/layerTree.test.ts`, existing suites | P3 |
 | 14 | **I1** Frame-root registry (seam refactor; no behaviour change) | new `hooks/useFrameRegistry.tsx`, `components/BreakpointFrame.tsx`, `components/DesignerCanvas.tsx`, `hooks/useLayerDimensions.ts` | new `hooks/useFrameRegistry.test.tsx` | P3, S8 |
 | 15 | **I2** Shadow-root style isolation | new `components/FrameShadowRoot.tsx`, `components/BreakpointFrame.tsx`, `hooks/useFrameRegistry.tsx`, `BreakpointFrame.test.tsx` (route queries through a shadow helper) | `components/FrameShadowRoot.test.tsx` | I1 |
+| 17 | **S10** Every panel control affects the canvas | `lib/cssPropertyMapping.ts`, `lib/layers/{frame,text,image,input}.tsx` (`supportedCssProperties`), panel action components only if a sub-value must be combined (`components/actions/Action{FlexWrap,GridLayout,Margin,TextDecoration,TextShadow,TextStyle}.tsx`) | new `lib/panelControls.test.tsx`, `lib/cssPropertyMapping.test.ts` | S6 |
 | 16 | **L1** Zero lint warnings, enforced | `hooks/useDesigner.ts` (split `applyAction`), `components/PaneLayerTree.tsx`, `components/FrameStylesPanel.tsx`, `components/actions/{ActionElementType,ActionTextContent,ColorActionPopover}.tsx`, `package.json` (`lint` gets `--error-on-warnings`) | the gate itself | every other task |
 
 **Order** (at most 2 fixers at once): S1 ∥ S2 → S3 ∥ S5 → S6 ∥ S8 → S4 ∥ S9 → S7 → P1 → P2 → P3
@@ -993,6 +994,34 @@ maps. UNDO restores both the breakpoint and the overrides.
 
 **Test:** `bunx vitest run src/hooks/useDesigner.test.ts -t "delete breakpoint"`
 
+### S10 — Panel controls that write properties no layer supports (added by the user mid-round)
+
+**Repro:** S6's audit found panel controls that write CSS vars which no layer type lists in
+`supportedCssProperties`, or which `CSS_VAR_TO_PROPERTY_MAP` doesn't map:
+- `--flex-wrap` (`ActionFlexWrap`);
+- `--grid-template-columns` and `--grid-template-rows` (`ActionGridLayout`);
+- `--margin-top/right/bottom/left` (`ActionMargin`; layers only accept `--margin-block-*` and
+  `--margin-inline-*`);
+- possibly `--text-decoration-*` and `--text-shadow-*` sub-values, and `--text-style` (they may be
+  internal parts the panel combines into `--text-decoration` and `--text-shadow`).
+
+**Fix:**
+- For each control, find what it dispatches.
+- Where a var is a real CSS property, map it and add it to the right layer types. Margin controls
+  should write the same logical properties layers support, or the map should accept the physical
+  ones; choose one model and report which.
+- Where it's a sub-value, either combine it into the real property when dispatching, or confirm
+  it's already combined and the sub-var is only internal UI state that never needs rendering.
+
+**Acceptance:**
+- A table-driven test: for each panel control that writes layer CSS, rendering a layer of a type
+  that shows that control, with the control's output, produces the expected inline CSS property.
+- Browser: flex-wrap, grid template, per-side margin, text decoration and text shadow each visibly
+  change the canvas.
+- No control writes a var that's neither rendered nor documented as internal.
+
+**Test:** `bunx vitest run src/lib/panelControls.test.tsx src/lib/cssPropertyMapping.test.ts`, plus browser (port 5317).
+
 ### P1 — Cheap re-render fixes
 
 **Repro:**
@@ -1160,7 +1189,7 @@ zoom and shortcuts still work.
 
 ### Round 3 verdict log
 
-- [x] S1 · [x] S2 · [ ] S3 · [ ] S4 · [ ] S5 · [ ] S6 · [ ] S7 · [ ] S8 · [ ] S9 · [ ] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [ ] L1
+- [x] S1 · [x] S2 · [ ] S3 · [ ] S4 · [ ] S5 · [ ] S6 · [ ] S7 · [ ] S8 · [ ] S9 · [ ] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [ ] S10 · [ ] L1
 
 - S2: PASS at `29f5ad2`, first round. In the browser, a 20-step drag was undone by one Cmd+Z, and redo restored it. Merged as `d4e6002`. Note: the X/Y position inputs also coalesce with a drag on the same frame (by design).
 - S1: PASS at `8dfbf5b`, first round. The verdict was formatted as 'CONCERNS: none blocking / PASS' and treated as PASS. In the browser, typing Georgia gives 1 link and 'Inter, system-ui' loads Inter only. Merged as `d2bee72`. Notes: no test covers a layer-font change after mount (the code path is not debounced, confirmed in the browser); `preloadFont` skips `primaryFontFamily` (hover only).
