@@ -10,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import type { ComponentType } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionAlignItems } from "../components/actions/ActionAlignItems";
+import { ActionBorder } from "../components/actions/ActionBorder";
 import { ActionDisplay } from "../components/actions/ActionDisplay";
 import { ActionFlexDirection } from "../components/actions/ActionFlexDirection";
 import { ActionFlexWrap } from "../components/actions/ActionFlexWrap";
@@ -635,5 +636,82 @@ describe("every control the panel shows for a layer type renders", () => {
 		expect(el.style.backgroundColor).toBe("red");
 		expect(el.style.borderTopLeftRadius).toBe("3px");
 		expect(el.style.borderColor).toBe("blue");
+	});
+});
+
+describe("border", () => {
+	const layers: [string, LayerType][] = [
+		["frame", frameLayerType],
+		["text", textLayerType],
+		["image", imageLayerType],
+		["input", inputLayerType],
+	];
+	const BORDER_STYLES = ["none", "solid", "dashed", "dotted", "double"];
+
+	const setWidth = (value: string) => {
+		openPopover("Border");
+		fireEvent.change(numericInput("Width"), { target: { value } });
+	};
+	const chooseStyle = async (name: string) => {
+		const trigger = screen
+			.getAllByRole("combobox")
+			.find((c) => BORDER_STYLES.includes(c.textContent ?? ""));
+		await userEvent.click(trigger as HTMLElement);
+		await userEvent.click(await screen.findByRole("option", { name }));
+	};
+
+	it.each(layers)("%s: width alone renders border-style solid", (name, lt) => {
+		const get = mount(ActionBorder, name, {});
+		setWidth("2");
+		const vars = get();
+		expect(vars["--border-width"]).toBe("2px");
+		expect(vars["--border-style"]).toBe("solid");
+		cleanup();
+		expect(renderLayer(lt, vars).style.borderStyle).toBe("solid");
+	});
+
+	it.each(layers)("%s: dashed renders, none removes", async (name, lt) => {
+		const get = mount(ActionBorder, name, { "--border-width": "2px" });
+		openPopover("Border");
+		await chooseStyle("dashed");
+		expect(renderLayer(lt, get()).style.borderStyle).toBe("dashed");
+		await chooseStyle("none");
+		expect(get()["--border-style"]).toBe("none");
+		expect(renderLayer(lt, get()).style.borderStyle).not.toBe("dashed");
+	});
+
+	it("every style option is valid CSS", async () => {
+		const get = mount(ActionBorder, "frame", { "--border-width": "2px" });
+		openPopover("Border");
+		await userEvent.click(
+			screen
+				.getAllByRole("combobox")
+				.find((c) => BORDER_STYLES.includes(c.textContent ?? "")) as HTMLElement
+		);
+		const names = (await screen.findAllByRole("option")).map(
+			(o) => o.textContent ?? ""
+		);
+		await userEvent.keyboard("{Escape}");
+		expect(names.length).toBe(5);
+		for (const n of names) {
+			await chooseStyle(n);
+			expect(BORDER_STYLES).toContain(get()["--border-style"]);
+		}
+	});
+
+	it("a chosen style survives a later width change", async () => {
+		const get = mount(ActionBorder, "frame", { "--border-width": "1px" });
+		openPopover("Border");
+		await chooseStyle("dotted");
+		fireEvent.change(numericInput("Width"), { target: { value: "4" } });
+		expect(get()["--border-width"]).toBe("4px");
+		expect(get()["--border-style"]).toBe("dotted");
+	});
+
+	it("emptying the width clears the style", () => {
+		const get = mount(ActionBorder, "frame", {});
+		setWidth("2");
+		fireEvent.change(numericInput("Width"), { target: { value: "" } });
+		expect(get()["--border-style"]).toBeUndefined();
 	});
 });
