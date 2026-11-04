@@ -1,10 +1,12 @@
-import { act } from "@testing-library/react";
-import { useEffect } from "react";
+import { act, cleanup, render } from "@testing-library/react";
+import { type ReactElement, useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { breakpoints, makeLayer, renderInDesigner } from "../test/fixtures";
+import { DimensionAble } from "./ables/DimensionAble";
 import { BreakpointHeader } from "./BreakpointHeader";
 import { DesignerCanvas } from "./DesignerCanvas";
+import canvasSource from "./DesignerCanvas.tsx?raw";
 
 const moveableProps = vi.hoisted(() => ({
 	current: null as Record<string, unknown> | null,
@@ -178,5 +180,66 @@ describe("header drag", () => {
 		expect(
 			container.querySelector(".breakpoint-header[data-breakpoint-header]")
 		).not.toBeNull();
+	});
+});
+
+describe("zoom", () => {
+	const setZoom = (zoom: number) =>
+		act(() => {
+			dispatch({ type: "SET_ZOOM", payload: zoom });
+		});
+
+	beforeEach(() => {
+		renderInDesigner(
+			<DesignerCanvas>
+				<Probe />
+			</DesignerCanvas>,
+			{ layers: [makeLayer("a")] }
+		);
+	});
+
+	it("gives Moveable zoom === 1 / state.zoom", () => {
+		setZoom(2);
+		expect(moveableProps.current?.zoom).toBe(0.5);
+		setZoom(0.5);
+		expect(moveableProps.current?.zoom).toBe(2);
+	});
+
+	it("passes viewerZoom to the ables and no custom zoom key", () => {
+		setZoom(2);
+		const props = moveableProps.current?.props as Record<string, unknown>;
+		expect(props.viewerZoom).toBe(2);
+		expect(props).not.toHaveProperty("zoom");
+	});
+
+	it("has no dead getElement() inverse-scale effect left", () => {
+		expect(canvasSource).not.toContain("inverseScale");
+		expect(canvasSource).not.toMatch(
+			/querySelectorAll\(\s*"\.moveable-control-box"/
+		);
+	});
+
+	it("DimensionAble shows the unzoomed size, counter-scaled", () => {
+		const renderLabel = (viewerZoom: number) => {
+			const el = DimensionAble.render(
+				{
+					getRect: () => ({ height: 100, offsetWidth: 120, offsetHeight: 80 }),
+					props: { viewerZoom },
+				} as never,
+				{} as never
+			);
+			return render(el as ReactElement).container;
+		};
+		const at2 = renderLabel(2);
+		expect(at2.textContent).toBe("120 x 80");
+		expect(
+			(at2.querySelector(".moveable-dimension") as HTMLElement).style.transform
+		).toBe("scale(0.5)");
+		cleanup();
+		const at05 = renderLabel(0.5);
+		expect(at05.textContent).toBe("120 x 80");
+		expect(
+			(at05.querySelector(".moveable-dimension") as HTMLElement).style.transform
+		).toBe("scale(2)");
 	});
 });

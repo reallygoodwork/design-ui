@@ -4,13 +4,13 @@ import type { MoveableManagerInterface, Renderer } from "react-moveable";
 
 interface DimensionAbleProps {
 	dimensionViewable: boolean;
-	zoom?: number;
+	viewerZoom?: number;
 	isLocked?: boolean;
 }
 
 export const DimensionAble = {
 	name: "dimensionViewable",
-	props: ["dimensionViewable", "zoom", "isLocked"],
+	props: ["dimensionViewable", "viewerZoom", "isLocked"],
 	events: [],
 	render(
 		moveable: MoveableManagerInterface<DimensionAbleProps, unknown>,
@@ -18,16 +18,18 @@ export const DimensionAble = {
 	) {
 		const rect = moveable.getRect();
 		const isLocked = moveable.props.isLocked ?? false;
-		// Moveable's custom ables are rendered in a fixed position container outside InfiniteViewer's transform context
-		// So they're not affected by zoom and should maintain constant size
-		// Moveable handles positioning relative to the target element automatically
+		// The label lives inside InfiniteViewer's scaled viewport, so it is scaled by
+		// viewerZoom on screen. Counter-scale by 1/viewerZoom (and divide the offsets)
+		// to keep it a constant screen size. rect.offsetWidth/Height are unzoomed CSS px.
+		const inverse = 1 / (moveable.props.viewerZoom || 1);
 
 		// Add key (required)
 		// Add class prefix moveable-(required)
 		const style: CSSProperties = {
-			"--left": `2px`,
-			"--top": `${rect.height + 4}px`,
-			transformOrigin: "center top",
+			"--left": `${2 * inverse}px`,
+			"--top": `${rect.height + 4 * inverse}px`,
+			transform: `scale(${inverse})`,
+			transformOrigin: "left top",
 		} as CSSProperties;
 
 		return (
