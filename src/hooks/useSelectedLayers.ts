@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { Layer } from "../lib/Types";
 import { useDesignerContext } from "./useDesignerContext";
 
@@ -7,20 +8,23 @@ import { useDesignerContext } from "./useDesignerContext";
  */
 export const useSelectedLayers = () => {
 	const { state } = useDesignerContext();
+	const { layers, selectedLayers } = state;
 
-	// Recursive helper to find layers by ID in a nested structure
-	const findLayersById = (layers: Layer[], ids: string[]): Layer[] => {
-		const found: Layer[] = [];
-		for (const layer of layers) {
-			if (ids.includes(layer.id)) {
-				found.push(layer);
+	return useMemo(() => {
+		// Recursive helper to find layers by ID in a nested structure
+		const findLayersById = (list: Layer[], ids: string[]): Layer[] => {
+			const found: Layer[] = [];
+			for (const layer of list) {
+				if (ids.includes(layer.id)) {
+					found.push(layer);
+				}
+				if (layer.children) {
+					found.push(...findLayersById(layer.children, ids));
+				}
 			}
-			if (layer.children) {
-				found.push(...findLayersById(layer.children, ids));
-			}
-		}
-		return found;
-	};
+			return found;
+		};
 
-	return findLayersById(state.layers, state.selectedLayers);
+		return findLayersById(layers, selectedLayers);
+	}, [layers, selectedLayers]);
 };
