@@ -29,7 +29,7 @@ export const StructureAble = {
 		const targets = moveable.getTargets();
 		const target = targets[0];
 		const layerId =
-			target.nodeType === 1
+			target?.nodeType === 1
 				? (target as Element)
 						.closest("[data-layer-id]")
 						?.getAttribute("data-layer-id") || ""
