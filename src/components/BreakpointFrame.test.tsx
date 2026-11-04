@@ -2,6 +2,7 @@ import { act, fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { DesignerProvider } from "../context/DesignerContext";
 import { useDesignerContext } from "../hooks/useDesignerContext";
+import { inputLayerType } from "../lib/layers/input";
 import { textLayerType } from "../lib/layers/text";
 import {
 	breakpoints,
@@ -194,7 +195,23 @@ describe("frame root", () => {
 
 	it("logs no DOM nesting error for nested block layers", () => {
 		const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
-		renderInDesigner(<Frames />, { layers: [nested] });
+		const input = makeLayer("in", undefined, { type: "input", value: "x" });
+		const { container } = render(
+			<DesignerProvider
+				defaultLayers={[nested, input]}
+				defaultLayerTypes={[...defaultLayerTypes, inputLayerType]}
+				breakpoints={breakpoints}
+			>
+				<Frames />
+			</DesignerProvider>
+		);
+		const layerEls = container.querySelectorAll(
+			".breakpoint-content .designer-layer"
+		);
+		expect(layerEls.length).toBeGreaterThan(0);
+		for (const el of layerEls) {
+			expect(el.closest("button")).toBeNull();
+		}
 		const bad = spy.mock.calls
 			.map((a) => a.map(String).join(" "))
 			.filter(
