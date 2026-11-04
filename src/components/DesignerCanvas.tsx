@@ -314,6 +314,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 	}, [state.centerRequestId, centerOnBreakpoints]);
 
 	// Update Moveable when zoom changes so it recalculates positions and scales correctly
+	// biome-ignore lint/correctness/useExhaustiveDependencies: state.zoom is the intentional trigger
 	useEffect(() => {
 		if (moveableRef.current) {
 			// Force Moveable to update its rect calculations when zoom changes
