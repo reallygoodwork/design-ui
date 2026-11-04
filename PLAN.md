@@ -78,7 +78,7 @@ Critical path: `T0 → B9 → B5 → H → B8 → F` (6 steps).
 HEAD (the fixer's own report never counts), it's merged into
 `fix/review-bugs`, the global gate is green on the merged branch, and its box is checked below.
 
-- [x] T0 · [x] B1 · [x] B9 · [x] B5 · [x] H · [x] B6 · [x] B7 · [x] B8 · [ ] F
+- [x] T0 · [x] B1 · [x] B9 · [x] B5 · [x] H · [x] B6 · [x] B7 · [x] B8 · [x] F
 
 **Verdict log:**
 - T0: PASS at `ad81b8b` after 2 retry rounds (CONCERNS ×2: `biome.json` scope and fixture name, both approved as amendments; then fixture helpers not exercised, fixed). Merged as `42a0b1c`.
@@ -89,6 +89,7 @@ HEAD (the fixer's own report never counts), it's merged into
 - H: PASS at `c5f02b5` after 1 retry round. CONCERNS: controlled-mode `SET_LAYERS` echo broke coalescing (fixed); signature deviation (user approved the amendment). Merged as `c6409d3`. Adds 1 lint warning (`applyAction` complexity 17 > 15).
 - B7: PASS at `b2c10c0` after 1 retry round, with a browser check. CONCERNS: the DOM-nesting test didn't discriminate, so a no-`button`-ancestor assertion was added. Merged as `3f55114`.
 - B8: PASS at `3d05d65`, first round, with a browser check (no 'inside' button on text; a tree drop onto text only reorders). Merged as `3295606`. Note: the guard raises the `applyAction` complexity warning from 17 to 21; no test yet that a blocked action preserves a coalescing run.
+- F: PASS at `1e81006`, first round, with a browser check in light and dark themes. Merged as `5f61fdd`. Notes: a mouse click on a tree row didn't select it under agent-browser (the same happens at 4dedb87, before F; keyboard selection works); the light-theme tint is faint (about L99 against L100).
 
 ---
 
