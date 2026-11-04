@@ -961,6 +961,20 @@ against the map, and add any other missing ones found.
 
 **Test:** `bunx vitest run src/components/DesignerCanvas.test.tsx -t "zoom"`, plus browser.
 
+**Correction (orchestrator, after the S7 verifier's FAIL; the acceptance criteria are unchanged):**
+The fix text above assumed Moveable renders inside InfiniteViewer's scaled viewport. That's wrong.
+Its control box lives in `.infinite-viewer-wrapper` (`transform: none`) and Moveable computes
+positions in **screen space**. Measured on the base: handles and lines scale with zoom (6px at 0.5,
+24px at 2) because `props.zoom: state.zoom` overrides Moveable's `zoom`. The dimension label was
+already constant (67×19).
+
+Correct direction:
+- Don't override Moveable's `zoom`: leave its default of 1, or pass `zoom={1}` explicitly.
+- Keep the `viewerZoom` rename for the ables.
+- Don't counter-scale `DimensionAble`'s label.
+- Unit tests must assert this real contract: Moveable's `zoom` is 1 or absent at every viewer zoom,
+  and the label carries no zoom-dependent transform. The browser check is the final proof.
+
 ### S8 — Size readout measures the wrong frame, in zoomed pixels
 
 **Repro:** `useLayerDimensions` queries `.designer-frame .designer-layer[...]`, which always matches
