@@ -376,6 +376,27 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		}
 	}, [selectedLayersCSSVars]);
 
+	// Frame geometry key: moving or resizing a frame moves the selected layer
+	// without changing its CSS vars, so Moveable must be told to re-measure.
+	const hasSelection = selectedLayers.length > 0;
+	const breakpointGeometryKey = useMemo(
+		() =>
+			state.breakpoints
+				.map(
+					(bp) =>
+						`${bp.id}:${bp.position.x}:${bp.position.y}:${bp.width}:${bp.height}`
+				)
+				.join("|"),
+		[state.breakpoints]
+	);
+
+	useEffect(() => {
+		if (!hasSelection || !breakpointGeometryKey) return;
+		requestAnimationFrame(() => {
+			moveableRef.current?.updateRect();
+		});
+	}, [breakpointGeometryKey, hasSelection]);
+
 	// Handle keyboard shortcuts: Delete/Backspace for deletion, Cmd/Ctrl+Z for undo, Cmd/Ctrl+Y for redo
 	useEffect(() => {
 		const isInputField = (target: HTMLElement): boolean =>
