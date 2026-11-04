@@ -815,7 +815,7 @@ Paths are under `src/`. "→" means "blocked by".
 | 13 | **P4** Flat normalized state behind the nested API | `hooks/useDesigner.ts`, `lib/Types.ts`, new `lib/layerTree.ts`, `lib/layerIndex.ts`, `hooks/useLayers.ts`, `components/PaneLayerTree.tsx`; test helpers in `useDesigner.test.ts`, `fixtures.test.tsx`, `ActionFontFamily.test.tsx` | `lib/layerTree.test.ts`, existing suites | P3 |
 | 14 | **I1** Frame-root registry (seam refactor; no behaviour change) | new `hooks/useFrameRegistry.tsx`, `components/BreakpointFrame.tsx`, `components/DesignerCanvas.tsx`, `hooks/useLayerDimensions.ts` | new `hooks/useFrameRegistry.test.tsx` | P3, S8 |
 | 15 | **I2** Shadow-root style isolation | new `components/FrameShadowRoot.tsx`, `components/BreakpointFrame.tsx`, `hooks/useFrameRegistry.tsx`, `BreakpointFrame.test.tsx` (route queries through a shadow helper) | `components/FrameShadowRoot.test.tsx` | I1 |
-| 17 | **S10** Every panel control affects the canvas | `lib/cssPropertyMapping.ts`, `lib/layers/{frame,text,image,input}.tsx` (`supportedCssProperties`), panel action components only if a sub-value must be combined (`components/actions/Action{FlexWrap,GridLayout,Margin,TextDecoration,TextShadow,TextStyle}.tsx`) | new `lib/panelControls.test.tsx`, `lib/cssPropertyMapping.test.ts` | S6 |
+| 17 | **S10** Every panel control affects the canvas | `lib/cssPropertyMapping.ts`, `lib/layers/{frame,text,image,input}.tsx` (`supportedCssProperties`), panel action components only if a sub-value must be combined (`components/actions/Action{FlexWrap,GridLayout,Margin,TextDecoration,TextShadow,TextStyle,AlignItems}.tsx`) | new `lib/panelControls.test.tsx`, `lib/cssPropertyMapping.test.ts` | S6 |
 | 16 | **L1** Zero lint warnings, enforced | `hooks/useDesigner.ts` (split `applyAction`), `components/PaneLayerTree.tsx`, `components/FrameStylesPanel.tsx`, `components/actions/{ActionElementType,ActionTextContent,ColorActionPopover}.tsx`, `package.json` (`lint` gets `--error-on-warnings`) | the gate itself | every other task |
 
 **Order** (at most 2 fixers at once): S1 ∥ S2 → S3 ∥ S5 → S6 ∥ S8 → S4 ∥ S9 → S7 → P1 → P2 → P3
@@ -1019,6 +1019,7 @@ maps. UNDO restores both the breakpoint and the overrides.
 - Browser: flex-wrap, grid template, per-side margin, text decoration and text shadow each visibly
   change the canvas.
 - No control writes a var that's neither rendered nor documented as internal.
+- **(Amended per the user, from the S6 verifier.)** Every value a control writes is valid CSS for its property. For example, Align "Center" currently writes `flex-center`; the table-driven test checks this with `CSS.supports` (or an allowlist where jsdom lacks it). `components/actions/ActionAlignItems.tsx` joins S10's files.
 
 **Test:** `bunx vitest run src/lib/panelControls.test.tsx src/lib/cssPropertyMapping.test.ts`, plus browser (port 5317).
 
@@ -1189,13 +1190,14 @@ zoom and shortcuts still work.
 
 ### Round 3 verdict log
 
-- [x] S1 · [x] S2 · [x] S3 · [ ] S4 · [x] S5 · [ ] S6 · [ ] S7 · [x] S8 · [ ] S9 · [ ] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [ ] S10 · [ ] L1
+- [x] S1 · [x] S2 · [x] S3 · [ ] S4 · [x] S5 · [ ] S6 · [ ] S7 · [x] S8 · [x] S9 · [ ] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [ ] S10 · [ ] L1
 
 - S2: PASS at `29f5ad2`, first round. In the browser, a 20-step drag was undone by one Cmd+Z, and redo restored it. Merged as `d4e6002`. Note: the X/Y position inputs also coalesce with a drag on the same frame (by design).
 - S1: PASS at `8dfbf5b`, first round. The verdict was formatted as 'CONCERNS: none blocking / PASS' and treated as PASS. In the browser, typing Georgia gives 1 link and 'Inter, system-ui' loads Inter only. Merged as `d2bee72`. Notes: no test covers a layer-font change after mount (the code path is not debounced, confirmed in the browser); `preloadFont` skips `primaryFontFamily` (hover only).
 - S5: PASS at `548d1b9`, first round. Light theme: none L100 > tint L96.5 > hover L91 > selected L85, with selected-row text contrast 12:1. Dark theme identical to the base. Merged as `2450d4c`. The tint test helpers now assert `dark:bg-accent/30` (an equivalent check). Selected uses neutral-300 rather than the suggested neutral-200, which meets the criteria.
 - S3: PASS at `f82e348`, first round. In the browser at zoom 50%, 100% and 200%, the outline follows frame drags, offset only by half the stroke width. Merged as `9d1b3a1`.
 - S8: PASS at `2147510`, first round. In the browser at zoom 0.5, 0.7 and 2, the readout equals the Tablet `offsetWidth` and updates live. Merged as `e1f1b6b`. New follow-up: `ActionSize`'s Width/Height trigger labels use base `cssVars`, not the active breakpoint's override.
+- S9: PASS at `e7c1a83`, first round. In the browser: delete Tablet and its override disappears from Desktop; one Cmd+Z restores both. Merged as `d8c7465`.
 
 ---
 
