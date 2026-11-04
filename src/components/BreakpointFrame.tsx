@@ -152,6 +152,7 @@ export const BreakpointFrame = ({
 					// ones (font, color, line-height) cascade to layers natively
 					...applyCssVars(frameStyleVars),
 					backgroundColor: frameStyleVars?.["--background-color"] || "#ffffff",
+					color: frameStyleVars?.["--color"] || "#000000",
 				}}
 				onClick={handleContentClick}
 				data-slot="designer-frame"
