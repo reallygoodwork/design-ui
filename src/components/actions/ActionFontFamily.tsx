@@ -1,7 +1,8 @@
 import { IconZoom } from "@tabler/icons-react";
 import { Command } from "cmdk";
-import { useEffect, useMemo, useState } from "react";
-import { useDesignerAction } from "../../hooks/useDesignerAction";
+import { useEffect, useState } from "react";
+import { useBreakpointCss } from "../../hooks/useBreakpointCss";
+import { useDesignerContext } from "../../hooks/useDesignerContext";
 import { useGoogleFonts } from "../../hooks/useGoogleFonts";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { ActionPopover } from "./ActionPopover";
@@ -33,7 +34,13 @@ const fallbackFonts = [
 export const ActionFontFamily = () => {
 	const selectedLayers = useSelectedLayers();
 	const selectedLayer = selectedLayers[0];
-	const designerAction = useDesignerAction();
+	const { state } = useDesignerContext();
+	const {
+		value: layerFont,
+		inheritedValue,
+		setValue,
+		clearValue,
+	} = useBreakpointCss("--font-family");
 	const { loadFont, preloadFont } = useGoogleFonts();
 	const [fonts, setFonts] = useState<GoogleFont[]>(cachedFonts || []);
 	const [isLoading, setIsLoading] = useState(false);
@@ -75,21 +82,20 @@ export const ActionFontFamily = () => {
 		}
 	}, [isLoading]);
 
-	const currentValue = selectedLayer?.cssVars?.["--font-family"] || "Arial";
-
-	const triggerDisplayValue = useMemo(() => {
-		return currentValue;
-	}, [currentValue]);
+	// Explicit font wins; otherwise show what is actually inherited
+	// (smaller breakpoint, then the frame), or "Default".
+	const hasValue = Boolean(layerFont);
+	const triggerDisplayValue =
+		layerFont ||
+		inheritedValue ||
+		state.frameStyles?.["--font-family"] ||
+		"Default";
 
 	const handleSelect = (value: string) => {
 		if (selectedLayer) {
 			// Load the font before applying it
 			loadFont(value);
-
-			designerAction({
-				type: "UPDATE_LAYER_CSS",
-				payload: { id: selectedLayer.id, css: { "--font-family": value } },
-			});
+			setValue(value);
 		}
 	};
 
@@ -98,27 +104,13 @@ export const ActionFontFamily = () => {
 		preloadFont(fontFamily);
 	};
 
-	const hasValue = useMemo(() => {
-		return Boolean(selectedLayer?.cssVars?.["--font-family"]);
-	}, [selectedLayer?.cssVars]);
-
-	const handleClear = () => {
-		if (selectedLayer) {
-			designerAction({
-				type: "UPDATE_LAYER_CSS",
-				payload: {
-					id: selectedLayer.id,
-					css: { "--font-family": "" },
-				},
-			});
-		}
-	};
+	const handleClear = () => clearValue();
 
 	return (
 		<ActionPopover
 			label="Family"
 			popoverTitle="Font Family"
-			triggerDisplayValue={triggerDisplayValue ?? ""}
+			triggerDisplayValue={triggerDisplayValue}
 			hasValue={hasValue}
 			onClear={handleClear}
 		>
