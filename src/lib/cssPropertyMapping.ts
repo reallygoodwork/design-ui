@@ -105,6 +105,23 @@ function combineTextShadow(
 }
 
 /**
+ * A border width alone must be visible, and must not rely on a global
+ * preflight (`border: 0 solid`), so default the style to solid at render
+ * time. Nothing is stored: clearing the width leaves no stray style, and an
+ * explicit --border-style always wins.
+ */
+function defaultBorderStyle(
+	cssVars: Record<string, string>,
+	style: CSSProperties,
+	supportedProperties?: SupportedCssProperty[]
+): "solid" | undefined {
+	if (!cssVars["--border-width"] || style.borderStyle) return undefined;
+	if (supportedProperties && !supportedProperties.includes("--border-style"))
+		return undefined;
+	return "solid";
+}
+
+/**
  * Converts a cssVars object to a CSSProperties object
  * Optionally filters by supported properties
  */
@@ -143,6 +160,9 @@ export function applyCssVars(
 	) {
 		style.textShadow = shadow;
 	}
+
+	const borderStyle = defaultBorderStyle(cssVars, style, supportedProperties);
+	if (borderStyle) style.borderStyle = borderStyle;
 
 	return style;
 }

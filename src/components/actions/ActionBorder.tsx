@@ -1,9 +1,11 @@
 import { useMemo } from "react";
-import { useDesignerAction } from "../../hooks/useDesignerAction";
+import { useBreakpointCss } from "../../hooks/useBreakpointCss";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
+import { ClearButton } from "../common/ClearButton";
+import { Select } from "../common/Select";
+import { DesignAction } from "../DesignAction";
 import { ColorActionPopover } from "./ColorActionPopover";
 import { NumericActionControl } from "./NumericActionControl";
-import { SelectActionControl } from "./SelectActionControl";
 
 const borderStyles = [
 	{ label: "none", value: "none" },
@@ -15,28 +17,28 @@ const borderStyles = [
 
 type BorderStyle = (typeof borderStyles)[number]["value"];
 
+/**
+ * Breakpoint-aware style select. Nothing is written until the user picks a
+ * style; with none set it shows "solid", the render-time default for a width.
+ */
+const BorderStyleControl = () => {
+	const { value, inheritedValue, isExplicit, setValue, clearValue } =
+		useBreakpointCss("--border-style");
+	return (
+		<DesignAction label="Style" orientation="horizontal">
+			<Select
+				items={borderStyles}
+				value={value ?? inheritedValue ?? "solid"}
+				onValueChange={setValue}
+			/>
+			<ClearButton hasValue={isExplicit} handleClear={clearValue} />
+		</DesignAction>
+	);
+};
+
 export const ActionBorder = () => {
 	const selectedLayers = useSelectedLayers();
 	const selectedLayer = selectedLayers[0];
-	const designerAction = useDesignerAction();
-
-	// A width alone must produce a visible border, so default the style to
-	// "solid" when none has been chosen. Emptying the width clears the style
-	// too, leaving no orphaned style (which would draw a default-width border).
-	const handleWidthChange = (e: React.ChangeEvent<HTMLDivElement>) => {
-		if (!selectedLayer || !(e.target instanceof HTMLInputElement)) return;
-		const hasWidth = e.target.value.trim() !== "";
-		const hasStyle = Boolean(selectedLayer.cssVars?.["--border-style"]);
-		if (hasWidth === hasStyle) return;
-		designerAction({
-			type: "UPDATE_LAYER_CSS",
-			payload: {
-				id: selectedLayer.id,
-				css: { "--border-style": hasWidth ? "solid" : "" },
-			},
-		});
-	};
-
 	const borderColor = selectedLayer?.cssVars?.["--border-color"];
 	const borderWidth = selectedLayer?.cssVars?.["--border-width"] || "1px";
 	const borderStyle =
@@ -54,10 +56,7 @@ export const ActionBorder = () => {
 			popoverTitle="Border"
 			triggerDisplayValue={triggerDisplayValue}
 		>
-			<div
-				className="flex items-center gap-1 mt-2"
-				onChange={handleWidthChange}
-			>
+			<div className="flex items-center gap-1 mt-2">
 				<NumericActionControl
 					cssProperty="--border-width"
 					label="Width"
@@ -66,13 +65,7 @@ export const ActionBorder = () => {
 					orientation="horizontal"
 				/>
 			</div>
-			<SelectActionControl
-				cssProperty="--border-style"
-				label="Style"
-				options={borderStyles}
-				defaultValue="solid"
-				orientation="horizontal"
-			/>
+			<BorderStyleControl />
 		</ColorActionPopover>
 	);
 };
