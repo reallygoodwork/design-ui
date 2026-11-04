@@ -150,4 +150,29 @@ describe("ActionFontFamily", () => {
 		expect(layer?.breakpointCssVars?.tablet?.["--font-family"]).toBe("Roboto");
 		expect(layer?.cssVars?.["--font-family"]).toBe("Lato");
 	});
+
+	it("shows a smaller-breakpoint font as inherited, then an override, then clears it", async () => {
+		const trigger = setup({ "--font-family": "Lato" }, undefined, "tablet");
+		const clear = () => {
+			const buttons = screen.getAllByRole("button");
+			return buttons[buttons.length - 1] as HTMLButtonElement;
+		};
+		expect(trigger.textContent).toBe("Lato");
+		expect(trigger.getAttribute("data-empty")).toBe("true");
+		expect(clear().disabled).toBe(true);
+
+		fireEvent.click(trigger);
+		fireEvent.click(await screen.findByText("Roboto"));
+		expect(trigger.textContent).toBe("Roboto");
+		expect(trigger.getAttribute("data-empty")).toBe("false");
+		expect(clear().disabled).toBe(false);
+
+		fireEvent.click(clear());
+		const layer = ref.ctx?.state.layers[0];
+		expect(trigger.textContent).toBe("Lato");
+		expect(trigger.getAttribute("data-empty")).toBe("true");
+		expect(clear().disabled).toBe(true);
+		expect(layer?.cssVars?.["--font-family"]).toBe("Lato");
+		expect(layer?.breakpointCssVars?.tablet?.["--font-family"]).toBeFalsy();
+	});
 });

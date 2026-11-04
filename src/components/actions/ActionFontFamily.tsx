@@ -38,6 +38,7 @@ export const ActionFontFamily = () => {
 	const {
 		value: layerFont,
 		inheritedValue,
+		isExplicit,
 		setValue,
 		clearValue,
 	} = useBreakpointCss("--font-family");
@@ -82,12 +83,12 @@ export const ActionFontFamily = () => {
 		}
 	}, [isLoading]);
 
-	// Explicit font wins; otherwise show what is actually inherited
-	// (smaller breakpoint, then the frame), or "Default".
-	const hasValue = Boolean(layerFont);
+	// Only a font set at the active breakpoint is "explicit". Otherwise show
+	// what is actually inherited (smaller breakpoint, then the frame), or
+	// "Default", marked as inherited.
+	const hasValue = isExplicit && Boolean(layerFont);
 	const triggerDisplayValue =
-		layerFont ||
-		inheritedValue ||
+		(hasValue ? layerFont : inheritedValue) ||
 		state.frameStyles?.["--font-family"] ||
 		"Default";
 
