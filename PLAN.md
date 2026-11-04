@@ -138,8 +138,11 @@ Nothing is graded by the agent that wrote it. The only thing that unlocks a merg
 
 ### Per-task loop (B1, B9, B5, H, B6, B7, B8, F)
 
-1. **Fix:** launch `bug-fixer` with `isolation: "worktree"`, branched from the current `fix/review-bugs`
-   tip, so every dependency is already merged. The prompt contains:
+1. **Fix:** the orchestrator creates the task's worktree itself with
+   `git worktree add -b task/<id> <scratchpad>/wt-<id> fix/review-bugs` and runs `bun install` in it,
+   so every dependency is already merged. Then it launches `bug-fixer` pointed at that path.
+   (Correction: `isolation: "worktree"` branches from `main`, not from the current tip. Both wave-1
+   fixers launched that way stopped before editing anything, because T0 was missing.) The prompt contains:
    - the task ID and its `PLAN.md` entry name (bugs 2+3+4 for `H`; the Feature spec for `F`, where
      "repro" means the current ancestor-tint behaviour failing criteria A–E);
    - the exact files from the task's row in the files table (it shouldn't edit outside them without
