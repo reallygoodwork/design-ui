@@ -9,11 +9,11 @@ export const ActionMargin = () => {
 	const designerAction = useDesignerAction();
 	const selectedLayer = selectedLayers[0];
 
-	// Get all padding values
+	// Get all margin values (logical properties, same model as ActionPadding)
 	const marginTop = selectedLayer?.cssVars?.["--margin-block-start"];
-	const marginRight = selectedLayer?.cssVars?.["--margin-inline-start"];
+	const marginRight = selectedLayer?.cssVars?.["--margin-inline-end"];
 	const marginBottom = selectedLayer?.cssVars?.["--margin-block-end"];
-	const marginLeft = selectedLayer?.cssVars?.["--margin-inline-end"];
+	const marginLeft = selectedLayer?.cssVars?.["--margin-inline-start"];
 
 	// Create display value for trigger
 	const triggerDisplayValue = useMemo(() => {
@@ -43,10 +43,10 @@ export const ActionMargin = () => {
 				payload: {
 					id: selectedLayer.id,
 					css: {
-						"--margin-top": "",
-						"--margin-right": "",
-						"--margin-bottom": "",
-						"--margin-left": "",
+						"--margin-block-start": "",
+						"--margin-inline-end": "",
+						"--margin-block-end": "",
+						"--margin-inline-start": "",
 					},
 				},
 			});
@@ -62,28 +62,28 @@ export const ActionMargin = () => {
 			onClear={handleClear}
 		>
 			<NumericActionControl
-				cssProperty="--margin-top"
+				cssProperty="--margin-block-start"
 				label="Top"
 				defaultValue={0}
 				showSteppers={false}
 				orientation="horizontal"
 			/>
 			<NumericActionControl
-				cssProperty="--margin-right"
+				cssProperty="--margin-inline-end"
 				label="Right"
 				defaultValue={0}
 				showSteppers={false}
 				orientation="horizontal"
 			/>
 			<NumericActionControl
-				cssProperty="--margin-bottom"
+				cssProperty="--margin-block-end"
 				label="Bottom"
 				defaultValue={0}
 				showSteppers={false}
 				orientation="horizontal"
 			/>
 			<NumericActionControl
-				cssProperty="--margin-left"
+				cssProperty="--margin-inline-start"
 				label="Left"
 				defaultValue={0}
 				showSteppers={false}

@@ -13,7 +13,7 @@ export const ActionTextTransform = () => {
 			label="Transform"
 			orientation="horizontal"
 			options={[
-				{ label: "Normal", value: "normal", icon: <IconTypography /> },
+				{ label: "Normal", value: "none", icon: <IconTypography /> },
 				{
 					label: "Uppercase",
 					value: "uppercase",

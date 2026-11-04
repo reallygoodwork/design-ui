@@ -4,7 +4,7 @@ import { ToggleGroupControl } from "./ToggleGroupControl";
 export const ActionTextStyle = () => {
 	return (
 		<ToggleGroupControl
-			cssProperty="--text-style"
+			cssProperty="--font-style"
 			label="Style"
 			orientation="horizontal"
 			options={[
