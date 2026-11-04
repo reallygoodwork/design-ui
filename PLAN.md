@@ -529,7 +529,10 @@ Tailwind preflight leak, plus the flat node map and so on).
 Order: R1 ∥ R4, then R2, R5, R6 and R7 as slots free up (R2 only after R1 merges), then R3, then a
 final integration check.
 
-- [ ] R1 · [ ] R2 · [ ] R3 · [ ] R4 · [ ] R5 · [ ] R6 · [~] R7 (dropped)
+- [x] R1 · [ ] R2 · [ ] R3 · [ ] R4 · [ ] R5 · [ ] R6 · [~] R7 (dropped)
+
+**Round 2 verdict log:**
+- R1: PASS at `8465ffc`, first round. In a real browser, clicks right of the name, in the padding, on the name and on the icon all select. Merged as `dd0a48c`. Shift-click wasn't compared with the base branch (the tree is single-select and the selection code is unchanged).
 
 ---
 
