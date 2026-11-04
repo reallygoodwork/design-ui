@@ -1,12 +1,31 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { isPrimaryBreakpoint } from "../lib/breakpointUtils";
-import type { Breakpoint, CSSVars, Layer, LayerType } from "../lib/Types";
+import {
+	denormalize,
+	getNode,
+	insertLayer,
+	mapNodes,
+	moveLayer,
+	type NodeMap,
+	normalize,
+	removeLayer,
+	type Tree,
+	updateNode,
+} from "../lib/layerTree";
+import type {
+	Breakpoint,
+	CSSVars,
+	Layer,
+	LayerNode,
+	LayerType,
+} from "../lib/Types";
 
 /**
  * The undoable part of the state. Snapshots share structure with the live state.
  */
 export type Doc = {
-	layers: Layer[];
+	nodes: NodeMap;
+	rootIds: string[];
 	breakpoints: Breakpoint[];
 	frameStyles: CSSVars;
 };
@@ -18,9 +37,18 @@ const MAX_HISTORY = 200;
  */
 export type State = {
 	/**
-	 * The layers in the designer.
+	 * The layers, flat: every layer by id, without `children`.
 	 */
-	layers: Layer[];
+	nodes: NodeMap;
+	/**
+	 * The ids of the top-level layers, in order.
+	 */
+	rootIds: string[];
+	/**
+	 * The nested layers, derived from `nodes` and `rootIds` (memoised, read-only).
+	 * Present on states made by the reducer, the store or `withLayers`.
+	 */
+	readonly layers: Layer[];
 	/**
 	 * The available layer types.
 	 */
@@ -194,122 +222,29 @@ export type Action =
 			type: "CENTER_ON_BREAKPOINTS";
 	  };
 
-// Helper function to find a layer by ID in a nested structure
-const findLayer = (
-	layers: Layer[],
-	layerId: string
-): { layer: Layer; parent: Layer[]; index: number } | null => {
-	for (let i = 0; i < layers.length; i++) {
-		if (layers[i].id === layerId) {
-			return { layer: layers[i], parent: layers, index: i };
-		}
-		if (layers[i].children) {
-			const found = findLayer(layers[i].children || [], layerId);
-			if (found) {
-				return found;
-			}
-		}
+// Add the derived nested `layers` accessor (non-enumerable, so spreads drop it)
+const withDerived = (state: Omit<State, "layers">): State => {
+	if (Object.hasOwn(state, "layers")) {
+		return state as State;
 	}
-	return null;
+	return Object.defineProperty(state, "layers", {
+		get(this: State) {
+			return denormalize(this.nodes, this.rootIds);
+		},
+		enumerable: false,
+		configurable: true,
+	}) as State;
 };
 
-// Helper function to recursively delete a layer and all its children
-const deleteLayer = (layers: Layer[], layerId: string): Layer[] => {
-	return layers
-		.filter((layer) => layer.id !== layerId)
-		.map((layer) => {
-			// Recursively delete from children if they exist
-			if (layer.children && layer.children.length > 0) {
-				return {
-					...layer,
-					children: deleteLayer(layer.children, layerId),
-				};
-			}
-			return layer;
-		});
-};
+/**
+ * A copy of `state` holding the given nested layers (normalised).
+ */
+export const withLayers = (state: State, layers: Layer[]): State =>
+	withDerived({ ...state, ...normalize(layers) });
 
-// Helper function to recursively update a layer by ID at any nesting level
-const updateLayerById = (
-	layers: Layer[],
-	layerId: string,
-	updater: (layer: Layer) => Layer
-): Layer[] => {
-	let changed = false;
-	const next = layers.map((layer) => {
-		if (layer.id === layerId) {
-			changed = true;
-			return updater(layer);
-		}
-		// Recursively update children if they exist
-		if (layer.children && layer.children.length > 0) {
-			const children = updateLayerById(layer.children, layerId, updater);
-			// Untouched subtrees keep their identity
-			if (children === layer.children) {
-				return layer;
-			}
-			changed = true;
-			return { ...layer, children };
-		}
-		return layer;
-	});
-	return changed ? next : layers;
-};
-
-// Helper function to insert a layer at a specific position
-const insertLayer = (
-	layers: Layer[],
-	newLayer: Layer,
-	targetLayerId: string,
-	position: "before" | "inside" | "after"
-): Layer[] => {
-	const found = findLayer(layers, targetLayerId);
-	if (!found) {
-		// If target not found, append to root
-		return [...layers, newLayer];
-	}
-
-	const { parent, index } = found;
-
-	if (position === "inside") {
-		// Add as child of target layer (only the target is touched)
-		return updateLayerById(layers, targetLayerId, (l) => ({
-			...l,
-			children: [...(l.children ?? []), newLayer],
-		}));
-	} else {
-		// position === "before" or "after"
-		// Insert before/after target layer in its parent
-		const insertIndex = position === "before" ? index : index + 1;
-		const newParent = [...parent];
-		newParent.splice(insertIndex, 0, newLayer);
-
-		// If parent is the root layers array, return the new parent directly
-		if (parent === layers) {
-			return newParent;
-		}
-
-		// Otherwise, find the parent layer and update its children
-		const updateParentLayer = (layerList: Layer[]): Layer[] => {
-			return layerList.map((l) => {
-				// Check if this layer contains the target in its children
-				if (l.children?.some((child) => child.id === targetLayerId)) {
-					return { ...l, children: newParent };
-				}
-				// Recursively check nested children
-				if (l.children) {
-					return { ...l, children: updateParentLayer(l.children) };
-				}
-				return l;
-			});
-		};
-
-		return updateParentLayer(layers);
-	}
-};
-
-const getDoc = ({ layers, breakpoints, frameStyles }: State): Doc => ({
-	layers,
+const getDoc = ({ nodes, rootIds, breakpoints, frameStyles }: State): Doc => ({
+	nodes,
+	rootIds,
 	breakpoints,
 	frameStyles,
 });
@@ -356,11 +291,11 @@ export const getCoalesceKey = (
 
 // Helper function to update layer CSS (handles primary vs breakpoint-specific)
 const updateLayerCss = (
-	layer: Layer,
+	layer: LayerNode,
 	css: Record<string, string>,
 	targetBreakpointId: string | null,
 	breakpoints: Breakpoint[]
-): Layer => {
+): LayerNode => {
 	const isPrimary =
 		!targetBreakpointId ||
 		breakpoints.length === 0 ||
@@ -420,10 +355,8 @@ const handleSelectLayer = (
 	shiftKey: boolean,
 	breakpointId?: string
 ): State => {
-	const targetLayer = findLayer(state.layers, layerId);
-
 	// Don't select locked layers
-	if (targetLayer?.layer.isLocked) {
+	if (getNode(state.nodes, layerId)?.isLocked) {
 		return state;
 	}
 
@@ -462,30 +395,23 @@ const handleMoveLayer = (
 	position: "before" | "on" | "after"
 ): State => {
 	const insertPosition = position === "on" ? "inside" : position;
-	let newLayers = state.layers;
+	let tree: Tree = state;
 
 	for (const layerId of layerIds) {
-		if (layerId === targetId) continue;
-
-		const layerToMove = findLayer(newLayers, layerId);
-		if (!layerToMove) continue;
-
-		const movedLayer = { ...layerToMove.layer };
-		newLayers = deleteLayer(newLayers, layerId);
-		newLayers = insertLayer(newLayers, movedLayer, targetId, insertPosition);
+		tree = moveLayer(tree, layerId, targetId, insertPosition);
 	}
 
-	return addHistoryEntry(state, { layers: newLayers });
+	return addHistoryEntry(state, { nodes: tree.nodes, rootIds: tree.rootIds });
 };
 
 // Helper function to update a simple layer property
 const updateLayerProperty = (
 	state: State,
 	layerId: string,
-	updater: (layer: Layer) => Layer
+	updater: (layer: LayerNode) => LayerNode
 ): State => {
-	const newLayers = updateLayerById(state.layers, layerId, updater);
-	return addHistoryEntry(state, { layers: newLayers });
+	const tree = updateNode(state, layerId, updater);
+	return addHistoryEntry(state, { nodes: tree.nodes, rootIds: tree.rootIds });
 };
 
 // Swap the Doc fields only, then drop selection/breakpoint ids that no longer exist
@@ -494,21 +420,15 @@ const restoreDoc = (
 	doc: Doc,
 	history: State["history"]
 ): State => {
-	const ids = new Set<string>();
-	const collect = (layers: Layer[]) => {
-		for (const l of layers) {
-			ids.add(l.id);
-			if (l.children) collect(l.children);
-		}
-	};
-	collect(doc.layers);
 	const hasBp = (id: string | null) =>
 		id !== null && doc.breakpoints.some((bp) => bp.id === id);
 	return {
 		...state,
 		...doc,
 		history,
-		selectedLayers: state.selectedLayers.filter((id) => ids.has(id)),
+		selectedLayers: state.selectedLayers.filter((id) =>
+			Object.hasOwn(doc.nodes, id)
+		),
 		selectedBreakpointId: hasBp(state.selectedBreakpointId)
 			? state.selectedBreakpointId
 			: null,
@@ -536,31 +456,17 @@ const handleRedo = (state: State): State => {
 	});
 };
 
-// Remove one breakpoint's overrides from every layer at every depth.
+// Remove one breakpoint's overrides from every layer.
 // Layers with nothing to strip keep their identity.
-const stripBreakpointVars = (layers: Layer[], id: string): Layer[] => {
-	let changed = false;
-	const next = layers.map((layer) => {
-		const children = layer.children
-			? stripBreakpointVars(layer.children, id)
-			: undefined;
-		const hasVars = layer.breakpointCssVars
-			? id in layer.breakpointCssVars
-			: false;
-		if (children === layer.children && !hasVars) return layer;
-		changed = true;
-		const { breakpointCssVars, ...rest } = layer;
-		const { [id]: _removed, ...remaining } = breakpointCssVars ?? {};
-		return {
-			...rest,
-			...(children && { children }),
-			...(Object.keys(remaining).length > 0 && {
-				breakpointCssVars: remaining,
-			}),
-		};
+const stripBreakpointVars = (tree: Tree, id: string): Tree =>
+	mapNodes(tree, (node) => {
+		if (!(node.breakpointCssVars && id in node.breakpointCssVars)) return node;
+		const { breakpointCssVars, ...rest } = node;
+		const { [id]: _removed, ...remaining } = breakpointCssVars;
+		return Object.keys(remaining).length > 0
+			? { ...rest, breakpointCssVars: remaining }
+			: rest;
 	});
-	return changed ? next : layers;
-};
 
 // Helper function to handle breakpoint updates with history
 const updateBreakpoints = (
@@ -587,8 +493,9 @@ const applyFrameStylesUpdate = (
 	return addHistoryEntry(state, { frameStyles: updatedFrameStyles });
 };
 
-export const initialState: State = {
-	layers: [],
+export const initialState: State = withDerived({
+	nodes: {},
+	rootIds: [],
 	layerTypes: [],
 	selectedLayers: [],
 	breakpoints: [],
@@ -600,13 +507,13 @@ export const initialState: State = {
 	zoom: 1,
 	pan: { x: 0, y: 0 },
 	centerRequestId: 0,
-};
+});
 
 // True when `targetId` is a layer whose type is known and can't hold children
 const cannotHaveChildren = (state: State, targetId: string): boolean => {
-	const target = findLayer(state.layers, targetId);
+	const target = getNode(state.nodes, targetId);
 	if (!target) return false;
-	const type = state.layerTypes.find((t) => t.type === target.layer.type);
+	const type = state.layerTypes.find((t) => t.type === target.type);
 	return !!type && !type.supportsChildren;
 };
 
@@ -623,17 +530,20 @@ const applyAction = (state: State, action: Action): State => {
 	}
 	switch (action.type) {
 		case "SET_LAYERS":
-			if (action.payload === state.layers) return state;
-			return { ...state, layers: action.payload };
+			// Echo of the last emitted nested array: nothing to do
+			if (action.payload === denormalize(state.nodes, state.rootIds)) {
+				return state;
+			}
+			return { ...state, ...normalize(action.payload) };
 		case "ADD_LAYER": {
 			const { layer, targetLayerId, position } = action.payload;
-			const newLayers = insertLayer(
-				state.layers,
-				layer,
-				targetLayerId,
-				position
-			);
-			return addHistoryEntry(state, { layers: newLayers });
+			const tree = insertLayer(state, layer, targetLayerId, position);
+			// Existing id: nothing inserted, so no history entry
+			if (tree === state) return state;
+			return addHistoryEntry(state, {
+				nodes: tree.nodes,
+				rootIds: tree.rootIds,
+			});
 		}
 		case "SELECT_LAYER": {
 			return handleSelectLayer(
@@ -650,10 +560,11 @@ const applyAction = (state: State, action: Action): State => {
 			};
 		case "DELETE_LAYERS": {
 			const { layerIds } = action.payload;
-			let newLayers = state.layers;
-			for (const id of layerIds) newLayers = deleteLayer(newLayers, id);
+			let tree: Tree = state;
+			for (const id of layerIds) tree = removeLayer(tree, id);
 			return addHistoryEntry(state, {
-				layers: newLayers,
+				nodes: tree.nodes,
+				rootIds: tree.rootIds,
 				selectedLayers: state.selectedLayers.filter(
 					(id) => !layerIds.includes(id)
 				),
@@ -685,10 +596,13 @@ const applyAction = (state: State, action: Action): State => {
 		case "UPDATE_LAYER_CSS": {
 			const { id, css, breakpointId } = action.payload;
 			const targetBreakpointId = breakpointId ?? state.activeBreakpointId;
-			const newLayers = updateLayerById(state.layers, id, (layer) =>
+			const tree = updateNode(state, id, (layer) =>
 				updateLayerCss(layer, css, targetBreakpointId, state.breakpoints)
 			);
-			return addHistoryEntry(state, { layers: newLayers });
+			return addHistoryEntry(state, {
+				nodes: tree.nodes,
+				rootIds: tree.rootIds,
+			});
 		}
 		case "UPDATE_LAYER_VALUE":
 			return updateLayerProperty(state, action.payload.id, (layer) => ({
@@ -745,9 +659,11 @@ const applyAction = (state: State, action: Action): State => {
 			const newBreakpoints = state.breakpoints.filter(
 				(bp) => bp.id !== action.payload.id
 			);
+			const stripped = stripBreakpointVars(state, action.payload.id);
 			return addHistoryEntry(state, {
 				breakpoints: newBreakpoints,
-				layers: stripBreakpointVars(state.layers, action.payload.id),
+				nodes: stripped.nodes,
+				rootIds: stripped.rootIds,
 				activeBreakpointId:
 					state.activeBreakpointId === action.payload.id
 						? (newBreakpoints[0]?.id ?? null)
@@ -795,18 +711,22 @@ const applyAction = (state: State, action: Action): State => {
 };
 
 export const reducer = (state: State, action: Action): State => {
-	const next = applyAction(state, action);
-	if (next === state) return state;
+	const applied = applyAction(state, action);
+	if (applied === state) return state;
+	const next = withDerived(applied);
 	const committed = next.history.past !== state.history.past;
 	const key = committed
 		? getCoalesceKey(action, state.activeBreakpointId)
 		: null;
 	if (committed && key !== null && key === state.lastCoalesceKey) {
 		// Same run: keep the earlier snapshot on top instead of pushing another
-		return { ...next, history: { past: state.history.past, future: [] } };
+		return withDerived({
+			...next,
+			history: { past: state.history.past, future: [] },
+		});
 	}
 	// Anything that is not a coalescable edit breaks the run
-	return { ...next, lastCoalesceKey: key };
+	return withDerived({ ...next, lastCoalesceKey: key });
 };
 
 /**
@@ -855,7 +775,7 @@ export type DesignerStore = {
 };
 
 export const createDesignerStore = (initial: State): DesignerStore => {
-	let state = initial;
+	let state = withDerived(initial);
 	const listeners = new Set<() => void>();
 	return {
 		getState: () => state,
@@ -905,7 +825,7 @@ export const useDesigner = ({
 	if (!storeRef.current) {
 		storeRef.current = createDesignerStore({
 			...initialState,
-			layers: defaultLayers || layers || [],
+			...normalize(defaultLayers || layers || []),
 			layerTypes: layerTypes || [],
 			frameSize,
 			breakpoints: initialBreakpoints,
@@ -923,11 +843,12 @@ export const useDesigner = ({
 		}
 	}, [layers, dispatch]);
 
+	const nestedLayers = denormalize(state.nodes, state.rootIds);
 	useEffect(() => {
 		if (onLayersChange) {
-			onLayersChange(state.layers);
+			onLayersChange(nestedLayers);
 		}
-	}, [state.layers, onLayersChange]);
+	}, [nestedLayers, onLayersChange]);
 
 	return { state, dispatch, store };
 };

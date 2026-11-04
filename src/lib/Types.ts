@@ -30,6 +30,15 @@ export type Layer = {
 	children?: Layer[];
 };
 
+/**
+ * A layer in the flat store: a Layer without `children`, linked by ids.
+ * `childIds` mirrors `children`: absent when the layer had no `children`.
+ */
+export type LayerNode = Omit<Layer, "children"> & {
+	parentId: string | null;
+	childIds?: string[];
+};
+
 export type LayerWithStyles = Layer & {
 	style: CSSProperties;
 	effectiveCssVars: CSSVars;

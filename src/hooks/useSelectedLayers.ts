@@ -2,13 +2,14 @@ import { useMemo } from "react";
 import { buildLayerIndex } from "../lib/layerIndex";
 import type { Layer } from "../lib/Types";
 import { useDesignerSelector } from "./useDesignerSelector";
+import { useLayers } from "./useLayers";
 
 /**
  * Hook to get the currently selected layers from the designer state.
  * Uses the id index so nested layers can be selected too.
  */
 export const useSelectedLayers = () => {
-	const layers = useDesignerSelector((state) => state.layers);
+	const layers = useLayers();
 	const selectedLayers = useDesignerSelector((state) => state.selectedLayers);
 
 	return useMemo(() => {
