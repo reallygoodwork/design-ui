@@ -533,7 +533,7 @@ To test against old code, use a scratch copy.
 Order: R1 ∥ R4, then R2, R5, R6 and R7 as slots free up (R2 only after R1 merges), then R3, then a
 final integration check.
 
-- [x] R1 · [x] R2 · [ ] R3 · [x] R4 · [x] R5 · [x] R6 · [~] R7 (dropped)
+- [x] R1 · [x] R2 · [x] R3 · [x] R4 · [x] R5 · [x] R6 · [~] R7 (dropped)
 
 **Round 2 verdict log:**
 - R1: PASS at `8465ffc`, first round. In a real browser, clicks right of the name, in the padding, on the name and on the icon all select. Merged as `dd0a48c`. Shift-click wasn't compared with the base branch (the tree is single-select and the selection code is unchanged).
@@ -541,6 +541,7 @@ final integration check.
 - R2: PASS at `4622b2f`, first round, with a browser and keyboard check; visuals match the base. Merged as `bc6ec0a`. Note: the header's 8px edge padding no longer selects on click.
 - R4: PASS at `7ea81ef` after 2 retry rounds (CONCERNS: keyboard select lost, then the header became full width). In a real browser it matches the base visuals with 0 px difference and the same keyboard tab stops. New: drag by the name area works and doesn't select. Fixes the base bug where Enter on the header added a breakpoint. Merged as `397b29a`. Note: after a mouse click on the name, focus no longer lands on the select button.
 - R6: PASS at `882dc52` after 2 retry rounds (CONCERNS: a `FontLoader` gap from going breakpoint-aware, so the scope was amended and the user approved; then breakpoint-inherited fonts showed as explicit). All font-control states were checked in a real browser. Merged as `5babb86`.
+- R3: PASS at `9710e69` after 1 retry round (CONCERNS: the reserved handle space shifted rows 20px and misaligned rename, so the handle is now overlaid). In a real browser all 12 rows match the base at rest, the drag-handle warning count went from 24 to 0, and mouse drag, keyboard drag and row clicks all work. Merged as `e67901f`.
 
 ---
 
