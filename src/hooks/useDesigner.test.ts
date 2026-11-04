@@ -15,6 +15,7 @@ import {
 	initialState,
 	reducer,
 	type State,
+	withLayers,
 } from "./useDesigner";
 import { useDesignerContext } from "./useDesignerContext";
 import { useHistory } from "./useHistory";
@@ -24,13 +25,10 @@ const flatIds = (layers: Layer[]): string[] =>
 
 describe("insertLayer", () => {
 	it("ADD_LAYER inside A adds the layer only once", () => {
-		const state = {
-			...initialState,
-			layers: [
-				makeLayer("A", [makeLayer("a1")]),
-				makeLayer("B", [makeLayer("b1")]),
-			],
-		};
+		const state = withLayers(initialState, [
+			makeLayer("A", [makeLayer("a1")]),
+			makeLayer("B", [makeLayer("b1")]),
+		]);
 		const next = reducer(state, {
 			type: "ADD_LAYER",
 			payload: {
@@ -43,13 +41,10 @@ describe("insertLayer", () => {
 	});
 
 	it("ADD_LAYER inside a deeply nested frame inserts only there", () => {
-		const state = {
-			...initialState,
-			layers: [
-				makeLayer("A", [makeLayer("a1", [makeLayer("a2")])]),
-				makeLayer("B", [makeLayer("b1")]),
-			],
-		};
+		const state = withLayers(initialState, [
+			makeLayer("A", [makeLayer("a1", [makeLayer("a2")])]),
+			makeLayer("B", [makeLayer("b1")]),
+		]);
 		const next = reducer(state, {
 			type: "ADD_LAYER",
 			payload: {
@@ -62,14 +57,11 @@ describe("insertLayer", () => {
 	});
 
 	it("MOVE_LAYER on A leaves exactly one copy of the moved layer", () => {
-		const state = {
-			...initialState,
-			layers: [
-				makeLayer("A", [makeLayer("a1")]),
-				makeLayer("B", [makeLayer("b1")]),
-				makeLayer("M"),
-			],
-		};
+		const state = withLayers(initialState, [
+			makeLayer("A", [makeLayer("a1")]),
+			makeLayer("B", [makeLayer("b1")]),
+			makeLayer("M"),
+		]);
 		const next = reducer(state, {
 			type: "MOVE_LAYER",
 			payload: { layerIds: ["M"], targetId: "A", position: "on" },
@@ -99,8 +91,7 @@ const rename = (layerId: string, name: string): Action => ({
 });
 
 const base = (): State => ({
-	...initialState,
-	layers: [makeLayer("X"), makeLayer("Y"), makeLayer("Z")],
+	...withLayers(initialState, [makeLayer("X"), makeLayer("Y"), makeLayer("Z")]),
 	breakpoints,
 	activeBreakpointId: "mobile",
 });
@@ -226,7 +217,8 @@ describe("history memory", () => {
 			expect(Object.keys(doc).sort()).toEqual([
 				"breakpoints",
 				"frameStyles",
-				"layers",
+				"nodes",
+				"rootIds",
 			]);
 		}
 	});
@@ -295,10 +287,12 @@ describe("coalesce", () => {
 
 describe("delete", () => {
 	it("DELETE_LAYERS of 3 layers is 1 step; UNDO restores them in order", () => {
-		const s0 = {
-			...base(),
-			layers: [makeLayer("A"), makeLayer("B"), makeLayer("C"), makeLayer("D")],
-		};
+		const s0 = withLayers(base(), [
+			makeLayer("A"),
+			makeLayer("B"),
+			makeLayer("C"),
+			makeLayer("D"),
+		]);
 		const s = reducer(s0, {
 			type: "DELETE_LAYERS",
 			payload: { layerIds: ["A", "B", "C"] },
@@ -323,15 +317,14 @@ describe("delete", () => {
 });
 
 describe("supportsChildren", () => {
-	const base: State = {
-		...initialState,
-		layerTypes: defaultLayerTypes,
-		layers: [
+	const base: State = withLayers(
+		{ ...initialState, layerTypes: defaultLayerTypes },
+		[
 			makeLayer("T", undefined, { type: "text" }),
 			makeLayer("F", []),
 			makeLayer("X"),
-		],
-	};
+		]
+	);
 
 	it("text layer type does not support children", () => {
 		expect(textLayerType.supportsChildren).toBe(false);
@@ -470,7 +463,7 @@ describe("delete breakpoint", () => {
 			breakpointCssVars: { desktop: { width: "3px" } },
 		}),
 	];
-	const withTree = (): State => ({ ...base(), layers: tree() });
+	const withTree = (): State => withLayers(base(), tree());
 	const hasKey = (layers: Layer[], id: string): boolean =>
 		layers.some(
 			(l) =>

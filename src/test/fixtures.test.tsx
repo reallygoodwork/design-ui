@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { initialState, reducer } from "../hooks/useDesigner";
+import { initialState, reducer, withLayers } from "../hooks/useDesigner";
 import { useDesignerContext } from "../hooks/useDesignerContext";
 import { useLayers } from "../hooks/useLayers";
 import {
@@ -29,10 +29,9 @@ const DesignerSummary = () => {
 
 describe("test infrastructure", () => {
 	it("runs the reducer against fixture layers", () => {
-		const state = reducer(
-			{ ...initialState, layers: [makeLayer("A")] },
-			{ type: "DESELECT_ALL" }
-		);
+		const state = reducer(withLayers(initialState, [makeLayer("A")]), {
+			type: "DESELECT_ALL",
+		});
 		expect(state.layers.map((l) => l.id)).toEqual(["A"]);
 	});
 
