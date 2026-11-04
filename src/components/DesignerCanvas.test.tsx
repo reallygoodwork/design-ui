@@ -1,10 +1,12 @@
-import { act } from "@testing-library/react";
-import { useEffect } from "react";
+import { act, cleanup, render } from "@testing-library/react";
+import { type ReactElement, useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { breakpoints, makeLayer, renderInDesigner } from "../test/fixtures";
+import { DimensionAble } from "./ables/DimensionAble";
 import { BreakpointHeader } from "./BreakpointHeader";
 import { DesignerCanvas } from "./DesignerCanvas";
+import canvasSource from "./DesignerCanvas.tsx?raw";
 
 const moveableProps = vi.hoisted(() => ({
 	current: null as Record<string, unknown> | null,
@@ -13,12 +15,16 @@ const selectoProps = vi.hoisted(() => ({
 	current: null as Record<string, unknown> | null,
 }));
 const updateRect = vi.hoisted(() => vi.fn());
+const controlBox = vi.hoisted(() => ({ current: null as HTMLElement | null }));
 
 vi.mock("react-moveable", async () => {
 	const React = await import("react");
 	return {
 		default: React.forwardRef((props: Record<string, unknown>, ref) => {
-			React.useImperativeHandle(ref, () => ({ updateRect }));
+			React.useImperativeHandle(ref, () => ({
+				updateRect,
+				getControlBoxElement: () => controlBox.current,
+			}));
 			moveableProps.current = props;
 			return null;
 		}),
@@ -157,7 +163,7 @@ describe("header drag", () => {
 		header.appendChild(inner);
 		container.appendChild(header);
 		const layer = document.createElement("div");
-		layer.className = "designer-layer";
+		layer.className = "designer-layer moveable-dimension";
 		const layerChild = document.createElement("span");
 		layer.appendChild(layerChild);
 		container.appendChild(layer);
@@ -178,5 +184,119 @@ describe("header drag", () => {
 		expect(
 			container.querySelector(".breakpoint-header[data-breakpoint-header]")
 		).not.toBeNull();
+	});
+});
+
+describe("zoom", () => {
+	const setZoom = (zoom: number) =>
+		act(() => {
+			dispatch({ type: "SET_ZOOM", payload: zoom });
+		});
+
+	beforeEach(() => {
+		renderInDesigner(
+			<DesignerCanvas>
+				<Probe />
+			</DesignerCanvas>,
+			{ layers: [makeLayer("a")] }
+		);
+	});
+
+	it("does not override Moveable's own zoom at any canvas zoom", () => {
+		for (const z of [0.5, 1, 2]) {
+			setZoom(z);
+			const mz = moveableProps.current?.zoom;
+			expect(mz === undefined || mz === 1).toBe(true);
+		}
+	});
+
+	it("passes viewerZoom to the ables and no custom zoom key", () => {
+		setZoom(2);
+		const props = moveableProps.current?.props as Record<string, unknown>;
+		expect(props.viewerZoom).toBe(2);
+		expect(props).not.toHaveProperty("zoom");
+	});
+
+	it("has no dead getElement() inverse-scale effect left", () => {
+		expect(canvasSource).not.toContain("inverseScale");
+		expect(canvasSource).not.toMatch(/moveableRef\.current\??\.getElement/);
+		expect(canvasSource).not.toMatch(
+			/querySelectorAll\(\s*"\.moveable-control-box"/
+		);
+	});
+
+	it("DimensionAble shows the unzoomed size with no zoom-dependent transform", () => {
+		for (const viewerZoom of [0.5, 1, 2]) {
+			const el = DimensionAble.render(
+				{
+					getRect: () => ({ height: 100, offsetWidth: 120, offsetHeight: 80 }),
+					props: { viewerZoom },
+				} as never,
+				{} as never
+			);
+			const { container } = render(el as ReactElement);
+			const label = container.querySelector(
+				".moveable-dimension"
+			) as HTMLElement;
+			expect(container.textContent).toBe("120 x 80");
+			expect(label.style.transform).toBe("");
+			cleanup();
+		}
+	});
+});
+
+describe("moveable control clicks", () => {
+	const selectEnd = (target: Element) =>
+		act(() => {
+			const onSelectEnd = selectoProps.current?.onSelectEnd as (
+				e: unknown
+			) => void;
+			onSelectEnd({
+				inputEvent: { target, clientX: 5, clientY: 5, shiftKey: false },
+				isClick: true,
+				selected: [],
+			});
+		});
+	const targets = () => moveableProps.current?.target as unknown[] | undefined;
+
+	let box: HTMLElement;
+	let handle: HTMLElement;
+	let layer: HTMLElement;
+	beforeEach(() => {
+		const { container } = renderInDesigner(
+			<DesignerCanvas>
+				<Probe />
+			</DesignerCanvas>,
+			{ layers: [makeLayer("a")] }
+		);
+		box = document.createElement("div");
+		handle = document.createElement("span");
+		box.appendChild(handle);
+		layer = document.createElement("div");
+		layer.className = "designer-layer moveable-dimension";
+		container.append(box, layer);
+		controlBox.current = box;
+		act(() => {
+			dispatch({
+				type: "SELECT_LAYER",
+				payload: { layerId: "a", shiftKey: false, breakpointId: "tablet" },
+			});
+		});
+	});
+
+	afterEach(() => {
+		(document as { elementsFromPoint?: unknown }).elementsFromPoint = undefined;
+		controlBox.current = null;
+	});
+
+	it("ignores a click inside the control box (no DESELECT_ALL)", () => {
+		selectEnd(handle);
+		expect(targets()?.length).toBe(1);
+	});
+
+	it("does not ignore a click on a design layer", () => {
+		document.elementsFromPoint = () => [];
+		selectEnd(layer);
+		expect(targets()?.length ?? 0).toBe(0);
 	});
 });

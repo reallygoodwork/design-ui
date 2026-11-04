@@ -4,13 +4,13 @@ import type { MoveableManagerInterface, Renderer } from "react-moveable";
 
 interface DimensionAbleProps {
 	dimensionViewable: boolean;
-	zoom?: number;
+	viewerZoom?: number;
 	isLocked?: boolean;
 }
 
 export const DimensionAble = {
 	name: "dimensionViewable",
-	props: ["dimensionViewable", "zoom", "isLocked"],
+	props: ["dimensionViewable", "viewerZoom", "isLocked"],
 	events: [],
 	render(
 		moveable: MoveableManagerInterface<DimensionAbleProps, unknown>,
@@ -18,9 +18,9 @@ export const DimensionAble = {
 	) {
 		const rect = moveable.getRect();
 		const isLocked = moveable.props.isLocked ?? false;
-		// Moveable's custom ables are rendered in a fixed position container outside InfiniteViewer's transform context
-		// So they're not affected by zoom and should maintain constant size
-		// Moveable handles positioning relative to the target element automatically
+		// Moveable's control box renders in screen space (outside the scaled viewport),
+		// so the label is already a constant screen size. viewerZoom is declared for
+		// ables but intentionally unused here. rect.offsetWidth/Height are unzoomed CSS px.
 
 		// Add key (required)
 		// Add class prefix moveable-(required)

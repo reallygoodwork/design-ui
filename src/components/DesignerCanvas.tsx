@@ -129,21 +129,17 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		};
 		if (moveable.isMoveableElement?.(element)) return true;
 
-		// Check if element is within Moveable's control box
-		// @ts-expect-error - getElement exists at runtime but not in types
-		const moveableElement = moveableRef.current?.getElement?.();
-		if (!moveableElement) return false;
+		// Never treat design content as a Moveable control
+		if (element.closest(".designer-layer")) return false;
 
-		const controlBox = moveableElement.querySelector(".moveable-control-box");
-		if (
-			controlBox &&
-			(controlBox === element || controlBox.contains(element))
-		) {
-			return true;
-		}
+		// Check if element is within Moveable's control box (handles, lines, custom ables)
+		const controlBox = moveableRef.current.getControlBoxElement?.();
+		if (controlBox?.contains(element)) return true;
 
-		// Check if element has moveable- prefix class (custom ables)
-		return Boolean(element.closest("[class*='moveable-']"));
+		// Custom ables render inside the control box; match only Moveable's own classes
+		return Boolean(
+			element.closest(".moveable-control-box, .moveable-dimension")
+		);
 	};
 
 	// Helper to process click selection with drill-down logic
@@ -315,39 +311,9 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 
 	// Update Moveable when zoom changes so it recalculates positions and scales correctly
 	useEffect(() => {
-		if (moveableRef.current) {
+		if (moveableRef.current && state.zoom > 0) {
 			// Force Moveable to update its rect calculations when zoom changes
 			moveableRef.current.updateRect();
-
-			// Apply inverse scale to Moveable's control box to counteract InfiniteViewer zoom
-			// Use a small delay to ensure Moveable has rendered its controls
-			requestAnimationFrame(() => {
-				// @ts-expect-error - getElement exists at runtime but not in types
-				const moveableElement = moveableRef.current?.getElement?.();
-				if (moveableElement) {
-					const controlBoxes = moveableElement.querySelectorAll(
-						".moveable-control-box"
-					) as NodeListOf<HTMLElement>;
-					const inverseScale = 1 / state.zoom;
-					controlBoxes.forEach((controlBox) => {
-						// Read existing transform and combine with our scale
-						const existingTransform = controlBox.style.transform || "";
-						// Combine transforms: append our scale so it's applied after Moveable's positioning
-						// CSS transforms are applied left-to-right, so we want: [Moveable's transforms] scale(ourScale)
-						if (existingTransform && !existingTransform.includes("scale")) {
-							controlBox.style.transform = `${existingTransform} scale(${inverseScale})`;
-						} else if (!existingTransform) {
-							controlBox.style.transform = `scale(${inverseScale})`;
-						} else {
-							// Replace existing scale if present (in case Moveable added one)
-							controlBox.style.transform = existingTransform.replace(
-								/scale\([^)]+\)/,
-								`scale(${inverseScale})`
-							);
-						}
-					});
-				}
-			});
 		}
 	}, [state.zoom]);
 
@@ -635,7 +601,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 					props={{
 						dimensionViewable: true,
 						structureViewable: true,
-						zoom: state.zoom,
+						viewerZoom: state.zoom,
 						isLocked: selectedLayers[0]?.isLocked ?? false,
 						supportsChildren:
 							(selectedLayers[0] &&
