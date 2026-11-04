@@ -252,27 +252,14 @@ const insertLayer = (
 		return [...layers, newLayer];
 	}
 
-	const { layer: targetLayer, parent, index } = found;
+	const { parent, index } = found;
 
 	if (position === "inside") {
-		// Add as child of target layer
-		const updatedTarget = {
-			...targetLayer,
-			children: [...(targetLayer.children || []), newLayer],
-		};
-		// Recursively update the layers array to replace the target
-		return layers.map((l) => {
-			if (l.id === targetLayerId) {
-				return updatedTarget;
-			}
-			if (l.children) {
-				return {
-					...l,
-					children: insertLayer(l.children, newLayer, targetLayerId, position),
-				};
-			}
-			return l;
-		});
+		// Add as child of target layer (only the target is touched)
+		return updateLayerById(layers, targetLayerId, (l) => ({
+			...l,
+			children: [...(l.children ?? []), newLayer],
+		}));
 	} else {
 		// position === "before" or "after"
 		// Insert before/after target layer in its parent
