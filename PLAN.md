@@ -1189,10 +1189,11 @@ zoom and shortcuts still work.
 
 ### Round 3 verdict log
 
-- [x] S1 · [x] S2 · [ ] S3 · [ ] S4 · [ ] S5 · [ ] S6 · [ ] S7 · [ ] S8 · [ ] S9 · [ ] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [ ] S10 · [ ] L1
+- [x] S1 · [x] S2 · [ ] S3 · [ ] S4 · [x] S5 · [ ] S6 · [ ] S7 · [ ] S8 · [ ] S9 · [ ] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [ ] S10 · [ ] L1
 
 - S2: PASS at `29f5ad2`, first round. In the browser, a 20-step drag was undone by one Cmd+Z, and redo restored it. Merged as `d4e6002`. Note: the X/Y position inputs also coalesce with a drag on the same frame (by design).
 - S1: PASS at `8dfbf5b`, first round. The verdict was formatted as 'CONCERNS: none blocking / PASS' and treated as PASS. In the browser, typing Georgia gives 1 link and 'Inter, system-ui' loads Inter only. Merged as `d2bee72`. Notes: no test covers a layer-font change after mount (the code path is not debounced, confirmed in the browser); `preloadFont` skips `primaryFontFamily` (hover only).
+- S5: PASS at `548d1b9`, first round. Light theme: none L100 > tint L96.5 > hover L91 > selected L85, with selected-row text contrast 12:1. Dark theme identical to the base. Merged as `2450d4c`. The tint test helpers now assert `dark:bg-accent/30` (an equivalent check). Selected uses neutral-300 rather than the suggested neutral-200, which meets the criteria.
 
 ---
 
