@@ -57,19 +57,19 @@ const isDescendantOf = (
 	return false;
 };
 
-// Helper function to collect the ancestor IDs of the given layers
-const getAncestorIds = (layers: Layer[], layerIds: string[]): Set<string> => {
-	const ancestors = new Set<string>();
-	const walk = (layerList: Layer[], path: string[]) => {
-		for (const layer of layerList) {
-			if (layerIds.includes(layer.id)) {
-				for (const id of path) ancestors.add(id);
-			}
-			if (layer.children) walk(layer.children, [...path, layer.id]);
+// Helper function to collect every descendant ID of the given layers
+const getDescendantIds = (layers: Layer[], layerIds: string[]): Set<string> => {
+	const descendants = new Set<string>();
+	const collect = (children: Layer[] | undefined) => {
+		for (const child of children ?? []) {
+			descendants.add(child.id);
+			collect(child.children);
 		}
 	};
-	walk(layers, []);
-	return ancestors;
+	for (const id of layerIds) {
+		collect(findLayerById(layers, id)?.children);
+	}
+	return descendants;
 };
 
 const LayerTreeItemContent = ({ layer }: { layer: Layer }) => {
@@ -356,23 +356,23 @@ export const PaneLayerTree = () => {
 		});
 	};
 
-	// Parents of the selection get a lighter tint so the hierarchy is visible
-	const selectedAncestorIds = getAncestorIds(
+	// Everything inside the selection gets a lighter tint (Figma-style)
+	const selectedSubtreeIds = getDescendantIds(
 		layers,
 		selectedLayers.map((l) => l.id)
 	);
 	// React Aria caches items by identity; invalidate when the tint changes
-	const ancestorDependency = [...selectedAncestorIds].join(",");
+	const subtreeDependency = [...selectedSubtreeIds].join(",");
 
-	const createRenderItem = (showAncestors: boolean) => {
+	const createRenderItem = (showSubtree: boolean) => {
 		const renderItem = (layer: Layer) => {
 			const hasChildren = layer.children && layer.children.length > 0;
-			const isSelectedAncestor =
-				showAncestors && selectedAncestorIds.has(layer.id);
+			const isInSelection = showSubtree && selectedSubtreeIds.has(layer.id);
 
 			return (
 				<TreeItem
 					key={layer.id}
+					data-in-selection={isInSelection ? "true" : undefined}
 					id={layer.id}
 					textValue={layer.name}
 					className={({
@@ -386,7 +386,7 @@ export const PaneLayerTree = () => {
 								? "bg-accent text-accent-foreground"
 								: isHovered
 									? "bg-accent/50"
-									: isSelectedAncestor
+									: isInSelection
 										? "bg-accent/30"
 										: ""
 						} ${isFocusVisible ? "ring-2 ring-ring ring-offset-1" : ""} ${isDropTarget ? "bg-primary/20 ring-2 ring-primary" : ""}`
@@ -396,7 +396,7 @@ export const PaneLayerTree = () => {
 					{hasChildren && (
 						<Collection
 							items={layer.children}
-							dependencies={[ancestorDependency]}
+							dependencies={[subtreeDependency]}
 						>
 							{renderItem}
 						</Collection>
@@ -422,7 +422,7 @@ export const PaneLayerTree = () => {
 				onExpandedChange={(keys) => setExpandedKeys(keys as Set<string>)}
 				dragAndDropHooks={dragAndDropHooks}
 				items={layers}
-				dependencies={[ancestorDependency]}
+				dependencies={[subtreeDependency]}
 				className="-m-1 flex flex-col gap-0.5 overflow-y-auto p-1 outline-none"
 			>
 				{createRenderItem(true)}
@@ -463,7 +463,7 @@ export const PaneLayerTree = () => {
 									}
 									dragAndDropHooks={dragAndDropHooks}
 									items={layers}
-									dependencies={[ancestorDependency, isActive]}
+									dependencies={[subtreeDependency, isActive]}
 									className="flex flex-col gap-0.5 outline-none"
 								>
 									{createRenderItem(isActive)}
