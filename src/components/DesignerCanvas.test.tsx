@@ -15,12 +15,16 @@ const selectoProps = vi.hoisted(() => ({
 	current: null as Record<string, unknown> | null,
 }));
 const updateRect = vi.hoisted(() => vi.fn());
+const controlBox = vi.hoisted(() => ({ current: null as HTMLElement | null }));
 
 vi.mock("react-moveable", async () => {
 	const React = await import("react");
 	return {
 		default: React.forwardRef((props: Record<string, unknown>, ref) => {
-			React.useImperativeHandle(ref, () => ({ updateRect }));
+			React.useImperativeHandle(ref, () => ({
+				updateRect,
+				getControlBoxElement: () => controlBox.current,
+			}));
 			moveableProps.current = props;
 			return null;
 		}),
@@ -214,6 +218,7 @@ describe("zoom", () => {
 
 	it("has no dead getElement() inverse-scale effect left", () => {
 		expect(canvasSource).not.toContain("inverseScale");
+		expect(canvasSource).not.toMatch(/moveableRef\.current\??\.getElement/);
 		expect(canvasSource).not.toMatch(
 			/querySelectorAll\(\s*"\.moveable-control-box"/
 		);
@@ -241,5 +246,61 @@ describe("zoom", () => {
 		expect(
 			(at05.querySelector(".moveable-dimension") as HTMLElement).style.transform
 		).toBe("scale(2)");
+	});
+});
+
+describe("moveable control clicks", () => {
+	const selectEnd = (target: Element) =>
+		act(() => {
+			const onSelectEnd = selectoProps.current?.onSelectEnd as (
+				e: unknown
+			) => void;
+			onSelectEnd({
+				inputEvent: { target, clientX: 5, clientY: 5, shiftKey: false },
+				isClick: true,
+				selected: [],
+			});
+		});
+	const targets = () => moveableProps.current?.target as unknown[] | undefined;
+
+	let box: HTMLElement;
+	let handle: HTMLElement;
+	let layer: HTMLElement;
+	beforeEach(() => {
+		const { container } = renderInDesigner(
+			<DesignerCanvas>
+				<Probe />
+			</DesignerCanvas>,
+			{ layers: [makeLayer("a")] }
+		);
+		box = document.createElement("div");
+		handle = document.createElement("span");
+		box.appendChild(handle);
+		layer = document.createElement("div");
+		layer.className = "designer-layer";
+		container.append(box, layer);
+		controlBox.current = box;
+		act(() => {
+			dispatch({
+				type: "SELECT_LAYER",
+				payload: { layerId: "a", shiftKey: false, breakpointId: "tablet" },
+			});
+		});
+	});
+
+	afterEach(() => {
+		(document as { elementsFromPoint?: unknown }).elementsFromPoint = undefined;
+		controlBox.current = null;
+	});
+
+	it("ignores a click inside the control box (no DESELECT_ALL)", () => {
+		selectEnd(handle);
+		expect(targets()?.length).toBe(1);
+	});
+
+	it("does not ignore a click on a design layer", () => {
+		document.elementsFromPoint = () => [];
+		selectEnd(layer);
+		expect(targets()?.length ?? 0).toBe(0);
 	});
 });

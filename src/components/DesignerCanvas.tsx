@@ -129,21 +129,17 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		};
 		if (moveable.isMoveableElement?.(element)) return true;
 
-		// Check if element is within Moveable's control box
-		// @ts-expect-error - getElement exists at runtime but not in types
-		const moveableElement = moveableRef.current?.getElement?.();
-		if (!moveableElement) return false;
+		// Never treat design content as a Moveable control
+		if (element.closest(".designer-layer")) return false;
 
-		const controlBox = moveableElement.querySelector(".moveable-control-box");
-		if (
-			controlBox &&
-			(controlBox === element || controlBox.contains(element))
-		) {
-			return true;
-		}
+		// Check if element is within Moveable's control box (handles, lines, custom ables)
+		const controlBox = moveableRef.current.getControlBoxElement?.();
+		if (controlBox?.contains(element)) return true;
 
-		// Check if element has moveable- prefix class (custom ables)
-		return Boolean(element.closest("[class*='moveable-']"));
+		// Custom ables render inside the control box; match only Moveable's own classes
+		return Boolean(
+			element.closest(".moveable-control-box, .moveable-dimension")
+		);
 	};
 
 	// Helper to process click selection with drill-down logic
@@ -314,9 +310,8 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 	}, [state.centerRequestId, centerOnBreakpoints]);
 
 	// Update Moveable when zoom changes so it recalculates positions and scales correctly
-	// biome-ignore lint/correctness/useExhaustiveDependencies: state.zoom is the intentional trigger
 	useEffect(() => {
-		if (moveableRef.current) {
+		if (moveableRef.current && state.zoom > 0) {
 			// Force Moveable to update its rect calculations when zoom changes
 			moveableRef.current.updateRect();
 		}
