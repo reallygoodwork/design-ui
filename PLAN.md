@@ -74,13 +74,14 @@ Critical path: `T0 → B9 → B5 → H → B8 → F` (6 steps).
 HEAD (the fixer's own report never counts), it's merged into
 `fix/review-bugs`, the global gate is green on the merged branch, and its box is checked below.
 
-- [x] T0 · [x] B1 · [x] B9 · [x] B5 · [ ] H · [ ] B6 · [ ] B7 · [ ] B8 · [ ] F
+- [x] T0 · [x] B1 · [x] B9 · [x] B5 · [ ] H · [x] B6 · [ ] B7 · [ ] B8 · [ ] F
 
 **Verdict log:**
 - T0: PASS at `ad81b8b` after 2 retry rounds (CONCERNS ×2: `biome.json` scope and fixture name, both approved as amendments; then fixture helpers not exercised, fixed). Merged as `42a0b1c`.
 - B9: PASS at `23eeff2`, first round. Merged as `bce2d23`. Manual browser check still pending (end of run).
 - B1: PASS at `d62a130`, first round (after the worktree-base restart). Merged as `ae9e825`.
 - B5: PASS at `9c00f71`, first round. The verifier confirmed all 4 new tests fail on the old source. Merged as `ee6cadf`.
+- B6: PASS at `5893f38`, first round. Merged as `d984a1e`. Verifier notes (non-blocking): the text default `--color: #000000` still shadows the frame colour for new text, and `FontLoader` ignores the frame font.
 
 ---
 
