@@ -238,3 +238,65 @@ describe("frame root", () => {
 		expect(getByTestId("sel").textContent).toBe("tablet");
 	});
 });
+
+describe("default colour", () => {
+	const plain = makeLayer("plain", undefined, {
+		type: "text",
+		value: "Plain",
+		elementType: "p",
+		cssVars: { "--font-size": "16px" },
+	});
+	const explicit = makeLayer("explicit", undefined, {
+		type: "text",
+		value: "Explicit",
+		elementType: "p",
+		cssVars: { "--color": "#0000ff" },
+	});
+	const root = (c: HTMLElement, bp: string) =>
+		c.querySelector(
+			`.breakpoint-frame[data-breakpoint-id="${bp}"] .breakpoint-content`
+		) as HTMLElement;
+	const inner = (c: HTMLElement, bp: string, id: string) =>
+		find(c, bp, id).firstElementChild as HTMLElement;
+
+	it("defaults every frame root to black and leaves plain text uncoloured", () => {
+		const { container } = renderInDesigner(<Frames />, {
+			layers: [plain],
+		});
+		for (const bp of ["mobile", "tablet", "desktop"]) {
+			expect(root(container, bp).style.color).toBe("rgb(0, 0, 0)");
+			expect(inner(container, bp, "plain").style.color).toBe("");
+		}
+	});
+
+	it("uses the frame --color when set", () => {
+		const { container } = render(
+			<DesignerProvider
+				defaultLayers={[plain]}
+				defaultLayerTypes={defaultLayerTypes}
+				breakpoints={breakpoints}
+				frameStyles={{ "--color": "#ff0000" }}
+			>
+				<Frames />
+			</DesignerProvider>
+		);
+		for (const bp of ["mobile", "tablet", "desktop"]) {
+			expect(root(container, bp).style.color).toBe("rgb(255, 0, 0)");
+			expect(inner(container, bp, "plain").style.color).toBe("");
+		}
+	});
+
+	it("keeps an explicit layer colour", () => {
+		const { container } = renderInDesigner(<Frames />, {
+			layers: [explicit],
+		});
+		expect(inner(container, "mobile", "explicit").style.color).toBe(
+			"rgb(0, 0, 255)"
+		);
+	});
+
+	it("text layer defaults have no --color", () => {
+		const vars = textLayerType.defaultValues.cssVars as Record<string, string>;
+		expect(vars["--color"]).toBeUndefined();
+	});
+});
