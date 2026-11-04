@@ -817,7 +817,10 @@ Paths are under `src/`. "→" means "blocked by".
 | 15 | **I2** Shadow-root style isolation | new `components/FrameShadowRoot.tsx`, `components/BreakpointFrame.tsx`, `hooks/useFrameRegistry.tsx`, `BreakpointFrame.test.tsx` (route queries through a shadow helper) | `components/FrameShadowRoot.test.tsx` | I1, S11 |
 | 17 | **S10** Every panel control affects the canvas | `lib/cssPropertyMapping.ts`, `lib/layers/{frame,text,image,input}.tsx` (`supportedCssProperties`), panel action components only if a sub-value must be combined (`components/actions/Action{FlexWrap,GridLayout,Margin,TextDecoration,TextShadow,TextStyle,AlignItems,TextTransform}.tsx`) | new `lib/panelControls.test.tsx`, `lib/cssPropertyMapping.test.ts` | S6 |
 | 18 | **S11** Border control writes a border style | `components/actions/ActionBorder.tsx`, `lib/layers/*.tsx` (only if `--border-style` is missing), `lib/cssPropertyMapping.ts` (only if needed) | `lib/panelControls.test.tsx` | S10 |
+<<<<<<< HEAD
 | 19 | **S12** Opacity control writes invalid values | `components/actions/ActionOpacity.tsx` | new `components/actions/ActionOpacity.test.tsx` | — |
+=======
+>>>>>>> task/s11
 | 16 | **L1** Zero lint warnings, enforced | `hooks/useDesigner.ts` (split `applyAction`), `components/PaneLayerTree.tsx`, `components/FrameStylesPanel.tsx`, `components/actions/{ActionElementType,ActionTextContent,ColorActionPopover}.tsx`, `package.json` (`lint` gets `--error-on-warnings`) | the gate itself | every other task |
 
 **Order** (at most 2 fixers at once): S1 ∥ S2 → S3 ∥ S5 → S6 ∥ S8 → S4 ∥ S9 → S7 → P1 → P2 → P3
@@ -1085,6 +1088,7 @@ nothing.
   `border-style` is set.
 
 **Test:** `bunx vitest run src/lib/panelControls.test.tsx -t "border"`, plus browser (port 5318).
+<<<<<<< HEAD
 
 ### S12 — The Opacity control writes `opacity: 50` (added by the user mid-round)
 
@@ -1107,6 +1111,8 @@ fades. Found by the P2 verifier.
 - Browser: the layer visibly fades, with computed `opacity: 0.5`.
 
 **Test:** `bunx vitest run src/components/actions/ActionOpacity.test.tsx`, plus browser (port 5319).
+=======
+>>>>>>> task/s11
 
 ### P1 — Cheap re-render fixes
 
@@ -1277,7 +1283,7 @@ zoom and shortcuts still work.
 
 ### Round 3 verdict log
 
-- [x] S1 · [x] S2 · [x] S3 · [x] S4 · [x] S5 · [x] S6 · [x] S7 · [x] S8 · [x] S9 · [x] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [x] S10 · [ ] S11 · [ ] S12 · [ ] L1
+- [x] S1 · [x] S2 · [x] S3 · [x] S4 · [x] S5 · [x] S6 · [x] S7 · [x] S8 · [x] S9 · [x] P1 · [ ] P2 · [ ] P3 · [ ] P4 · [ ] I1 · [ ] I2 · [x] S10 · [x] S11 · [ ] S12 · [ ] L1
 
 - S2: PASS at `29f5ad2`, first round. In the browser, a 20-step drag was undone by one Cmd+Z, and redo restored it. Merged as `d4e6002`. Note: the X/Y position inputs also coalesce with a drag on the same frame (by design).
 - S1: PASS at `8dfbf5b`, first round. The verdict was formatted as 'CONCERNS: none blocking / PASS' and treated as PASS. In the browser, typing Georgia gives 1 link and 'Inter, system-ui' loads Inter only. Merged as `d2bee72`. Notes: no test covers a layer-font change after mount (the code path is not debounced, confirmed in the browser); `preloadFont` skips `primaryFontFamily` (hover only).
@@ -1290,6 +1296,7 @@ zoom and shortcuts still work.
 - S10: PASS at `34f6546` (the user decided 3 open points mid-task; the verdict was formatted as 'CONCERNS: none (PASS)'). Every control was browser-checked: wrap, grid, margins, align center, transform, decoration, shadow, position and image styles. 50 tests fail on the old code. Merged as `741e50c`. Notes: the TextShadow label shows '0 0 0' when only a colour is set; the colour input needs a leading '#'.
 - S7: PASS at `178b64c` after 1 retry round. FAIL: the plan's premise was wrong (Moveable renders in screen space), so the orchestrator corrected the fix text. Handle 12×12, line 1px and label 67×19 are constant at zoom 0.5, 1 and 2, against a base range of 6–24px. Control-box clicks are ignored properly. Merged as `a39bd12`.
 - P1: PASS at `4559eea`, first round. Old code vs new: scroll 1→0 commits, dispatch-only 5→0, keydown adds 42→2. In the browser, scroll causes 0 React commits, and shortcuts act on the latest state. Merged as `b9c4975`.
+- S11: PASS at `f74362c` after 1 retry round. CONCERNS: a Tablet style was overwritten, and the X-clear left a stray style; fixed with a render-time `solid` default plus a breakpoint-aware Style select. Browser with preflight simulated off: borders visible, and cleared borders draw nothing. One S10 assertion changed (border-width renders 2 keys), judged a necessary consequence. Merged as `f6b3f11`. Note: the `ActionBorder` trigger label reads base cssVars (pre-existing).
 
 ---
 

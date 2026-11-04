@@ -10,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import type { ComponentType } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionAlignItems } from "../components/actions/ActionAlignItems";
+import { ActionBorder } from "../components/actions/ActionBorder";
 import { ActionDisplay } from "../components/actions/ActionDisplay";
 import { ActionFlexDirection } from "../components/actions/ActionFlexDirection";
 import { ActionFlexWrap } from "../components/actions/ActionFlexWrap";
@@ -618,7 +619,11 @@ describe("every control the panel shows for a layer type renders", () => {
 			const supported = layerType.supportedCssProperties as string[];
 			expect(supported, `${layerType.type} ${v}`).toContain(v);
 			const css = applyCssVars({ [v]: "1" }, layerType.supportedCssProperties);
-			expect(Object.keys(css), `${layerType.type} ${v}`).toHaveLength(1);
+			// A width also renders the default `border-style: solid` (S11).
+			const expectedKeys = v === "--border-width" ? 2 : 1;
+			expect(Object.keys(css), `${layerType.type} ${v}`).toHaveLength(
+				expectedKeys
+			);
 		}
 	});
 
@@ -635,5 +640,140 @@ describe("every control the panel shows for a layer type renders", () => {
 		expect(el.style.backgroundColor).toBe("red");
 		expect(el.style.borderTopLeftRadius).toBe("3px");
 		expect(el.style.borderColor).toBe("blue");
+	});
+});
+
+describe("border", () => {
+	const layers: [string, LayerType][] = [
+		["frame", frameLayerType],
+		["text", textLayerType],
+		["image", imageLayerType],
+		["input", inputLayerType],
+	];
+	const BORDER_STYLES = ["none", "solid", "dashed", "dotted", "double"];
+	const bps = ["mobile", "tablet"];
+
+	/** Switch breakpoint, and return the layer's effective vars there. */
+	const switchBreakpoint = (id: string) => {
+		act(() => {
+			ref.dispatch?.({
+				type: "SET_ACTIVE_BREAKPOINT",
+				payload: { breakpointId: id },
+			});
+		});
+	};
+	const effective = (id: string): CSSVars => {
+		const l = ref.ctx?.state.layers[0];
+		const own = id === "mobile" ? {} : (l?.breakpointCssVars?.[id] ?? {});
+		return { ...(l?.cssVars ?? {}), ...own };
+	};
+	const rendered = (lt: LayerType, id: string) => {
+		const el = renderLayer(lt, effective(id));
+		return el.style.borderStyle;
+	};
+
+	// The label gains a bullet once the value is an override ("Width •").
+	const widthAction = () =>
+		screen
+			.getAllByText(/^Width/)
+			.map((el) => el.closest("[data-slot=action]") as HTMLElement)
+			.find((el) => el?.querySelector("input")) as HTMLElement;
+	const setWidth = (value: string) => {
+		fireEvent.change(widthAction().querySelector("input") as HTMLInputElement, {
+			target: { value },
+		});
+	};
+	const styleTrigger = () =>
+		screen
+			.getAllByRole("combobox")
+			.find((c) => BORDER_STYLES.includes(c.textContent ?? "")) as HTMLElement;
+	const chooseStyle = async (name: string) => {
+		await userEvent.click(styleTrigger());
+		await userEvent.click(await screen.findByRole("option", { name }));
+	};
+	const clickWidthClear = () => {
+		const action = widthAction();
+		const buttons = within(action).getAllByRole("button");
+		fireEvent.click(buttons[buttons.length - 1]);
+	};
+
+	describe.each(bps)("at %s", (bp) => {
+		it.each(layers)("%s: width alone renders solid", (name, lt) => {
+			mount(ActionBorder, name, {});
+			openPopover("Border");
+			switchBreakpoint(bp);
+			setWidth("2");
+			expect(rendered(lt, bp)).toBe("solid");
+		});
+
+		it("choosing dashed then editing the width keeps dashed", async () => {
+			mount(ActionBorder, "frame", {});
+			openPopover("Border");
+			switchBreakpoint(bp);
+			setWidth("6");
+			await chooseStyle("dashed");
+			setWidth("8");
+			expect(rendered(frameLayerType, bp)).toBe("dashed");
+			expect(effective(bp)["--border-style"]).toBe("dashed");
+		});
+
+		it("none removes the border style", async () => {
+			mount(ActionBorder, "frame", {});
+			openPopover("Border");
+			switchBreakpoint(bp);
+			setWidth("2");
+			await chooseStyle("none");
+			expect(rendered(frameLayerType, bp)).toBe("none");
+		});
+
+		it("emptying the width leaves no border-style", () => {
+			mount(ActionBorder, "frame", {});
+			openPopover("Border");
+			switchBreakpoint(bp);
+			setWidth("2");
+			setWidth("");
+			expect(effective(bp)["--border-style"]).toBeUndefined();
+			expect(rendered(frameLayerType, bp)).toBe("");
+		});
+
+		it("the width X button leaves no border-style", () => {
+			mount(ActionBorder, "frame", {});
+			openPopover("Border");
+			switchBreakpoint(bp);
+			setWidth("2");
+			clickWidthClear();
+			expect(effective(bp)["--border-width"]).toBeUndefined();
+			expect(effective(bp)["--border-style"]).toBeUndefined();
+			expect(rendered(frameLayerType, bp)).toBe("");
+		});
+	});
+
+	it("every style option is valid CSS", async () => {
+		const get = mount(ActionBorder, "frame", { "--border-width": "2px" });
+		openPopover("Border");
+		await userEvent.click(styleTrigger());
+		const names = (await screen.findAllByRole("option")).map(
+			(o) => o.textContent ?? ""
+		);
+		await userEvent.keyboard("{Escape}");
+		expect(names.length).toBe(5);
+		for (const n of names) {
+			await chooseStyle(n);
+			expect(BORDER_STYLES).toContain(get()["--border-style"]);
+		}
+	});
+
+	it("applyCssVars defaults the style only when a width is set", () => {
+		const sp = frameLayerType.supportedCssProperties;
+		expect(applyCssVars({ "--border-width": "2px" }, sp).borderStyle).toBe(
+			"solid"
+		);
+		expect(
+			applyCssVars({ "--border-width": "2px", "--border-style": "dotted" }, sp)
+				.borderStyle
+		).toBe("dotted");
+		expect(applyCssVars({ "--border-color": "red" }, sp).borderStyle).toBe(
+			undefined
+		);
 	});
 });
