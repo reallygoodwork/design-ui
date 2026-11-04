@@ -167,6 +167,7 @@ export const BreakpointHeader = ({
 				isSelected && "bg-primary/10 rounded-t",
 				isDragging ? "cursor-grabbing" : "cursor-grab"
 			)}
+			data-breakpoint-header
 			onMouseDown={handleDragStart}
 		>
 			<button

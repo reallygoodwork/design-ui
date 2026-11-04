@@ -2,10 +2,14 @@ import { act } from "@testing-library/react";
 import { useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDesignerAction } from "../hooks/useDesignerAction";
-import { makeLayer, renderInDesigner } from "../test/fixtures";
+import { breakpoints, makeLayer, renderInDesigner } from "../test/fixtures";
+import { BreakpointHeader } from "./BreakpointHeader";
 import { DesignerCanvas } from "./DesignerCanvas";
 
 const moveableProps = vi.hoisted(() => ({
+	current: null as Record<string, unknown> | null,
+}));
+const selectoProps = vi.hoisted(() => ({
 	current: null as Record<string, unknown> | null,
 }));
 const updateRect = vi.hoisted(() => vi.fn());
@@ -23,7 +27,12 @@ vi.mock("react-moveable", async () => {
 
 vi.mock("react-selecto", async () => {
 	const React = await import("react");
-	return { default: React.forwardRef(() => null) };
+	return {
+		default: React.forwardRef((props: Record<string, unknown>) => {
+			selectoProps.current = props;
+			return null;
+		}),
+	};
 });
 
 vi.mock("react-infinite-viewer", async () => {
@@ -123,5 +132,51 @@ describe("outline follows frame", () => {
 			dispatch({ type: "CLOSE_ADD_LAYER_DIALOG" });
 		});
 		expect(updateRect).not.toHaveBeenCalled();
+	});
+});
+
+describe("header drag", () => {
+	const getCondition = () =>
+		selectoProps.current?.dragCondition as
+			| ((e: { inputEvent?: { target: EventTarget | null } }) => boolean)
+			| undefined;
+
+	it("dragCondition rejects header targets and accepts layer targets", () => {
+		const { container } = renderInDesigner(
+			<DesignerCanvas>{null}</DesignerCanvas>,
+			{
+				layers: [makeLayer("a")],
+			}
+		);
+		const condition = getCondition();
+		expect(condition).toBeTypeOf("function");
+
+		const header = document.createElement("div");
+		header.setAttribute("data-breakpoint-header", "");
+		const inner = document.createElement("button");
+		header.appendChild(inner);
+		container.appendChild(header);
+		const layer = document.createElement("div");
+		layer.className = "designer-layer";
+		const layerChild = document.createElement("span");
+		layer.appendChild(layerChild);
+		container.appendChild(layer);
+
+		expect(condition?.({ inputEvent: { target: inner } })).toBe(false);
+		expect(condition?.({ inputEvent: { target: layerChild } })).toBe(true);
+		expect(condition?.({})).toBe(true);
+	});
+
+	it("BreakpointHeader renders the marker", () => {
+		const { container } = renderInDesigner(
+			<BreakpointHeader
+				breakpoint={breakpoints[0]}
+				isActive={false}
+				isSelected={false}
+			/>
+		);
+		expect(
+			container.querySelector(".breakpoint-header[data-breakpoint-header]")
+		).not.toBeNull();
 	});
 });
