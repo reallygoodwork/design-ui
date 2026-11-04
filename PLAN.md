@@ -529,7 +529,7 @@ Tailwind preflight leak, plus the flat node map and so on).
 Order: R1 ∥ R4, then R2, R5, R6 and R7 as slots free up (R2 only after R1 merges), then R3, then a
 final integration check.
 
-- [ ] R1 · [ ] R2 · [ ] R3 · [ ] R4 · [ ] R5 · [ ] R6 · [ ] R7
+- [ ] R1 · [ ] R2 · [ ] R3 · [ ] R4 · [ ] R5 · [ ] R6 · [~] R7 (dropped)
 
 ---
 
@@ -684,6 +684,13 @@ label instead of "Arial". Selecting a font still sets the layer's own `--font-fa
 
 ## R7 — Canvas Selecto target `.designer-frame .designer-layer` never matches
 
+> **Dropped: the premise was wrong.** The R7 fixer stopped before editing, as instructed:
+> `DesignerFrame.tsx:24` *does* render `className="designer-frame"`, and `useLayerDimensions.ts:19`
+> queries it. Every `.designer-layer` renders inside `.breakpoint-content`, which is inside
+> `.designer-frame`, so the two Selecto targets match the same elements. The second one is redundant,
+> not dead, and causes no user-facing problem. The orchestrator relayed the round-1 claim without
+> checking it.
+
 **Repro:** `DesignerCanvas.tsx` (around line 524) passes `".designer-frame .designer-layer"` to
 Selecto's `selectableTargets`, but no element has the class `designer-frame` (only
 `data-slot="designer-frame"`), so the selector is dead. The live target is
@@ -727,7 +734,7 @@ Selecto's `selectableTargets`, but no element has the class `designer-frame` (on
   `--color: #000000` shadows the frame colour (B6 verifier note).
 - Existing nested `<button>` warnings: `PaneLayerTree.tsx:256` (`BreakpointSectionHeader`) and
   `BreakpointHeader.tsx:14`; React Aria warns that draggable tree items have no `slot="drag"` button.
-- `DesignerCanvas.tsx:526` selector `.designer-frame .designer-layer` never matches anything.
+- ~~`DesignerCanvas.tsx:526` selector never matches~~ (wrong: it's redundant, not dead; see R7).
 - Layer-tree row click (above). Also, the Typography panel shows "Arial" for text that inherits the frame font
   (`ActionFontFamily.tsx` fallback).
 - Headless core package, `applyOps`, MCP server.
