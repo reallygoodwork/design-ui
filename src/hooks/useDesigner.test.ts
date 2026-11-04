@@ -439,3 +439,107 @@ describe("breakpoint drag", () => {
 		expect(getCoalesceKey(move("tablet", 1), null)).toBe("bp-pos:tablet");
 	});
 });
+
+describe("delete breakpoint", () => {
+	const del = (id: string): Action => ({
+		type: "DELETE_BREAKPOINT",
+		payload: { id },
+	});
+	const tree = (): Layer[] => [
+		makeLayer("A", [
+			makeLayer("A1", [
+				makeLayer("A1a", undefined, {
+					breakpointCssVars: {
+						tablet: { width: "10px" },
+						desktop: { width: "20px" },
+					},
+				}),
+				makeLayer("A1b", undefined, {
+					breakpointCssVars: { tablet: { height: "5px" } },
+				}),
+			]),
+			makeLayer("A2", undefined, { cssVars: { color: "red" } }),
+		]),
+		makeLayer("B", undefined, {
+			breakpointCssVars: {
+				tablet: { width: "1px" },
+				desktop: { width: "2px" },
+			},
+		}),
+		makeLayer("C", undefined, {
+			breakpointCssVars: { desktop: { width: "3px" } },
+		}),
+	];
+	const withTree = (): State => ({ ...base(), layers: tree() });
+	const hasKey = (layers: Layer[], id: string): boolean =>
+		layers.some(
+			(l) =>
+				(l.breakpointCssVars !== undefined && id in l.breakpointCssVars) ||
+				hasKey(l.children ?? [], id)
+		);
+
+	it("removes the deleted breakpoint's overrides at every depth", () => {
+		const s = reducer(withTree(), del("tablet"));
+		expect(s.breakpoints.some((b) => b.id === "tablet")).toBe(false);
+		expect(hasKey(s.layers, "tablet")).toBe(false);
+	});
+
+	it("leaves other breakpoints' overrides untouched", () => {
+		const s = reducer(withTree(), del("tablet"));
+		expect(findById(s.layers, "A1a")?.breakpointCssVars).toEqual({
+			desktop: { width: "20px" },
+		});
+		expect(findById(s.layers, "B")?.breakpointCssVars).toEqual({
+			desktop: { width: "2px" },
+		});
+		expect(findById(s.layers, "C")?.breakpointCssVars).toEqual({
+			desktop: { width: "3px" },
+		});
+	});
+
+	it("removes breakpointCssVars when it ends up empty", () => {
+		const s = reducer(withTree(), del("tablet"));
+		expect(findById(s.layers, "A1b")).not.toHaveProperty("breakpointCssVars");
+	});
+
+	it("keeps identity of layers with nothing to strip", () => {
+		const before = withTree();
+		const s = reducer(before, del("tablet"));
+		expect(s.layers[2]).toBe(before.layers[2]);
+		expect(findById(s.layers, "A2")).toBe(findById(before.layers, "A2"));
+		expect(s.layers[0]).not.toBe(before.layers[0]);
+	});
+
+	it("is one undo step, and UNDO restores the breakpoint and all overrides", () => {
+		const before = withTree();
+		const s = reducer(before, del("tablet"));
+		expect(s.history.past.length).toBe(before.history.past.length + 1);
+		const u = reducer(s, { type: "UNDO" });
+		expect(u.history.past.length).toBe(before.history.past.length);
+		expect(u.breakpoints).toEqual(before.breakpoints);
+		expect(u.layers).toEqual(tree());
+	});
+
+	it("REDO deletes again", () => {
+		const s = run(
+			withTree(),
+			del("tablet"),
+			{ type: "UNDO" },
+			{ type: "REDO" }
+		);
+		expect(s.breakpoints.some((b) => b.id === "tablet")).toBe(false);
+		expect(hasKey(s.layers, "tablet")).toBe(false);
+		expect(findById(s.layers, "B")?.breakpointCssVars).toEqual({
+			desktop: { width: "2px" },
+		});
+	});
+
+	it("refuses to delete the last remaining breakpoint", () => {
+		const one: State = {
+			...withTree(),
+			breakpoints: [breakpoints[1]],
+			activeBreakpointId: "tablet",
+		};
+		expect(reducer(one, del("tablet"))).toBe(one);
+	});
+});
