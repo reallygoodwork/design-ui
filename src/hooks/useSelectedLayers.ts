@@ -1,14 +1,14 @@
 import { useMemo } from "react";
 import type { Layer } from "../lib/Types";
-import { useDesignerContext } from "./useDesignerContext";
+import { useDesignerSelector } from "./useDesignerSelector";
 
 /**
  * Hook to get the currently selected layers from the designer state.
  * Recursively searches nested layers to support selecting children.
  */
 export const useSelectedLayers = () => {
-	const { state } = useDesignerContext();
-	const { layers, selectedLayers } = state;
+	const layers = useDesignerSelector((state) => state.layers);
+	const selectedLayers = useDesignerSelector((state) => state.selectedLayers);
 
 	return useMemo(() => {
 		// Recursive helper to find layers by ID in a nested structure

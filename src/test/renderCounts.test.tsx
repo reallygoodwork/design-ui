@@ -4,8 +4,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { DesignerCanvas } from "../components/DesignerCanvas";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useDesignerContext } from "../hooks/useDesignerContext";
+import { useHistory } from "../hooks/useHistory";
 import { useKeybindings } from "../hooks/useKeybindings";
+import { useLayers } from "../hooks/useLayers";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
+import { useZoom } from "../hooks/useZoom";
 import { makeLayer, renderInDesigner } from "./fixtures";
 
 const viewerProps = vi.hoisted(() => ({
@@ -76,6 +79,18 @@ const Keys = () => {
 const seen: unknown[] = [];
 const Selected = () => {
 	seen.push(useSelectedLayers());
+	return null;
+};
+
+const LayerSliceReaders = () => {
+	useLayers();
+	useSelectedLayers();
+	useHistory();
+	return null;
+};
+
+const ZoomReader = () => {
+	useZoom();
 	return null;
 };
 
@@ -195,7 +210,49 @@ describe("render counts", () => {
 		act(() => {
 			dispatch({ type: "SET_ZOOM", payload: 3 });
 		});
-		expect(seen.length).toBeGreaterThan(count);
+		// With selectors a zoom change no longer re-renders this component at all
+		// (P2); the reference must still be unchanged.
+		expect(seen.length).toBe(count);
 		expect(seen[seen.length - 1]).toBe(afterSelect);
+	});
+
+	it("SET_ZOOM does not re-render components using only layers, selection or history", () => {
+		const c = counter();
+		renderInDesigner(
+			<>
+				<Dispatcher />
+				<Profiler id="slices" onRender={c.onRender}>
+					<LayerSliceReaders />
+				</Profiler>
+			</>,
+			{ layers: [makeLayer("a")] }
+		);
+		const before = c.counts.commits;
+		for (let i = 0; i < 5; i++) {
+			act(() => {
+				dispatch({ type: "SET_ZOOM", payload: 1 + (i + 1) / 10 });
+			});
+		}
+		expect(c.counts.commits - before).toBe(0);
+	});
+
+	it("UPDATE_LAYER_CSS does not re-render a component using only useZoom", () => {
+		const c = counter();
+		renderInDesigner(
+			<>
+				<Dispatcher />
+				<Profiler id="zoom" onRender={c.onRender}>
+					<ZoomReader />
+				</Profiler>
+			</>,
+			{ layers: [makeLayer("a")] }
+		);
+		const before = c.counts.commits;
+		for (let i = 0; i < 5; i++) {
+			act(() => {
+				unrelatedChange(i);
+			});
+		}
+		expect(c.counts.commits - before).toBe(0);
 	});
 });

@@ -1,9 +1,6 @@
-import { useDesignerContext } from "./useDesignerContext";
+import { useDesignerSelector } from "./useDesignerSelector";
 
 /**
  * Hook to get the current layers from the designer state.
  */
-export const useLayers = () => {
-	const { state } = useDesignerContext();
-	return state.layers;
-};
+export const useLayers = () => useDesignerSelector((state) => state.layers);
