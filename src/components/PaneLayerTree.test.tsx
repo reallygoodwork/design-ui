@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useDesignerContext } from "../hooks/useDesignerContext";
 import { makeLayer, renderInDesigner } from "../test/fixtures";
-import { PaneLayerTree } from "./PaneLayerTree";
+import { PaneLayerTree, rowStateClass } from "./PaneLayerTree";
 
 type Dispatch = ReturnType<typeof useDesignerAction>;
 
@@ -56,12 +56,12 @@ const rowsIn = (breakpointName: string) => {
 
 // Tinted means the lighter class AND the test hook agree
 const tinted = (row: HTMLElement) => {
-	const byClass = row.classList.contains("bg-accent/30");
+	const byClass = row.classList.contains("dark:bg-accent/30");
 	const byAttr = row.getAttribute("data-in-selection") === "true";
 	return byClass && byAttr;
 };
 const hasTintClass = (row: HTMLElement) =>
-	row.classList.contains("bg-accent/30");
+	row.classList.contains("dark:bg-accent/30");
 
 describe("subtree tint", () => {
 	afterEach(cleanup);
@@ -273,5 +273,70 @@ describe("drag handle", () => {
 		const row = rowsIn("Desktop");
 		await userEvent.click(row("Frame"));
 		expect(row("Frame").getAttribute("data-selected")).toBe("true");
+	});
+});
+
+describe("row state classes", () => {
+	const none = {
+		isSelected: false,
+		isHovered: false,
+		isInSelection: false,
+		isFocusVisible: false,
+		isDropTarget: false,
+	};
+	const toks = (o: Partial<typeof none>) =>
+		rowStateClass({ ...none, ...o }).split(/\s+/);
+
+	it("selected: light neutral-300, dark accent", () => {
+		const t = toks({ isSelected: true });
+		expect(t).toContain("bg-neutral-300");
+		expect(t).toContain("text-neutral-900");
+		expect(t).toContain("dark:bg-accent");
+		expect(t).toContain("dark:text-accent-foreground");
+	});
+
+	it("hover: light neutral-200, dark accent/50", () => {
+		const t = toks({ isHovered: true });
+		expect(t).toContain("bg-neutral-200");
+		expect(t).toContain("dark:bg-accent/50");
+	});
+
+	it("tint: light accent, dark accent/30", () => {
+		const t = toks({ isInSelection: true });
+		expect(t).toContain("bg-accent");
+		expect(t).toContain("dark:bg-accent/30");
+	});
+
+	it("no state: no background", () => {
+		const t = toks({});
+		expect(t.some((c) => c.includes("bg-"))).toBe(false);
+	});
+
+	it("selected wins over in-selection and hover", () => {
+		const t = toks({ isSelected: true, isInSelection: true, isHovered: true });
+		expect(t).toContain("bg-neutral-300");
+		expect(t).not.toContain("dark:bg-accent/30");
+		expect(t).not.toContain("dark:bg-accent/50");
+	});
+
+	it("hover wins over tint", () => {
+		const t = toks({ isHovered: true, isInSelection: true });
+		expect(t).toContain("bg-neutral-200");
+		expect(t).not.toContain("dark:bg-accent/30");
+	});
+
+	it("drop target wins over selected", () => {
+		const t = toks({ isDropTarget: true, isSelected: true });
+		expect(t).toContain("bg-primary/20");
+		expect(t).not.toContain("bg-neutral-300");
+	});
+
+	it("rendered tinted row keeps data-in-selection and tint class", () => {
+		const { select } = setup();
+		select("Frame");
+		const child = rowsIn("Desktop")("Child");
+		expect(child.getAttribute("data-in-selection")).toBe("true");
+		expect(child.classList.contains("bg-accent")).toBe(true);
+		expect(child.classList.contains("dark:bg-accent/30")).toBe(true);
 	});
 });

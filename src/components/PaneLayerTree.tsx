@@ -73,6 +73,35 @@ const getDescendantIds = (layers: Layer[], layerIds: string[]): Set<string> => {
 	return descendants;
 };
 
+export interface RowState {
+	isSelected: boolean;
+	isHovered: boolean;
+	isInSelection: boolean;
+	isFocusVisible: boolean;
+	isDropTarget?: boolean;
+}
+
+const ROW_BASE =
+	"flex cursor-default items-center gap-1 rounded-md pr-1 py-0.5 pl-[calc(calc(var(--tree-item-level)-1)*0.5rem)] text-sm outline-none h-7";
+
+// Light: tint (accent) < hover (neutral-200) < selected (neutral-300).
+// Dark: round 2 values via dark: variants.
+const SELECTED_CLASS =
+	"bg-neutral-300 text-neutral-900 dark:bg-accent dark:text-accent-foreground";
+const HOVER_CLASS = "bg-neutral-200 dark:bg-accent/50";
+const TINT_CLASS = "bg-accent dark:bg-accent/30";
+
+const rowBackground = (s: RowState) => {
+	if (s.isDropTarget) return "bg-primary/20 ring-2 ring-primary";
+	if (s.isSelected) return SELECTED_CLASS;
+	if (s.isHovered) return HOVER_CLASS;
+	if (s.isInSelection) return TINT_CLASS;
+	return "";
+};
+
+export const rowStateClass = (s: RowState) =>
+	`${ROW_BASE} ${rowBackground(s)} ${s.isFocusVisible ? "ring-2 ring-ring ring-offset-1" : ""}`;
+
 const LayerTreeItemContent = ({ layer }: { layer: Layer }) => {
 	const ref = useRef<HTMLInputElement>(null);
 	const [isEditing, setIsEditing] = useState(false);
@@ -389,22 +418,7 @@ export const PaneLayerTree = () => {
 					data-in-selection={isInSelection ? "true" : undefined}
 					id={layer.id}
 					textValue={layer.name}
-					className={({
-						isSelected,
-						isFocusVisible,
-						isHovered,
-						isDropTarget,
-					}) =>
-						`flex cursor-default items-center gap-1 rounded-md pr-1 py-0.5 pl-[calc(calc(var(--tree-item-level)-1)*0.5rem)] text-sm outline-none h-7 ${
-							isSelected
-								? "bg-accent text-accent-foreground"
-								: isHovered
-									? "bg-accent/50"
-									: isInSelection
-										? "bg-accent/30"
-										: ""
-						} ${isFocusVisible ? "ring-2 ring-ring ring-offset-1" : ""} ${isDropTarget ? "bg-primary/20 ring-2 ring-primary" : ""}`
-					}
+					className={(state) => rowStateClass({ ...state, isInSelection })}
 				>
 					<LayerTreeItemContent layer={layer} />
 					{hasChildren && (
