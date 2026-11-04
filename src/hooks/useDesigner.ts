@@ -501,7 +501,7 @@ const applyFrameStylesUpdate = (
 	return addHistoryEntry(state, { frameStyles: updatedFrameStyles });
 };
 
-const initialState: State = {
+export const initialState: State = {
 	layers: [],
 	layerTypes: [],
 	selectedLayers: [],
@@ -516,7 +516,7 @@ const initialState: State = {
 	centerRequestId: 0,
 };
 
-const reducer = (state: State, action: Action): State => {
+export const reducer = (state: State, action: Action): State => {
 	switch (action.type) {
 		case "SET_LAYERS":
 			return { ...state, layers: action.payload };
