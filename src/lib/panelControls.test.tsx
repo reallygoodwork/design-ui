@@ -187,11 +187,11 @@ const cases: Case[] = [
 			const get = mount(ActionGridLayout, "frame", GRID);
 			openPopover("Grid Layout");
 			const columns = screen.getByText("Columns").closest("[data-slot=action]");
-			fireEvent.click(
-				within(columns as HTMLElement).getByRole("button", {
-					name: /increase/i,
-				})
-			);
+			const input = (columns as HTMLElement).querySelector(
+				"input"
+			) as HTMLInputElement;
+			input.focus();
+			fireEvent.keyDown(input, { key: "ArrowUp" });
 			return get();
 		},
 		expected: {
@@ -214,8 +214,12 @@ const cases: Case[] = [
 				layer,
 				run: () => {
 					const get = mount(ActionMargin, layer.type, {});
-					openPopover("Margin");
-					fireEvent.change(numericInput(side), { target: { value: "10" } });
+					fireEvent.click(screen.getByLabelText("Edit each side"));
+					fireEvent.change(screen.getByLabelText(side), {
+						target: { value: "10" },
+					});
+					// Typed numbers apply on a pause, Enter or blur
+					fireEvent.blur(screen.getByLabelText(side));
 					return get();
 				},
 				expected,
@@ -227,8 +231,12 @@ const cases: Case[] = [
 		layer: inputLayerType,
 		run: () => {
 			const get = mount(ActionMargin, "input", {});
-			openPopover("Margin");
-			fireEvent.change(numericInput("Top"), { target: { value: "10" } });
+			fireEvent.click(screen.getByLabelText("Edit each side"));
+			fireEvent.change(screen.getByLabelText("Top"), {
+				target: { value: "10" },
+			});
+			// Typed numbers apply on a pause, Enter or blur
+			fireEvent.blur(screen.getByLabelText("Top"));
 			return get();
 		},
 		expected: { "margin-block-start": "10px" },
@@ -241,7 +249,7 @@ const cases: Case[] = [
 			openPopover("Position");
 			await userEvent.click(screen.getAllByRole("combobox")[0]);
 			await userEvent.click(
-				await screen.findByRole("option", { name: "absolute" })
+				await screen.findByRole("option", { name: /^absolute$/i })
 			);
 			return get();
 		},
@@ -254,6 +262,8 @@ const cases: Case[] = [
 			const get = mount(ActionPosition, "frame", {});
 			openPopover("Position");
 			fireEvent.change(numericInput("Top"), { target: { value: "10" } });
+			// Typed numbers apply on a pause, Enter or blur
+			fireEvent.blur(numericInput("Top"));
 			return get();
 		},
 		expected: { top: "10px" },
@@ -307,6 +317,8 @@ const cases: Case[] = [
 			const get = mount(ActionTextDecoration, "text", {});
 			openPopover("Decoration");
 			fireEvent.change(numericInput("Thickness"), { target: { value: "3" } });
+			// Typed numbers apply on a pause, Enter or blur
+			fireEvent.blur(numericInput("Thickness"));
 			return get();
 		},
 		expected: { "text-decoration-thickness": "3px" },
@@ -318,8 +330,14 @@ const cases: Case[] = [
 			const get = mount(ActionTextShadow, "text", {});
 			openPopover("Shadow");
 			fireEvent.change(numericInput("Offset X"), { target: { value: "2" } });
+			// Typed numbers apply on a pause, Enter or blur
+			fireEvent.blur(numericInput("Offset X"));
 			fireEvent.change(numericInput("Offset Y"), { target: { value: "3" } });
+			// Typed numbers apply on a pause, Enter or blur
+			fireEvent.blur(numericInput("Offset Y"));
 			fireEvent.change(numericInput("Blur"), { target: { value: "4" } });
+			// Typed numbers apply on a pause, Enter or blur
+			fireEvent.blur(numericInput("Blur"));
 			return get();
 		},
 		expected: { "text-shadow": "2px 3px 4px currentcolor" },
@@ -535,15 +553,17 @@ describe("no control writes a var that is neither rendered nor internal", () => 
 });
 
 describe("TextShadow trigger label", () => {
-	it("shows none, then the shadow parts, not the decoration", () => {
+	it("shows None, then the shadow parts, not the decoration", () => {
 		const get = mount(ActionTextShadow, "text", {
 			"--text-decoration": "underline",
 		});
 		const label = () =>
 			screen.getByText("Shadow").closest("[data-slot=action]")?.textContent;
-		expect(label()).toContain("none");
+		expect(label()).toContain("None");
 		openPopover("Shadow");
 		fireEvent.change(numericInput("Offset X"), { target: { value: "2" } });
+		// Typed numbers apply on a pause, Enter or blur
+		fireEvent.blur(numericInput("Offset X"));
 		expect(get()["--text-shadow-offset-x"]).toBe("2px");
 		expect(label()).toContain("2px 0 0");
 		expect(label()).not.toContain("underline");
@@ -679,17 +699,22 @@ describe("border", () => {
 			.map((el) => el.closest("[data-slot=action]") as HTMLElement)
 			.find((el) => el?.querySelector("input")) as HTMLElement;
 	const setWidth = (value: string) => {
-		fireEvent.change(widthAction().querySelector("input") as HTMLInputElement, {
-			target: { value },
-		});
+		const input = widthAction().querySelector("input") as HTMLInputElement;
+		fireEvent.change(input, { target: { value } });
+		// Typed numbers apply on a pause, Enter or blur
+		fireEvent.blur(input);
 	};
 	const styleTrigger = () =>
 		screen
 			.getAllByRole("combobox")
-			.find((c) => BORDER_STYLES.includes(c.textContent ?? "")) as HTMLElement;
+			.find((c) =>
+				BORDER_STYLES.includes((c.textContent ?? "").toLowerCase())
+			) as HTMLElement;
 	const chooseStyle = async (name: string) => {
 		await userEvent.click(styleTrigger());
-		await userEvent.click(await screen.findByRole("option", { name }));
+		await userEvent.click(
+			await screen.findByRole("option", { name: new RegExp(`^${name}$`, "i") })
+		);
 	};
 	const clickWidthClear = () => {
 		const action = widthAction();

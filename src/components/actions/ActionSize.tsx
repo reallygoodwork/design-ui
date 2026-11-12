@@ -1,149 +1,123 @@
-import { useMemo } from "react";
-import { useDesignerAction } from "../../hooks/useDesignerAction";
+import { useBreakpointCssGroup } from "../../hooks/useBreakpointCss";
 import { useLayerDimensions } from "../../hooks/useLayerDimensions";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
-import { ActionPopover } from "./ActionPopover";
-import { NumericActionControl } from "./NumericActionControl";
+import { UnitField } from "../common/UnitField";
+import { TokenSlot } from "../tokens/TokenSlot";
 
-export const ActionSize = () => {
-	const selectedLayers = useSelectedLayers();
-	const designerAction = useDesignerAction();
-	const selectedLayer = selectedLayers[0];
+const SIZE_SCALE = { px: 1440 };
 
-	// Get computed dimensions from the DOM
-	const dimensions = useLayerDimensions(selectedLayer);
+const SIZE_MODES = [
+	{ label: "Fill", value: "100%" },
+	{ label: "Hug", value: "fit-content" },
+	{ label: "Auto", value: "" },
+];
 
-	// Width values
-	const widthValue = selectedLayer?.cssVars?.["--width"];
-	const minWidthValue = selectedLayer?.cssVars?.["--min-width"];
-	const maxWidthValue = selectedLayer?.cssVars?.["--max-width"];
+type Group = ReturnType<typeof useBreakpointCssGroup>;
 
-	// Height values
-	const heightValue = selectedLayer?.cssVars?.["--height"];
-	const minHeightValue = selectedLayer?.cssVars?.["--min-height"];
-	const maxHeightValue = selectedLayer?.cssVars?.["--max-height"];
-
-	// Display values for triggers - show CSS value if set, otherwise show computed dimension
-	const widthDisplay = useMemo(() => {
-		if (widthValue) return widthValue;
-		if (dimensions?.width) return `${dimensions.width}px`;
-		return "";
-	}, [widthValue, dimensions?.width]);
-
-	const heightDisplay = useMemo(() => {
-		if (heightValue) return heightValue;
-		if (dimensions?.height) return `${dimensions.height}px`;
-		return "";
-	}, [heightValue, dimensions?.height]);
-
-	// Placeholder values for inputs - show computed dimension when no value is set
-	const widthPlaceholder = dimensions?.width
-		? `${dimensions.width}`
-		: undefined;
-	const heightPlaceholder = dimensions?.height
-		? `${dimensions.height}`
-		: undefined;
-
-	const hasWidthValue = Boolean(widthValue || minWidthValue || maxWidthValue);
-	const hasHeightValue = Boolean(
-		heightValue || minHeightValue || maxHeightValue
-	);
-
-	const handleClearWidth = () => {
-		if (selectedLayer) {
-			designerAction({
-				type: "UPDATE_LAYER_CSS",
-				payload: {
-					id: selectedLayer.id,
-					css: {
-						"--width": "",
-						"--min-width": "",
-						"--max-width": "",
-					},
-				},
-			});
-		}
-	};
-
-	const handleClearHeight = () => {
-		if (selectedLayer) {
-			designerAction({
-				type: "UPDATE_LAYER_CSS",
-				payload: {
-					id: selectedLayer.id,
-					css: {
-						"--height": "",
-						"--min-height": "",
-						"--max-height": "",
-					},
-				},
-			});
-		}
-	};
-
+const SizeField = ({
+	group,
+	properties,
+	index,
+	short,
+	ariaLabel,
+	computed,
+	keywords,
+}: {
+	group: Group;
+	properties: string[];
+	index: number;
+	short: string;
+	ariaLabel: string;
+	computed?: number;
+	keywords?: typeof SIZE_MODES;
+}) => {
+	const { value, isExplicit } = group.entries[index];
 	return (
-		<>
-			<ActionPopover
-				label="Width"
-				popoverTitle="Width"
-				triggerDisplayValue={widthDisplay}
-				hasValue={hasWidthValue}
-				onClear={handleClearWidth}
+		<div className="min-w-0" data-css-prop={properties[index]}>
+			<TokenSlot
+				variant="cell"
+				title={ariaLabel}
+				prefix={short.length <= 2 ? short : undefined}
+				inherited={!isExplicit}
+				binding={{
+					type: "dimension",
+					cssProperty: properties[index],
+					value,
+					onChange: (next) => group.setOne(properties[index], next),
+				}}
 			>
-				<NumericActionControl
-					cssProperty="--width"
-					label="Width"
-					defaultValue={0}
-					showSteppers={false}
-					orientation="horizontal"
-					placeholder={widthPlaceholder}
+				<UnitField
+					keywords={keywords}
+					value={isExplicit ? value : undefined}
+					placeholderValue={isExplicit ? undefined : value}
+					placeholder={computed ? `${computed}` : undefined}
+					defaultValue={computed ?? 0}
+					min={0}
+					scale={SIZE_SCALE}
+					addon={group.isOverride && isExplicit ? `${short} •` : short}
+					ariaLabel={ariaLabel}
+					onChange={(next) => group.setOne(properties[index], next)}
 				/>
-				<NumericActionControl
-					cssProperty="--min-width"
-					label="Min Width"
-					defaultValue={0}
-					showSteppers={false}
-					orientation="horizontal"
-				/>
-				<NumericActionControl
-					cssProperty="--max-width"
-					label="Max Width"
-					defaultValue={0}
-					showSteppers={false}
-					orientation="horizontal"
-				/>
-			</ActionPopover>
+			</TokenSlot>
+		</div>
+	);
+};
 
-			<ActionPopover
-				label="Height"
-				popoverTitle="Height"
-				triggerDisplayValue={heightDisplay}
-				hasValue={hasHeightValue}
-				onClear={handleClearHeight}
-			>
-				<NumericActionControl
-					cssProperty="--height"
-					label="Height"
-					defaultValue={0}
-					showSteppers={false}
-					orientation="horizontal"
-					placeholder={heightPlaceholder}
+const SIZE = ["--width", "--height"];
+
+/** Width and height. Each is a number, or Fill, Hug or Auto. */
+export const ActionSize = () => {
+	const [layer] = useSelectedLayers();
+	const dimensions = useLayerDimensions(layer);
+	const group = useBreakpointCssGroup(SIZE);
+	return (
+		<div className="grid grid-cols-2 gap-1">
+			<SizeField
+				group={group}
+				properties={SIZE}
+				index={0}
+				short="W"
+				ariaLabel="Width"
+				computed={dimensions?.width}
+				keywords={SIZE_MODES}
+			/>
+			<SizeField
+				group={group}
+				properties={SIZE}
+				index={1}
+				short="H"
+				ariaLabel="Height"
+				computed={dimensions?.height}
+				keywords={SIZE_MODES}
+			/>
+		</div>
+	);
+};
+
+export const SIZE_LIMITS = [
+	"--min-width",
+	"--min-height",
+	"--max-width",
+	"--max-height",
+];
+
+const LIMIT_LABELS = ["Min width", "Min height", "Max width", "Max height"];
+
+/** Bounds for a layer that grows and shrinks. */
+export const ActionSizeLimits = () => {
+	const group = useBreakpointCssGroup(SIZE_LIMITS);
+	return (
+		<div className="grid gap-1">
+			{LIMIT_LABELS.map((label, index) => (
+				<SizeField
+					key={label}
+					group={group}
+					properties={SIZE_LIMITS}
+					index={index}
+					short={label}
+					ariaLabel={label}
 				/>
-				<NumericActionControl
-					cssProperty="--min-height"
-					label="Min Height"
-					defaultValue={0}
-					showSteppers={false}
-					orientation="horizontal"
-				/>
-				<NumericActionControl
-					cssProperty="--max-height"
-					label="Max Height"
-					defaultValue={0}
-					showSteppers={false}
-					orientation="horizontal"
-				/>
-			</ActionPopover>
-		</>
+			))}
+		</div>
 	);
 };

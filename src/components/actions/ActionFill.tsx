@@ -27,7 +27,7 @@ export const ActionFill = () => {
 					type="color"
 					value={selectedLayer?.cssVars?.["--background-color"] || "#ffffff"}
 					onChange={handleColorChange}
-					className="w-24 p-1 border border-gray-300 rounded"
+					className="w-24 p-1 border border-border rounded"
 				/>
 			</div>
 		</div>

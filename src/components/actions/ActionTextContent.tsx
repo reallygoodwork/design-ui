@@ -12,7 +12,7 @@ export const ActionTextContent = () => {
 	return (
 		<DesignAction label="Text Content" orientation="vertical">
 			<textarea
-				className="field-sizing-content flex min-h-16 w-full break-all rounded-md border border-input bg-input px-3 py-2 text-base outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 sm:text-xs dark:bg-input/30 dark:aria-invalid:ring-destructive/40"
+				className="field-sizing-content flex min-h-16 w-full [overflow-wrap:anywhere] rounded-md border border-input bg-input px-3 py-2 text-control outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 pointer-coarse:text-base dark:bg-input/30 dark:aria-invalid:ring-destructive/40"
 				placeholder="Enter text content"
 				value={selectedLayer?.value}
 				onChange={(e) => {

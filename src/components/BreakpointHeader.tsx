@@ -162,7 +162,7 @@ export const BreakpointHeader = ({
 		// biome-ignore lint/a11y/noStaticElementInteractions: mouse-only drag surface; keyboard users select via the inner select button
 		<div
 			className={cn(
-				"breakpoint-header flex w-fit items-center gap-2 px-2 py-1 text-xs select-none",
+				"breakpoint-header flex w-fit items-center gap-2 px-2 py-1 text-control select-none",
 				isActive || isSelected ? "text-primary" : "text-muted-foreground",
 				isSelected && "bg-primary/10 rounded-t",
 				isDragging ? "cursor-grabbing" : "cursor-grab"
@@ -186,7 +186,7 @@ export const BreakpointHeader = ({
 
 				{/* Primary badge */}
 				{isPrimary && (
-					<span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+					<span className="rounded bg-primary/20 px-1.5 py-0.5 text-caption font-medium text-primary">
 						Primary
 					</span>
 				)}
@@ -195,7 +195,7 @@ export const BreakpointHeader = ({
 				<span className="flex-1" />
 
 				{/* Dimensions */}
-				<span className="text-muted-foreground tabular-nums">
+				<span className="font-mono text-muted-foreground">
 					{breakpoint.width} × {breakpoint.height}
 				</span>
 			</button>
@@ -204,7 +204,7 @@ export const BreakpointHeader = ({
 			<button
 				type="button"
 				data-header-action
-				className="flex size-5 items-center justify-center rounded hover:bg-accent/50"
+				className="flex size-5 items-center justify-center rounded hover:bg-hover/50"
 				onClick={handleAddBreakpoint}
 				title="Add breakpoint"
 			>

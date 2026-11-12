@@ -1,8 +1,8 @@
-import { useDesignerAction } from "../../hooks/useDesignerAction";
-import { useSelectedLayers } from "../../hooks/useSelectedLayers";
-import { ClearButton } from "../common/ClearButton";
+import { useBreakpointCss } from "../../hooks/useBreakpointCss";
+import type { TokenType } from "../../lib/tokens";
 import { Select } from "../common/Select";
 import { DesignAction } from "../DesignAction";
+import { TokenSlot } from "../tokens/TokenSlot";
 
 interface SelectItem {
 	label: string;
@@ -15,6 +15,8 @@ interface SelectActionControlProps {
 	options: readonly SelectItem[];
 	defaultValue?: string;
 	orientation?: "horizontal" | "vertical";
+	/** Lets the value be a token of this type, like font weight. */
+	tokenType?: TokenType;
 }
 
 export const SelectActionControl = ({
@@ -22,45 +24,35 @@ export const SelectActionControl = ({
 	label,
 	options,
 	defaultValue = "",
-	orientation = "vertical",
+	orientation = "horizontal",
+	tokenType,
 }: SelectActionControlProps) => {
-	const selectedLayers = useSelectedLayers();
-	const designerAction = useDesignerAction();
-	const selectedLayer = selectedLayers[0];
-
-	const currentValue = selectedLayer?.cssVars?.[cssProperty] || defaultValue;
-
-	const handleValueChange = (value: string) => {
-		if (selectedLayer) {
-			designerAction({
-				type: "UPDATE_LAYER_CSS",
-				payload: {
-					id: selectedLayer.id,
-					css: { [cssProperty]: value },
-				},
-			});
-		}
-	};
-
-	const handleClear = () => {
-		if (selectedLayer) {
-			designerAction({
-				type: "UPDATE_LAYER_CSS",
-				payload: { id: selectedLayer.id, css: { [cssProperty]: "" } },
-			});
-		}
-	};
-
-	const hasValue = Boolean(selectedLayer?.cssVars?.[cssProperty]);
+	const { value, isExplicit, isOverride, setValue, clearValue } =
+		useBreakpointCss(cssProperty);
+	const currentValue = value || defaultValue;
 
 	return (
-		<DesignAction label={label} orientation={orientation}>
-			<Select
-				items={options}
-				value={currentValue}
-				onValueChange={handleValueChange}
-			/>
-			<ClearButton hasValue={hasValue} handleClear={handleClear} />
+		<DesignAction
+			clear={{ hasValue: isExplicit, onClear: clearValue }}
+			label={isOverride ? `${label} \u2022` : label}
+			orientation={orientation}
+			property={cssProperty}
+		>
+			{tokenType ? (
+				<TokenSlot
+					title={label}
+					inherited={!isExplicit}
+					binding={{ type: tokenType, cssProperty, value, onChange: setValue }}
+				>
+					<Select
+						items={options}
+						value={currentValue}
+						onValueChange={setValue}
+					/>
+				</TokenSlot>
+			) : (
+				<Select items={options} value={currentValue} onValueChange={setValue} />
+			)}
 		</DesignAction>
 	);
 };

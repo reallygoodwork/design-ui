@@ -76,8 +76,8 @@ export const StructureAble = {
 				{/* Top button - positioned above the frame */}
 				<Button
 					data-moveable-control="true"
-					className="size-6 bg-gray-400 text-white rounded-full leading-none text-xs flex items-center justify-center hover:bg-gray-500 active:bg-gray-600 shrink-0 absolute top-0"
-					title="Add element before"
+					className="size-6 bg-muted-foreground text-background rounded-full leading-none text-control flex items-center justify-center hover:bg-gray-500 active:bg-gray-600 shrink-0 absolute top-0"
+					title="Add layer before"
 					style={{
 						transform: "translateY(calc(-100% - 2px))",
 						pointerEvents: "auto",
@@ -97,8 +97,8 @@ export const StructureAble = {
 				{supportsChildren && (
 					<Button
 						data-moveable-control="true"
-						className="size-6 bg-gray-400 text-white rounded-full leading-none text-xs flex items-center justify-center hover:bg-gray-500 active:bg-gray-600 shrink-0 absolute top-0"
-						title="Add element inside"
+						className="size-6 bg-muted-foreground text-background rounded-full leading-none text-control flex items-center justify-center hover:bg-gray-500 active:bg-gray-600 shrink-0 absolute top-0"
+						title="Add layer inside"
 						style={
 							{
 								transform: `translateY(calc(${height}px / 2 - 12px))`,
@@ -121,8 +121,8 @@ export const StructureAble = {
 				{/* Bottom button - positioned at the bottom of the frame */}
 				<Button
 					data-moveable-control="true"
-					className="size-6 bg-gray-400 text-white rounded-full leading-none text-xs flex items-center justify-center hover:bg-gray-500 active:bg-gray-600 shrink-0 absolute top-0"
-					title="Add element after"
+					className="size-6 bg-muted-foreground text-background rounded-full leading-none text-control flex items-center justify-center hover:bg-gray-500 active:bg-gray-600 shrink-0 absolute top-0"
+					title="Add layer after"
 					style={
 						{
 							transform: `translateY(calc(${height}px + 2px))`,

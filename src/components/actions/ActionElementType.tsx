@@ -1,7 +1,6 @@
 import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useDesignerContext } from "../../hooks/useDesignerContext";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
-import { ClearButton } from "../common/ClearButton";
 import { Select } from "../common/Select";
 import { DesignAction } from "../DesignAction";
 
@@ -61,13 +60,16 @@ export const ActionElementType = () => {
 	const hasValue = Boolean(selectedLayer.elementType);
 
 	return (
-		<DesignAction label="Element Type" orientation="horizontal">
+		<DesignAction
+			clear={{ hasValue, onClear: handleClear }}
+			label="Tag"
+			orientation="horizontal"
+		>
 			<Select
 				items={options}
 				value={currentValue}
 				onValueChange={handleValueChange}
 			/>
-			<ClearButton hasValue={hasValue} handleClear={handleClear} />
 		</DesignAction>
 	);
 };

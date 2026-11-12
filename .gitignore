@@ -32,3 +32,5 @@ CLAUDE.md
 .env
 .env.local
 .playwright-mcp
+# Rendered videos
+video/out

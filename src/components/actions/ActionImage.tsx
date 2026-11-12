@@ -27,7 +27,7 @@ export const ActionImage = () => {
 					type="text"
 					value={selectedLayer?.value || ""}
 					onChange={handleUrlChange}
-					className="w-48 p-1 border border-gray-300 rounded"
+					className="w-48 p-1 border border-border rounded"
 				/>
 			</div>
 		</div>

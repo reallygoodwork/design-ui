@@ -59,6 +59,27 @@ export type LayerType = {
 	supportedCssProperties?: SupportedCssProperty[];
 	elementType?: string;
 	availableElementTypes?: string[];
+	/**
+	 * Ready-made versions of this type listed in Add layer, such as a heading
+	 * built from Text. Without presets, the type is listed once by its name.
+	 */
+	presets?: LayerPreset[];
+	/** One line saying what the layer is for, shown in Add layer. */
+	description?: string;
+};
+
+export type LayerPreset = {
+	/** Unique within its layer type. */
+	id: string;
+	label: string;
+	description: string;
+	/** Heading under which Add layer lists it, e.g. "Layout" or "Text". */
+	group: string;
+	elementType?: string;
+	/** Merged over the type's default values. */
+	values?: Partial<Omit<Layer, "id" | "type" | "children">>;
+	/** Extra words to match when searching, e.g. "title" for a heading. */
+	keywords?: string[];
 };
 
 export type Keybinding = {

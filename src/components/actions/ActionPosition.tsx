@@ -1,4 +1,8 @@
 import { useMemo } from "react";
+import {
+	useBreakpointCssGroup,
+	useEffectiveCss,
+} from "../../hooks/useBreakpointCss";
 import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { ActionPopover } from "./ActionPopover";
@@ -6,48 +10,43 @@ import { NumericActionControl } from "./NumericActionControl";
 import { SelectActionControl } from "./SelectActionControl";
 
 const POSITION_OPTIONS = [
-	{ label: "static", value: "static" },
-	{ label: "relative", value: "relative" },
-	{ label: "absolute", value: "absolute" },
-	{ label: "fixed", value: "fixed" },
-	{ label: "sticky", value: "sticky" },
-	{ label: "inherit", value: "inherit" },
-	{ label: "initial", value: "initial" },
-	{ label: "revert", value: "revert" },
-	{ label: "revert-layer", value: "revert-layer" },
-	{ label: "unset", value: "unset" },
+	{ label: "Static", value: "static" },
+	{ label: "Relative", value: "relative" },
+	{ label: "Absolute", value: "absolute" },
+	{ label: "Fixed", value: "fixed" },
+	{ label: "Sticky", value: "sticky" },
+	{ label: "Inherit", value: "inherit" },
+	{ label: "Initial", value: "initial" },
+	{ label: "Revert", value: "revert" },
+	{ label: "Revert layer", value: "revert-layer" },
+	{ label: "Unset", value: "unset" },
 ] as const;
 
 const EDGE_PROPERTIES = ["top", "right", "bottom", "left"] as const;
+const ALL_PROPERTIES = ["position", ...EDGE_PROPERTIES];
 
 export const ActionPosition = () => {
 	const selectedLayers = useSelectedLayers();
 	const designerAction = useDesignerAction();
 	const selectedLayer = selectedLayers[0];
 
-	const currentPosition = selectedLayer?.cssVars?.position || "static";
+	const vars = useEffectiveCss();
+	const group = useBreakpointCssGroup(ALL_PROPERTIES);
+	const currentPosition = vars.position || "static";
 
 	// Format display value
 	const displayValue = useMemo(() => {
 		const appliedValues = EDGE_PROPERTIES.map((prop) => {
-			const rawValue = selectedLayer?.cssVars?.[prop];
+			const rawValue = vars[prop];
 			if (!rawValue) return null;
-			return `${prop}: ${rawValue}`;
+			return `${prop} ${rawValue}`;
 		}).filter(Boolean);
 
-		if (appliedValues.length === 0) {
-			return currentPosition;
-		}
-
-		return `${currentPosition} (${appliedValues.join(", ")})`;
-	}, [currentPosition, selectedLayer?.cssVars]);
-
-	const hasValue = useMemo(() => {
-		return Boolean(
-			selectedLayer?.cssVars?.position ||
-				EDGE_PROPERTIES.some((prop) => selectedLayer?.cssVars?.[prop])
-		);
-	}, [selectedLayer?.cssVars]);
+		const name =
+			POSITION_OPTIONS.find((o) => o.value === currentPosition)?.label ??
+			currentPosition;
+		return [name, ...appliedValues].join(", ");
+	}, [currentPosition, vars]);
 
 	const handleClear = () => {
 		if (selectedLayer) {
@@ -72,7 +71,8 @@ export const ActionPosition = () => {
 			label="Position"
 			popoverTitle="Position"
 			triggerDisplayValue={displayValue}
-			hasValue={hasValue}
+			hasValue={group.hasExplicit}
+			inherited={!group.isPrimary && group.isInherited}
 			onClear={handleClear}
 		>
 			<div className="flex flex-col gap-2">
@@ -89,7 +89,6 @@ export const ActionPosition = () => {
 						key={property}
 						cssProperty={property}
 						label={property.charAt(0).toUpperCase() + property.slice(1)}
-						showSteppers={false}
 						orientation="horizontal"
 					/>
 				))}

@@ -7,7 +7,7 @@ import {
 	IconWaveSine,
 } from "@tabler/icons-react";
 import { MinusIcon, Tally2Icon } from "lucide-react";
-import { useSelectedLayers } from "../../hooks/useSelectedLayers";
+import { useEffectiveCss } from "../../hooks/useBreakpointCss";
 import { ColorActionPopover } from "./ColorActionPopover";
 import { NumericActionControl } from "./NumericActionControl";
 import { ToggleGroupControl } from "./ToggleGroupControl";
@@ -32,16 +32,12 @@ const TEXT_DECORATION_STYLE_OPTIONS = [
 ];
 
 export const ActionTextDecoration = () => {
-	const selectedLayers = useSelectedLayers();
-	const selectedLayer = selectedLayers[0];
-
-	const currentValue =
-		selectedLayer?.cssVars?.["--text-decoration-line"] || "none";
+	const currentValue = useEffectiveCss()["--text-decoration-line"] || "none";
 	return (
 		<ColorActionPopover
 			cssProperty="--text-decoration-color"
 			label="Decoration"
-			popoverTitle="Text Decoration"
+			popoverTitle="Text decoration"
 			triggerDisplayValue={currentValue}
 		>
 			<ToggleGroupControl
@@ -53,9 +49,10 @@ export const ActionTextDecoration = () => {
 			/>
 			<NumericActionControl
 				cssProperty="--text-decoration-thickness"
+				scale={{ px: 20 }}
+				min={0}
 				label="Thickness"
 				defaultValue={1}
-				showSteppers={false}
 				orientation="horizontal"
 			/>
 			<ToggleGroupControl

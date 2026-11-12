@@ -1,5 +1,6 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { isPrimaryBreakpoint } from "../lib/breakpointUtils";
+import type { ActionMeta } from "../lib/changeLog";
 import {
 	denormalize,
 	getNode,
@@ -772,18 +773,47 @@ export type DesignerStore = {
 	getState: () => State;
 	dispatch: React.Dispatch<Action>;
 	subscribe: (listener: () => void) => () => void;
+	/**
+	 * Dispatch with who made the change and why, for the change log. Plain
+	 * `dispatch` counts as the person using the editor.
+	 */
+	dispatchWithMeta: (action: Action, meta: ActionMeta) => void;
+	/**
+	 * Runs after every action that changed the state, with the state before
+	 * and after. For history, logging and sync; it can't change the outcome.
+	 */
+	observe: (observer: (event: StoreEvent) => void) => () => void;
+};
+
+export type StoreEvent = {
+	action: Action;
+	prev: State;
+	next: State;
+	meta: ActionMeta;
 };
 
 export const createDesignerStore = (initial: State): DesignerStore => {
 	let state = withDerived(initial);
 	const listeners = new Set<() => void>();
+	const observers = new Set<(event: StoreEvent) => void>();
+	const run = (action: Action, meta: ActionMeta) => {
+		const next = reducer(state, action);
+		if (next === state) return;
+		const prev = state;
+		state = next;
+		for (const observer of [...observers])
+			observer({ action, prev, next, meta });
+		for (const listener of [...listeners]) listener();
+	};
 	return {
 		getState: () => state,
-		dispatch: (action) => {
-			const next = reducer(state, action);
-			if (next === state) return;
-			state = next;
-			for (const listener of [...listeners]) listener();
+		dispatch: (action) => run(action, {}),
+		dispatchWithMeta: run,
+		observe: (observer) => {
+			observers.add(observer);
+			return () => {
+				observers.delete(observer);
+			};
 		},
 		subscribe: (listener) => {
 			listeners.add(listener);

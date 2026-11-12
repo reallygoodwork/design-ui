@@ -8,7 +8,7 @@ import { useLayers } from "../hooks/useLayers";
 import { useLayerTypes } from "../hooks/useLayerTypes";
 import { sortBreakpointsByWidth } from "../lib/breakpointUtils";
 import { cn } from "../lib/cn";
-import { applyCssVars } from "../lib/cssPropertyMapping";
+import { applyCssVars, withoutTransitions } from "../lib/cssPropertyMapping";
 import type { Breakpoint, CSSVars, Layer, LayerWithStyles } from "../lib/Types";
 import { BreakpointHeader } from "./BreakpointHeader";
 
@@ -79,10 +79,11 @@ const DesignerLayer = memo(function DesignerLayerView({
 	const elementType = layer.elementType || layerType.elementType;
 
 	// Get effective styles for this layer at this breakpoint (mobile-first cascade)
-	const effectiveCssVars =
+	const effectiveCssVars = withoutTransitions(
 		sortedBreakpoints.length > 0
 			? getEffectiveStylesSorted(layer, breakpointId, sortedBreakpoints)
-			: (layer.cssVars ?? {});
+			: (layer.cssVars ?? {})
+	);
 
 	// Determine if layer has explicit dimensions
 	const hasWidth = effectiveCssVars["--width"];

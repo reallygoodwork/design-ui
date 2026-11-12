@@ -34,11 +34,11 @@ export const DimensionAble = {
 			<div
 				key={"dimension-viewer"}
 				className={
-					"group moveable-dimension top-(--top) left-(--left) flex items-center gap-1 rounded-[4px] bg-blue-500 px-1.5 py-1 text-white will-change-transform text-[11px] absolute"
+					"group moveable-dimension top-(--top) left-(--left) flex items-center gap-1 rounded-[4px] bg-accent px-1.5 py-1 text-white will-change-transform text-caption absolute"
 				}
 				style={style}
 			>
-				<span className="whitespace-nowrap font-medium tabular-nums leading-none">
+				<span className="whitespace-nowrap font-mono leading-none">
 					{Math.round(rect.offsetWidth)} x {Math.round(rect.offsetHeight)}
 				</span>
 				{isLocked && (

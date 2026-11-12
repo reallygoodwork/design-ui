@@ -6,19 +6,21 @@ import {
 	JustifyContentSpaceBetween,
 	JustifyContentSpaceEvenly,
 } from "../../assets/icons";
+import { useEffectiveCss } from "../../hooks/useBreakpointCss";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { ToggleGroupControl } from "./ToggleGroupControl";
 
 export const ActionJustifyContent = () => {
 	const selectedLayers = useSelectedLayers();
 	const selectedLayer = selectedLayers[0];
+	const display = useEffectiveCss()["--display"];
 
 	if (
 		!selectedLayer ||
-		(selectedLayer.cssVars?.["--display"] !== "flex" &&
-			selectedLayer.cssVars?.["--display"] !== "inline-flex" &&
-			selectedLayer.cssVars?.["--display"] !== "grid" &&
-			selectedLayer.cssVars?.["--display"] !== "inline-grid")
+		(display !== "flex" &&
+			display !== "inline-flex" &&
+			display !== "grid" &&
+			display !== "inline-grid")
 	)
 		return null;
 
@@ -58,7 +60,7 @@ export const ActionJustifyContent = () => {
 					icon: <JustifyContentSpaceAround />,
 				},
 			]}
-			orientation="vertical"
+			orientation="horizontal"
 		/>
 	);
 };

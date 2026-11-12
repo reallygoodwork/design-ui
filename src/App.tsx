@@ -1,3 +1,6 @@
+import { useEffect } from "react";
+import { ActivityPane } from "./components/activity/ActivityPane";
+import { AnnotationLayer } from "./components/activity/AnnotationLayer";
 import { BreakpointPropertiesPanel } from "./components/BreakpointPropertiesPanel";
 import { CSSPanel } from "./components/CSSPanel";
 import { Tabs } from "./components/common/Tabs";
@@ -10,50 +13,88 @@ import { DesignerHeader } from "./components/DesignerHeader";
 import { DesignerPane } from "./components/DesignerPane";
 import { DesignPanel } from "./components/DesignerPanel";
 import { DesignToolbarContainer } from "./components/DesignToolbarContainer";
+import { ConnectAgentButton, HelpMenu } from "./components/help/HelpMenu";
+import { HelpProvider } from "./components/help/HelpProvider";
 import { PaneLayerTree } from "./components/PaneLayerTree";
+import { TokensPane } from "./components/tokens/TokensPane";
+import { TokenTable } from "./components/tokens/TokenTable";
+import { demoAnnotations } from "./demo/annotations";
+import { worstCaseBreakpoints, worstCaseLayers } from "./demo/fixtures";
+import { demoTokenDimensions, demoTokens } from "./demo/tokens";
+import { useSelectedBreakpoint } from "./hooks/useActiveBreakpoint";
+import { useDesignerAction } from "./hooks/useDesignerAction";
+import { useDesignerApi } from "./hooks/useDesignerApi";
+import { useTokens } from "./hooks/useTokens";
+import { AGENT_PORT } from "./lib/agentProtocol";
+import { calculateBoundingBox } from "./lib/breakpointUtils";
 import type { Breakpoint, Layer } from "./lib/Types";
+import { tokenCssValue } from "./lib/tokens";
 
 const initialLayers: Layer[] = [
 	{
-		id: "1",
-		type: "text",
-		name: "Text 1",
-		value: "Hello World",
-		cssVars: {
-			"--font-size": "16px",
-			"--color": "#000000",
-		},
-	},
-	{
-		id: "2",
+		id: "page",
 		type: "frame",
-		name: "Frame 1",
+		name: "Page",
 		value: "",
 		cssVars: {
-			"--background-color": "#00ff00",
+			"--display": "flex",
+			"--flex-direction": "column",
+			"--row-gap": tokenCssValue("space.stack"),
+			"--padding-block-start": "40px",
+			"--padding-block-end": "40px",
+			"--padding-inline-start": tokenCssValue("space.page.inline"),
+			"--padding-inline-end": tokenCssValue("space.page.inline"),
+			"--background-color": tokenCssValue("color.bg.page"),
+		},
+		breakpointCssVars: {
+			desktop: {
+				"--padding-block-start": "96px",
+			},
 		},
 		children: [
 			{
-				id: "layer-1767983878663-j4ymau5vf",
+				id: "title",
 				type: "text",
-				name: "Text",
-				value: "Hello World",
+				name: "Title",
+				value: "Field notes from a small studio",
+				elementType: "h1",
 				cssVars: {
-					"--font-size": "16px",
-					"--color": "#000000",
+					"--font-size": "48px",
+					"--line-height": "52px",
+					"--font-weight": tokenCssValue("font.weight.heading"),
+					"--color": tokenCssValue("color.text.primary"),
+				},
+				breakpointCssVars: {
+					desktop: { "--font-size": "112px", "--line-height": "112px" },
 				},
 			},
+			{
+				id: "intro",
+				type: "text",
+				name: "Intro",
+				value:
+					"Select any layer, then change it in the panel on the right. Each frame shows the same layers at a different width.",
+				cssVars: {
+					"--font-size": "18px",
+					"--line-height": "28px",
+					"--color": "#52525b",
+				},
+				breakpointCssVars: {
+					desktop: { "--font-size": "28px", "--line-height": "40px" },
+				},
+			},
+			{
+				id: "swatch",
+				type: "frame",
+				name: "Feature",
+				value: "",
+				cssVars: {
+					"--height": "220px",
+					"--background-color": tokenCssValue("color.action.primary"),
+				},
+				breakpointCssVars: { desktop: { "--height": "360px" } },
+			},
 		],
-	},
-	{
-		id: "3",
-		type: "image",
-		name: "Image 1",
-		value: "https://placehold.co/150",
-		cssVars: {
-			"--width": "150px",
-			"--height": "150px",
-		},
 	},
 ];
 
@@ -82,43 +123,221 @@ const initialBreakpoints: Breakpoint[] = [
 	},
 ];
 
+/** Open with every frame in view, whatever size the canvas is. */
+const FitFramesOnLoad = () => {
+	const dispatch = useDesignerAction();
+	useEffect(() => {
+		const canvas = document.querySelector("[data-slot='designer-canvas']");
+		if (!canvas || canvas.clientWidth === 0) return;
+		const box = calculateBoundingBox(initialBreakpoints);
+		const zoom = Math.min(
+			(canvas.clientWidth - 80) / box.width,
+			(canvas.clientHeight - 120) / box.height,
+			1
+		);
+		dispatch({ type: "SET_ZOOM", payload: zoom });
+		dispatch({ type: "CENTER_ON_BREAKPOINTS" });
+	}, [dispatch]);
+	return null;
+};
+
+/** A selected frame shows its own settings. Otherwise, the layer's styles. */
+const Inspector = () => {
+	const selectedBreakpoint = useSelectedBreakpoint();
+	if (selectedBreakpoint) {
+		return (
+			<div className="h-full overflow-y-auto">
+				<BreakpointPropertiesPanel />
+			</div>
+		);
+	}
+	return (
+		<Tabs
+			items={[
+				{
+					label: "Styles",
+					value: "layer",
+					hint: "Change the selected layer",
+					content: <DesignActionPanel />,
+				},
+				{
+					label: "CSS",
+					value: "css",
+					hint: "The CSS the selected layer produces",
+					content: <CSSPanel />,
+				},
+			]}
+		/>
+	);
+};
+
+/** Layers and tokens. Going back to Layers brings the canvas back from a full-view token panel. */
+const LeftPanel = () => {
+	const { tableMaximized, setTableMaximized } = useTokens();
+	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: listens for clicks on the tabs inside
+		// biome-ignore lint/a11y/useKeyWithClickEvents: the tabs handle their own keys; Enter and Space click them
+		<div
+			className="contents"
+			onClickCapture={(event) => {
+				const tab = (event.target as HTMLElement).closest("[role=tab]");
+				if (tableMaximized && tab?.textContent === "Layers")
+					setTableMaximized(false);
+			}}
+		>
+			<Tabs
+				items={[
+					{
+						label: "Layers",
+						value: "layers",
+						hint: "Every layer on the page, in order",
+						content: (
+							<DesignerPane>
+								<PaneLayerTree />
+							</DesignerPane>
+						),
+					},
+					{
+						label: "Tokens",
+						value: "tokens",
+						hint: "Shared colors, sizes and spacing",
+						content: <TokensPane />,
+					},
+					{
+						label: "Activity",
+						value: "activity",
+						hint: "Changes, comments and tasks",
+						content: <ActivityPane />,
+					},
+				]}
+			/>
+		</div>
+	);
+};
+
+/**
+ * The demo's agent fixes one hardcoded color soon after load, with a reason,
+ * to show how an agent's change and its note land in Activity.
+ */
+const DemoAgentEdit = () => {
+	const { dispatch } = useDesignerApi();
+	useEffect(() => {
+		const timer = setTimeout(
+			() =>
+				dispatch(
+					{
+						type: "UPDATE_LAYER_CSS",
+						payload: {
+							id: "intro",
+							css: { "--color": tokenCssValue("color.text.muted") },
+							breakpointId: "mobile",
+						},
+					},
+					{
+						actor: { kind: "agent", name: "Agent" },
+						reason:
+							"Intro used a hardcoded #52525b, which stays dark in dark mode. Switched it to color.text.muted so it follows the theme.",
+					}
+				),
+			1500
+		);
+		return () => clearTimeout(timer);
+	}, [dispatch]);
+	return null;
+};
+
+const DATASETS = [
+	{ label: "Demo", value: "demo" },
+	{ label: "Worst case", value: "worst" },
+	{ label: "Empty", value: "empty" },
+];
+
+const dataset = () =>
+	import.meta.env.DEV
+		? (new URLSearchParams(window.location.search).get("data") ?? "demo")
+		: "demo";
+
+/** Swaps the sample data while developing. Never ships. */
+const DevDataToggle = () => {
+	if (!import.meta.env.DEV) return null;
+	const current = dataset();
+	return (
+		<div className="fixed bottom-4 left-4 z-50 flex gap-0.5 rounded-md bg-neutral-200 p-0.5 font-sans text-caption text-neutral-900">
+			{DATASETS.map(({ label, value }) => (
+				<a
+					key={value}
+					href={`?data=${value}`}
+					target="_top"
+					className={`rounded px-2 py-1 ${value === current ? "bg-white" : ""}`}
+				>
+					{label}
+				</a>
+			))}
+		</div>
+	);
+};
+
 function App() {
+	const data = dataset();
+	const layers =
+		data === "worst" ? worstCaseLayers : data === "empty" ? [] : initialLayers;
+	const breakpoints =
+		data === "worst" ? worstCaseBreakpoints : initialBreakpoints;
+
 	return (
 		<div className="flex h-screen w-screen isolate ds">
-			<Designer layers={initialLayers} breakpoints={initialBreakpoints}>
-				<DesignerHeader />
-				<DesignerContent>
-					<DesignPanel>
-						<DesignerPane>
-							<PaneLayerTree />
-						</DesignerPane>
-					</DesignPanel>
+			<DevDataToggle />
+			<Designer
+				layers={layers}
+				breakpoints={breakpoints}
+				tokens={demoTokens}
+				tokenDimensions={demoTokenDimensions}
+				annotations={data === "demo" ? demoAnnotations : []}
+				// While developing, connect to a local agent: bun run agent
+				agentUrl={
+					import.meta.env.DEV ? `ws://localhost:${AGENT_PORT}` : undefined
+				}
+			>
+				<HelpProvider>
+					<DesignerHeader>
+						{/* _top: the docs page embeds this editor in an iframe */}
+						<a
+							href="/"
+							target="_top"
+							className="text-control font-medium text-muted-foreground hover:text-foreground"
+						>
+							Coral Design docs
+						</a>
+						<div className="ml-auto flex items-center gap-1">
+							<ConnectAgentButton />
+							<HelpMenu />
+						</div>
+					</DesignerHeader>
+					<DesignerContent>
+						<DesignPanel>
+							<LeftPanel />
+						</DesignPanel>
 
-					<DesignerCanvas>
-						<DesignerFrame />
-					</DesignerCanvas>
+						{/* The token table opens under the canvas; the toolbar stays on the canvas. */}
+						<div className="flex min-w-0 flex-1 flex-col">
+							<div className="relative flex min-h-0 flex-1">
+								<DesignerCanvas>
+									<DesignerFrame />
+								</DesignerCanvas>
+								<AnnotationLayer />
+								<DesignToolbarContainer />
+							</div>
+							<TokenTable />
+						</div>
 
-					<DesignPanel>
-						{/* Show breakpoint properties when frame selected, layer styles otherwise */}
-						<BreakpointPropertiesPanel />
-						<Tabs
-							items={[
-								{
-									label: "Styles",
-									value: "layer",
-									content: <DesignActionPanel />,
-								},
-								{
-									label: "CSS",
-									value: "css",
-									content: <CSSPanel />,
-								},
-							]}
-						/>
-					</DesignPanel>
+						<DesignPanel>
+							<Inspector />
+						</DesignPanel>
 
-					<DesignToolbarContainer />
-				</DesignerContent>
+						<FitFramesOnLoad />
+						{data === "demo" && <DemoAgentEdit />}
+					</DesignerContent>
+				</HelpProvider>
 			</Designer>
 		</div>
 	);

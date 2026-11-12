@@ -70,6 +70,10 @@ const CSS_VAR_TO_PROPERTY_MAP: Record<string, keyof CSSProperties> = {
 	"--left": "left",
 	"--z-index": "zIndex",
 
+	// Motion
+	"--transition-duration": "transitionDuration",
+	"--transition-timing-function": "transitionTimingFunction",
+
 	// ActionPosition writes these without the "--" prefix
 	position: "position",
 	top: "top",
@@ -165,6 +169,18 @@ export function applyCssVars(
 	if (borderStyle) style.borderStyle = borderStyle;
 
 	return style;
+}
+
+/**
+ * A layer's transition is for the finished page. On the canvas it would make
+ * every edit lag behind the control.
+ */
+export function withoutTransitions(
+	cssVars: Record<string, string>
+): Record<string, string> {
+	return Object.fromEntries(
+		Object.entries(cssVars).filter(([key]) => !key.startsWith("--transition-"))
+	);
 }
 
 /**

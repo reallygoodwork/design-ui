@@ -5,7 +5,15 @@ import type { LayerType, LayerWithStyles } from "../Types";
 export const frameLayerType = {
 	type: "frame",
 	name: "Frame",
+	description: "A box that holds and lays out other layers",
 	icon: <IconFrame />,
+	keybinding: {
+		key: "f",
+		label: "F",
+		labelMac: "F",
+		description: "Add frame",
+		group: "Layers",
+	},
 	supportsChildren: true,
 	supportedCssProperties: [
 		"--width",
@@ -32,6 +40,8 @@ export const frameLayerType = {
 		"--border-style",
 		"--border-color",
 		"--opacity",
+		"--transition-duration",
+		"--transition-timing-function",
 		"--position",
 		"position",
 		"top",
@@ -88,5 +98,45 @@ export const frameLayerType = {
 		"footer",
 		"nav",
 		"aside",
+	],
+	presets: [
+		{
+			id: "frame",
+			label: "Frame",
+			description: "A box that holds and lays out other layers",
+			group: "Layout",
+			keywords: ["div", "box", "container", "group"],
+		},
+		...(
+			[
+				[
+					"section",
+					"Section",
+					"A themed part of the page, usually with a heading",
+				],
+				[
+					"header",
+					"Header",
+					"Introductory content, such as a logo and navigation",
+				],
+				["nav", "Navigation", "A group of links to other pages or sections"],
+				["main", "Main", "The page's primary content. Use one per page"],
+				[
+					"article",
+					"Article",
+					"Self-contained content, such as a post or card",
+				],
+				["aside", "Aside", "Content beside the main flow, such as a sidebar"],
+				["footer", "Footer", "Closing content, such as links and copyright"],
+			] as const
+		).map(([element, label, description]) => ({
+			id: element,
+			label,
+			description,
+			group: "Layout",
+			elementType: element,
+			values: { name: label },
+			keywords: [element],
+		})),
 	],
 } satisfies LayerType;

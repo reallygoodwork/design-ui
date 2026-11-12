@@ -5,7 +5,15 @@ import type { LayerType, LayerWithStyles } from "../Types";
 export const imageLayerType = {
 	type: "image",
 	name: "Image",
+	description: "A picture from a URL",
 	icon: <IconPhoto />,
+	keybinding: {
+		key: "i",
+		label: "I",
+		labelMac: "I",
+		description: "Add image",
+		group: "Layers",
+	},
 	supportsChildren: false,
 	supportedCssProperties: [
 		"--width",
@@ -38,6 +46,8 @@ export const imageLayerType = {
 		"--grid-template-columns",
 		"--grid-template-rows",
 		"--opacity",
+		"--transition-duration",
+		"--transition-timing-function",
 		"position",
 		"top",
 		"right",
@@ -69,4 +79,13 @@ export const imageLayerType = {
 			}}
 		/>
 	),
+	presets: [
+		{
+			id: "image",
+			label: "Image",
+			description: "A picture from a URL",
+			group: "Media",
+			keywords: ["img", "photo", "picture"],
+		},
+	],
 } satisfies LayerType;

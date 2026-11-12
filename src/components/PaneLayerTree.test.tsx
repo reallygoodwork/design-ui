@@ -37,11 +37,9 @@ const setup = () => {
 	return { select };
 };
 
-// Rows in the given breakpoint's tree, keyed by layer name
-const rowsIn = (breakpointName: string) => {
-	const tree = screen.getByRole("treegrid", {
-		name: `${breakpointName} layer tree`,
-	});
+// Rows in the layer tree, keyed by layer name
+const rowsIn = () => {
+	const tree = screen.getByRole("treegrid", { name: "Layer tree" });
 	return (name: string) => {
 		const row = within(tree)
 			.getAllByRole("row")
@@ -56,12 +54,12 @@ const rowsIn = (breakpointName: string) => {
 
 // Tinted means the lighter class AND the test hook agree
 const tinted = (row: HTMLElement) => {
-	const byClass = row.classList.contains("dark:bg-accent/30");
+	const byClass = row.classList.contains("bg-hover/50");
 	const byAttr = row.getAttribute("data-in-selection") === "true";
 	return byClass && byAttr;
 };
 const hasTintClass = (row: HTMLElement) =>
-	row.classList.contains("dark:bg-accent/30");
+	row.classList.contains("bg-hover/50");
 
 describe("subtree tint", () => {
 	afterEach(cleanup);
@@ -69,7 +67,7 @@ describe("subtree tint", () => {
 	it("A: selecting Frame tints Child and Grandchild only", () => {
 		const { select } = setup();
 		select("Frame");
-		const row = rowsIn("Desktop");
+		const row = rowsIn();
 		expect(tinted(row("Child"))).toBe(true);
 		expect(tinted(row("Grandchild"))).toBe(true);
 		expect(hasTintClass(row("Frame"))).toBe(false);
@@ -80,7 +78,7 @@ describe("subtree tint", () => {
 	it("B: selecting Child tints Grandchild but not Frame", () => {
 		const { select } = setup();
 		select("Child");
-		const row = rowsIn("Desktop");
+		const row = rowsIn();
 		expect(tinted(row("Grandchild"))).toBe(true);
 		expect(hasTintClass(row("Frame"))).toBe(false);
 		expect(hasTintClass(row("Child"))).toBe(false);
@@ -89,7 +87,7 @@ describe("subtree tint", () => {
 	it("C: selecting a leaf tints nothing", () => {
 		const { select } = setup();
 		select("Grandchild");
-		const row = rowsIn("Desktop");
+		const row = rowsIn();
 		for (const n of ["Frame", "Child", "Grandchild", "Other"]) {
 			expect(hasTintClass(row(n))).toBe(false);
 		}
@@ -99,18 +97,19 @@ describe("subtree tint", () => {
 		const { select } = setup();
 		select("Frame");
 		select("Other");
-		const row = rowsIn("Desktop");
+		const row = rowsIn();
 		for (const n of ["Frame", "Child", "Grandchild", "Other"]) {
 			expect(hasTintClass(row(n))).toBe(false);
 		}
 	});
 
-	it("E: tint appears only in the active breakpoint's tree", () => {
+	it("E: shows one tree whichever breakpoint is active", () => {
 		const { select } = setup();
 		select("Frame", "desktop");
-		expect(tinted(rowsIn("Desktop")("Child"))).toBe(true);
-		expect(hasTintClass(rowsIn("Mobile")("Child"))).toBe(false);
-		expect(hasTintClass(rowsIn("Tablet")("Grandchild"))).toBe(false);
+		expect(screen.getAllByRole("treegrid")).toHaveLength(1);
+		expect(tinted(rowsIn()("Child"))).toBe(true);
+		select("Other", "mobile");
+		expect(rowsIn()("Other").getAttribute("data-selected")).toBe("true");
 	});
 });
 
@@ -128,7 +127,7 @@ describe("row click", () => {
 	it("clicking the name wrapper (not the text) selects the layer", async () => {
 		setup();
 		const user = userEvent.setup();
-		const row = rowsIn("Desktop");
+		const row = rowsIn();
 		await user.click(nameWrapper(row("Other"), "Other"));
 		expect(row("Other").getAttribute("aria-selected")).toBe("true");
 	});
@@ -136,7 +135,7 @@ describe("row click", () => {
 	it("double-clicking the name opens the rename input", async () => {
 		setup();
 		const user = userEvent.setup();
-		const row = rowsIn("Desktop");
+		const row = rowsIn();
 		await user.dblClick(nameWrapper(row("Other"), "Other"));
 		expect(within(row("Other")).getByRole("textbox")).toBeTruthy();
 	});
@@ -144,7 +143,7 @@ describe("row click", () => {
 	it("clicking the lock button toggles the lock without selecting", async () => {
 		setup();
 		const user = userEvent.setup();
-		const row = rowsIn("Desktop");
+		const row = rowsIn();
 		await user.click(within(row("Other")).getByTitle("Lock layer"));
 		expect(within(row("Other")).getByTitle("Unlock layer")).toBeTruthy();
 		expect(row("Other").getAttribute("aria-selected")).not.toBe("true");
@@ -154,13 +153,16 @@ describe("row click", () => {
 const SelectedBreakpoint = () => {
 	const { state } = useDesignerContext();
 	return (
-		<output data-testid="selected-bp">
-			{state.selectedBreakpointId ?? ""}
-		</output>
+		<>
+			<output data-testid="selected-bp">
+				{state.selectedBreakpointId ?? ""}
+			</output>
+			<output data-testid="active-bp">{state.activeBreakpointId ?? ""}</output>
+		</>
 	);
 };
 
-describe("section header", () => {
+describe("frames list", () => {
 	afterEach(cleanup);
 
 	const setupHeaders = () => {
@@ -174,12 +176,6 @@ describe("section header", () => {
 		return userEvent.setup();
 	};
 	const selectedBp = () => screen.getByTestId("selected-bp").textContent;
-	const treeQuery = () =>
-		screen.queryByRole("treegrid", { name: "Tablet layer tree" });
-	const toggle = () =>
-		screen.getByRole("button", {
-			name: /tablet.*(expand|collapse)|(expand|collapse).*tablet/i,
-		});
 	const selectTarget = () =>
 		screen.getByRole("button", { name: /^Tablet.*768/ });
 
@@ -209,22 +205,12 @@ describe("section header", () => {
 		expect(selectedBp()).toBe("tablet");
 	});
 
-	it("clicking the chevron toggles the section without selecting", async () => {
+	it("selecting a layer in the tree keeps the active breakpoint", async () => {
 		const user = setupHeaders();
-		expect(treeQuery()).not.toBeNull();
-		await user.click(toggle());
-		expect(treeQuery()).toBeNull();
-		expect(selectedBp()).not.toBe("tablet");
-		await user.click(toggle());
-		expect(treeQuery()).not.toBeNull();
-		expect(selectedBp()).not.toBe("tablet");
-	});
-
-	it("exposes both controls as named buttons", () => {
-		setupHeaders();
-		expect(toggle()).toBeTruthy();
-		expect(selectTarget()).toBeTruthy();
-		expect(toggle()).not.toBe(selectTarget());
+		await user.click(selectTarget());
+		await user.click(rowsIn()("Other"));
+		expect(screen.getByTestId("active-bp").textContent).toBe("tablet");
+		expect(selectedBp()).toBe("");
 	});
 });
 
@@ -249,7 +235,7 @@ describe("drag handle", () => {
 
 	it("gives every row exactly one named drag button", () => {
 		setup();
-		const tree = screen.getByRole("treegrid", { name: "Desktop layer tree" });
+		const tree = screen.getByRole("treegrid", { name: "Layer tree" });
 		const rows = within(tree).getAllByRole("row");
 		expect(rows.length).toBeGreaterThan(0);
 		for (const row of rows) {
@@ -261,7 +247,7 @@ describe("drag handle", () => {
 
 	it("overlays the handle so it takes no layout space", () => {
 		setup();
-		const tree = screen.getByRole("treegrid", { name: "Desktop layer tree" });
+		const tree = screen.getByRole("treegrid", { name: "Layer tree" });
 		for (const handle of tree.querySelectorAll('[slot="drag"]')) {
 			expect(handle.classList.contains("absolute")).toBe(true);
 		}
@@ -270,7 +256,7 @@ describe("drag handle", () => {
 	it("still selects on a row click", async () => {
 		const { select } = setup();
 		select("Other");
-		const row = rowsIn("Desktop");
+		const row = rowsIn();
 		await userEvent.click(row("Frame"));
 		expect(row("Frame").getAttribute("data-selected")).toBe("true");
 	});
@@ -287,24 +273,18 @@ describe("row state classes", () => {
 	const toks = (o: Partial<typeof none>) =>
 		rowStateClass({ ...none, ...o }).split(/\s+/);
 
-	it("selected: light neutral-300, dark accent", () => {
+	it("selected: the selected surface", () => {
 		const t = toks({ isSelected: true });
-		expect(t).toContain("bg-neutral-300");
-		expect(t).toContain("text-neutral-900");
-		expect(t).toContain("dark:bg-accent");
-		expect(t).toContain("dark:text-accent-foreground");
+		expect(t).toContain("bg-selected");
+		expect(t).toContain("text-foreground");
 	});
 
-	it("hover: light neutral-200, dark accent/50", () => {
-		const t = toks({ isHovered: true });
-		expect(t).toContain("bg-neutral-200");
-		expect(t).toContain("dark:bg-accent/50");
+	it("hover: the hover surface", () => {
+		expect(toks({ isHovered: true })).toContain("bg-hover");
 	});
 
-	it("tint: light accent, dark accent/30", () => {
-		const t = toks({ isInSelection: true });
-		expect(t).toContain("bg-accent");
-		expect(t).toContain("dark:bg-accent/30");
+	it("tint: half the hover surface", () => {
+		expect(toks({ isInSelection: true })).toContain("bg-hover/50");
 	});
 
 	it("no state: no background", () => {
@@ -314,29 +294,28 @@ describe("row state classes", () => {
 
 	it("selected wins over in-selection and hover", () => {
 		const t = toks({ isSelected: true, isInSelection: true, isHovered: true });
-		expect(t).toContain("bg-neutral-300");
-		expect(t).not.toContain("dark:bg-accent/30");
-		expect(t).not.toContain("dark:bg-accent/50");
+		expect(t).toContain("bg-selected");
+		expect(t).not.toContain("bg-hover/50");
+		expect(t).not.toContain("bg-hover");
 	});
 
 	it("hover wins over tint", () => {
 		const t = toks({ isHovered: true, isInSelection: true });
-		expect(t).toContain("bg-neutral-200");
-		expect(t).not.toContain("dark:bg-accent/30");
+		expect(t).toContain("bg-hover");
+		expect(t).not.toContain("bg-hover/50");
 	});
 
 	it("drop target wins over selected", () => {
 		const t = toks({ isDropTarget: true, isSelected: true });
 		expect(t).toContain("bg-primary/20");
-		expect(t).not.toContain("bg-neutral-300");
+		expect(t).not.toContain("bg-selected");
 	});
 
 	it("rendered tinted row keeps data-in-selection and tint class", () => {
 		const { select } = setup();
 		select("Frame");
-		const child = rowsIn("Desktop")("Child");
+		const child = rowsIn()("Child");
 		expect(child.getAttribute("data-in-selection")).toBe("true");
-		expect(child.classList.contains("bg-accent")).toBe(true);
-		expect(child.classList.contains("dark:bg-accent/30")).toBe(true);
+		expect(child.classList.contains("bg-hover/50")).toBe(true);
 	});
 });

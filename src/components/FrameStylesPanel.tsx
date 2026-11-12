@@ -1,20 +1,12 @@
-import { Input } from "@base-ui/react/input";
-import { colord } from "colord";
-import { useEffect, useMemo, useState } from "react";
-import { HslaStringColorPicker, RgbaStringColorPicker } from "react-colorful";
 import { useFrameStyle } from "../hooks/useFrameStyles";
-import {
-	type ColorFormat,
-	colorFormats,
-	convertColorToFormat,
-	validateColorFormat,
-} from "../utils/colorUtils";
+import type { TokenType } from "../lib/tokens";
 import { ActionPopover } from "./actions/ActionPopover";
-import { ClearButton } from "./common/ClearButton";
+import { ColorPicker } from "./common/ColorPicker";
 import { InputGroup } from "./common/InputGroup";
-import { Select } from "./common/Select";
 import { DesignAction } from "./DesignAction";
 import { DesignerPane } from "./DesignerPane";
+import { useBinding } from "./tokens/TokenPicker";
+import { TokenSlot } from "./tokens/TokenSlot";
 
 /**
  * A text input control for frame styles.
@@ -23,10 +15,13 @@ const FrameStyleTextInput = ({
 	label,
 	cssProperty,
 	placeholder,
+	tokenType,
 }: {
 	label: string;
 	cssProperty: string;
 	placeholder?: string;
+	/** Frame styles aren't layer properties, so tokens apply without a canvas preview. */
+	tokenType: TokenType;
 }) => {
 	const { value, setValue, clearValue } = useFrameStyle(cssProperty);
 
@@ -40,13 +35,27 @@ const FrameStyleTextInput = ({
 	};
 
 	return (
-		<DesignAction label={label}>
-			<InputGroup
-				value={value ?? ""}
-				onChange={handleChange}
-				placeholder={placeholder}
-			/>
-			<ClearButton hasValue={Boolean(value)} handleClear={clearValue} />
+		<DesignAction
+			clear={{ hasValue: Boolean(value), onClear: clearValue }}
+			label={label}
+		>
+			<TokenSlot
+				title={label}
+				binding={{
+					type: tokenType,
+					cssProperty,
+					value,
+					onChange: setValue,
+					noPreview: true,
+				}}
+			>
+				<InputGroup
+					fullWidth
+					value={value ?? ""}
+					onChange={handleChange}
+					placeholder={placeholder}
+				/>
+			</TokenSlot>
 		</DesignAction>
 	);
 };
@@ -80,14 +89,39 @@ const FrameStyleNumberInput = ({
 	};
 
 	return (
-		<DesignAction label={label}>
-			<InputGroup
-				value={numericValue}
-				onChange={handleChange}
-				placeholder={placeholder}
-				type="number"
-			/>
-			<ClearButton hasValue={Boolean(value)} handleClear={clearValue} />
+		<DesignAction
+			clear={{ hasValue: Boolean(value), onClear: clearValue }}
+			label={label}
+		>
+			<TokenSlot
+				title={label}
+				binding={{
+					type: "dimension",
+					cssProperty,
+					value,
+					onChange: setValue,
+					noPreview: true,
+				}}
+			>
+				<InputGroup
+					fullWidth
+					value={numericValue}
+					onChange={handleChange}
+					placeholder={placeholder}
+					type="number"
+					suffix={
+						<span className="shrink-0 pr-2 text-muted-foreground text-control">
+							{unit}
+						</span>
+					}
+					scrub={{
+						value: Number(numericValue || placeholder || 0),
+						min: 0,
+						scaleMax: 96,
+						onChange: (next) => setValue(`${next}${unit}`),
+					}}
+				/>
+			</TokenSlot>
 		</DesignAction>
 	);
 };
@@ -104,122 +138,32 @@ const FrameStyleColorPicker = ({
 	cssProperty: string;
 	popoverTitle: string;
 }) => {
-	const {
-		value: rawColorValue,
-		setValue,
-		clearValue,
-	} = useFrameStyle(cssProperty);
-	const [colorFormat, setColorFormat] = useState<ColorFormat>("hex");
-	const [inputValue, setInputValue] = useState<string>("");
-	const [isInputValid, setIsInputValid] = useState<boolean>(true);
-
-	const hasValue = Boolean(rawColorValue);
-
-	// Get the color in the current format for display
-	const formattedColor = useMemo(() => {
-		return convertColorToFormat(rawColorValue, colorFormat);
-	}, [rawColorValue, colorFormat]);
-
-	// Get the color in the format needed for the color picker
-	const pickerColor = useMemo(() => {
-		if (!hasValue) {
-			return colorFormat === "hsla" ? "hsla(0, 0%, 0%, 0)" : "rgba(0, 0, 0, 0)";
-		}
-		if (colorFormat === "hsla") {
-			return convertColorToFormat(rawColorValue, "hsla");
-		}
-		return convertColorToFormat(rawColorValue, "rgba");
-	}, [rawColorValue, colorFormat, hasValue]);
-
-	// Update input value when format or color changes
-	useEffect(() => {
-		setInputValue(formattedColor);
-		setIsInputValid(true);
-	}, [formattedColor]);
-
-	const handleColorChange = (newColor: string) => {
-		if (!newColor || !newColor.trim()) {
-			clearValue();
-			return;
-		}
-		const convertedColor = convertColorToFormat(newColor, colorFormat);
-		setValue(convertedColor);
+	const { value, setValue, clearValue } = useFrameStyle(cssProperty);
+	const token = {
+		type: "color" as const,
+		cssProperty,
+		value,
+		onChange: setValue,
+		noPreview: true,
 	};
-
-	const handleInputChange = (value: string) => {
-		setInputValue(value);
-
-		if (!value.trim()) {
-			setIsInputValid(true);
-			clearValue();
-			return;
-		}
-
-		const isValid = validateColorFormat(value, colorFormat);
-		setIsInputValid(isValid);
-
-		if (isValid) {
-			const colorObj = colord(value);
-			if (colorObj.isValid()) {
-				const convertedColor = convertColorToFormat(value, colorFormat);
-				setValue(convertedColor);
-			}
-		}
-	};
-
-	const handleFormatChange = (newFormat: ColorFormat) => {
-		setColorFormat(newFormat);
-	};
+	// The picker edits the token's value, not `var(--…)`.
+	const { resolved } = useBinding(token);
 
 	return (
 		<ActionPopover
 			label={label}
 			popoverTitle={popoverTitle}
-			triggerDisplayValue={formattedColor || "None"}
-			hasValue={hasValue}
+			triggerDisplayValue={value || "None"}
+			hasValue={Boolean(value)}
 			onClear={clearValue}
 			showSwatch={true}
-			swatchColor={hasValue ? rawColorValue : "transparent"}
+			swatchColor={resolved}
+			token={token}
 		>
-			<div className="[&_div.react-colorful]:w-full!">
-				{colorFormat === "hsla" ? (
-					<HslaStringColorPicker
-						color={pickerColor}
-						onChange={handleColorChange}
-					/>
-				) : (
-					<RgbaStringColorPicker
-						color={pickerColor}
-						onChange={handleColorChange}
-					/>
-				)}
-			</div>
-
-			<div className="flex items-center gap-1">
-				<Input
-					value={inputValue}
-					onChange={(e) => handleInputChange(e.target.value)}
-					placeholder={
-						colorFormat === "hex"
-							? "#000000"
-							: colorFormat === "rgba"
-								? "rgba(255, 255, 255, 1)"
-								: "hsla(0, 0%, 100%, 1)"
-					}
-					aria-invalid={!isInputValid}
-					className={`flex h-7 w-full min-w-0 rounded-md border bg-input px-2 py-1 text-base outline-none transition-[color,box-shadow] selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground sm:text-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 ${
-						isInputValid
-							? "border-input"
-							: "border-destructive aria-invalid:ring-destructive/20"
-					}`}
-				/>
-				<Select
-					items={colorFormats}
-					value={colorFormat}
-					onValueChange={(value) => handleFormatChange(value as ColorFormat)}
-					className="flex-1"
-				/>
-			</div>
+			<ColorPicker
+				value={resolved}
+				onChange={(next) => (next ? setValue(next) : clearValue())}
+			/>
 		</ActionPopover>
 	);
 };
@@ -231,15 +175,16 @@ const FrameStyleColorPicker = ({
 export const FrameStylesPanel = () => {
 	return (
 		<DesignerPane title="Document Styles">
-			<p className="text-xs text-muted-foreground -mt-1 mb-1">
+			<p className="text-control text-muted-foreground -mt-1 mb-1">
 				These styles apply to all breakpoints
 			</p>
 
 			{/* Font Family */}
 			<FrameStyleTextInput
-				label="Font Family"
+				label="Font family"
 				cssProperty="--font-family"
 				placeholder="Inter, system-ui"
+				tokenType="fontFamily"
 			/>
 
 			{/* Base Font Size */}
@@ -254,20 +199,21 @@ export const FrameStylesPanel = () => {
 				label="Line Height"
 				cssProperty="--line-height"
 				placeholder="1.5"
+				tokenType="number"
 			/>
 
 			{/* Text Color */}
 			<FrameStyleColorPicker
 				label="Text Color"
 				cssProperty="--color"
-				popoverTitle="Text Color"
+				popoverTitle="Text color"
 			/>
 
 			{/* Background Color */}
 			<FrameStyleColorPicker
 				label="Background"
 				cssProperty="--background-color"
-				popoverTitle="Background Color"
+				popoverTitle="Background color"
 			/>
 		</DesignerPane>
 	);

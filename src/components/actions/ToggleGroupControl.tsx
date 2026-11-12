@@ -2,9 +2,8 @@ import { Toggle } from "@base-ui/react/toggle";
 import { ToggleGroup } from "@base-ui/react/toggle-group";
 import { Tooltip } from "@base-ui/react/tooltip";
 import type { ReactNode } from "react";
-import { useDesignerAction } from "../../hooks/useDesignerAction";
-import { useSelectedLayers } from "../../hooks/useSelectedLayers";
-import { ClearButton } from "../common/ClearButton";
+import { useBreakpointCss } from "../../hooks/useBreakpointCss";
+import { cn } from "../../lib/cn";
 import { DesignAction } from "../DesignAction";
 
 interface ToggleItem {
@@ -26,44 +25,26 @@ export const ToggleGroupControl = ({
 	label,
 	options,
 	defaultValue = "",
-	orientation = "vertical",
+	orientation = "horizontal",
 }: ToggleGroupControlProps) => {
-	const selectedLayers = useSelectedLayers();
-	const designerAction = useDesignerAction();
-	const selectedLayer = selectedLayers[0];
-
-	const currentValue = selectedLayer?.cssVars?.[cssProperty] || defaultValue;
-
-	const handleValueChange = (value: string[]) => {
-		if (selectedLayer) {
-			designerAction({
-				type: "UPDATE_LAYER_CSS",
-				payload: {
-					id: selectedLayer.id,
-					css: { [cssProperty]: value.join(" ") },
-				},
-			});
-		}
-	};
-
-	const handleClear = () => {
-		if (selectedLayer) {
-			designerAction({
-				type: "UPDATE_LAYER_CSS",
-				payload: { id: selectedLayer.id, css: { [cssProperty]: "" } },
-			});
-		}
-	};
-
-	const hasValue = Boolean(selectedLayer?.cssVars?.[cssProperty]);
+	const { value, isExplicit, isOverride, setValue, clearValue } =
+		useBreakpointCss(cssProperty);
+	const currentValue = value || defaultValue;
+	// Showing a value from a smaller breakpoint, not one set here
+	const isInherited = !isExplicit && Boolean(value);
 
 	return (
-		<DesignAction label={label} orientation={orientation}>
+		<DesignAction
+			clear={{ hasValue: isExplicit, onClear: clearValue }}
+			label={isOverride ? `${label} \u2022` : label}
+			orientation={orientation}
+			property={cssProperty}
+		>
 			<ToggleGroup
 				multiple={false}
 				value={[currentValue]}
-				onValueChange={handleValueChange}
-				className="flex h-7 flex-1 items-center gap-1 rounded-md bg-input p-1"
+				onValueChange={(next) => setValue(next.join(" "))}
+				className="flex h-7 min-w-0 flex-1 items-center justify-end gap-0.5 rounded-md bg-input p-1"
 			>
 				{options.map((option) => (
 					<Tooltip.Root key={option.value}>
@@ -72,35 +53,31 @@ export const ToggleGroupControl = ({
 								<Toggle
 									{...props}
 									value={option.value}
-									aria-label={option.label}
-									className="flex h-full flex-1 shrink-0 items-center justify-center rounded-sm text-xs hover:bg-white/40 data-pressed:bg-white data-pressed:text-black [&_svg:not([class*='size-'])]:size-3.5"
+									aria-label={
+										isInherited && option.value === currentValue
+											? `${option.label} (inherited)`
+											: option.label
+									}
+									className={cn(
+										"flex h-full min-w-6 shrink-0 items-center justify-center rounded-sm px-1 text-control hover:bg-raised/50 data-pressed:bg-raised data-pressed:text-foreground data-pressed:shadow-xs [&_svg:not([class*='size-'])]:size-3.5",
+										isInherited &&
+											"data-pressed:text-muted-foreground data-pressed:outline-1 data-pressed:outline-dashed data-pressed:outline-foreground/40 data-pressed:-outline-offset-1"
+									)}
 								>
 									{option.icon ? option.icon : option.label}
 								</Toggle>
 							)}
 						/>
 						<Tooltip.Portal>
-							<Tooltip.Positioner>
-								<Tooltip.Popup className="rounded-md bg-black px-2 py-1 text-xs text-white shadow-lg">
+							<Tooltip.Positioner sideOffset={6}>
+								<Tooltip.Popup className="ds-tooltip ds-tooltip-chip">
 									{option.label}
-									<Tooltip.Arrow className="data-[side=bottom]:top-[-4px] data-[side=left]:right-[-4px] data-[side=right]:left-[-4px] data-[side=top]:bottom-[-4px]">
-										<svg
-											width="10"
-											height="5"
-											viewBox="0 0 30 10"
-											preserveAspectRatio="none"
-											className="fill-black"
-										>
-											<polygon points="0,0 30,0 15,10" />
-										</svg>
-									</Tooltip.Arrow>
 								</Tooltip.Popup>
 							</Tooltip.Positioner>
 						</Tooltip.Portal>
 					</Tooltip.Root>
 				))}
 			</ToggleGroup>
-			<ClearButton hasValue={hasValue} handleClear={handleClear} />
 		</DesignAction>
 	);
 };

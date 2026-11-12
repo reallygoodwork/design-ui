@@ -1,18 +1,19 @@
 import { useMemo } from "react";
-import { useBreakpointCss } from "../../hooks/useBreakpointCss";
-import { useSelectedLayers } from "../../hooks/useSelectedLayers";
-import { ClearButton } from "../common/ClearButton";
+import {
+	useBreakpointCss,
+	useEffectiveCss,
+} from "../../hooks/useBreakpointCss";
 import { Select } from "../common/Select";
 import { DesignAction } from "../DesignAction";
 import { ColorActionPopover } from "./ColorActionPopover";
 import { NumericActionControl } from "./NumericActionControl";
 
 const borderStyles = [
-	{ label: "none", value: "none" },
-	{ label: "solid", value: "solid" },
-	{ label: "dashed", value: "dashed" },
-	{ label: "dotted", value: "dotted" },
-	{ label: "double", value: "double" },
+	{ label: "None", value: "none" },
+	{ label: "Solid", value: "solid" },
+	{ label: "Dashed", value: "dashed" },
+	{ label: "Dotted", value: "dotted" },
+	{ label: "Double", value: "double" },
 ] as const;
 
 type BorderStyle = (typeof borderStyles)[number]["value"];
@@ -25,27 +26,28 @@ const BorderStyleControl = () => {
 	const { value, inheritedValue, isExplicit, setValue, clearValue } =
 		useBreakpointCss("--border-style");
 	return (
-		<DesignAction label="Style" orientation="horizontal">
+		<DesignAction
+			clear={{ hasValue: isExplicit, onClear: clearValue }}
+			label="Style"
+			orientation="horizontal"
+		>
 			<Select
 				items={borderStyles}
 				value={value ?? inheritedValue ?? "solid"}
 				onValueChange={setValue}
 			/>
-			<ClearButton hasValue={isExplicit} handleClear={clearValue} />
 		</DesignAction>
 	);
 };
 
 export const ActionBorder = () => {
-	const selectedLayers = useSelectedLayers();
-	const selectedLayer = selectedLayers[0];
-	const borderColor = selectedLayer?.cssVars?.["--border-color"];
-	const borderWidth = selectedLayer?.cssVars?.["--border-width"] || "1px";
-	const borderStyle =
-		(selectedLayer?.cssVars?.["--border-style"] as BorderStyle) || "solid";
+	const vars = useEffectiveCss();
+	const borderColor = vars["--border-color"];
+	const borderWidth = vars["--border-width"] || "1px";
+	const borderStyle = (vars["--border-style"] as BorderStyle) || "solid";
 	// Create a display value for the trigger
 	const triggerDisplayValue = useMemo(() => {
-		if (!borderColor) return "none";
+		if (!borderColor) return "";
 		return `${borderWidth} ${borderStyle}`;
 	}, [borderColor, borderWidth, borderStyle]);
 
@@ -56,12 +58,13 @@ export const ActionBorder = () => {
 			popoverTitle="Border"
 			triggerDisplayValue={triggerDisplayValue}
 		>
-			<div className="flex items-center gap-1 mt-2">
+			<div className="flex items-center gap-1">
 				<NumericActionControl
 					cssProperty="--border-width"
+					scale={{ px: 20 }}
+					min={0}
 					label="Width"
 					defaultValue={1}
-					showSteppers={false}
 					orientation="horizontal"
 				/>
 			</div>

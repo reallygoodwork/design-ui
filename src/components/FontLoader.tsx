@@ -2,14 +2,17 @@ import { useEffect, useState } from "react";
 import { useDesignerContext } from "../hooks/useDesignerContext";
 import { useGoogleFonts } from "../hooks/useGoogleFonts";
 import { useLayers } from "../hooks/useLayers";
+import { useTokens } from "../hooks/useTokens";
 import { primaryFontFamily } from "../lib/fontFamily";
 import type { Layer } from "../lib/Types";
+import { aliasOf } from "../lib/tokens";
 
 /**
  * Component that automatically loads Google Fonts for all layers in the canvas
  */
 export const FontLoader = () => {
 	const layers = useLayers();
+	const { tokens } = useTokens();
 	const { loadFont } = useGoogleFonts();
 	const rawFrameFont =
 		useDesignerContext().state.frameStyles?.["--font-family"];
@@ -50,6 +53,19 @@ export const FontLoader = () => {
 		if (frameFont) {
 			fonts.add(frameFont);
 		}
+		// A layer using a font token holds `var(--…)`: load the fonts tokens name.
+		for (const token of tokens) {
+			if (token.type !== "fontFamily") continue;
+			for (const value of [
+				token.value,
+				...(token.modes ?? []).map((entry) => entry.value),
+			]) {
+				if (!aliasOf(value)) fonts.add(value);
+			}
+		}
+		for (const font of fonts) {
+			if (font.trim().startsWith("var(")) fonts.delete(font);
+		}
 
 		// Load all fonts
 		const primaries = new Set<string>();
@@ -60,7 +76,7 @@ export const FontLoader = () => {
 		primaries.forEach((font) => {
 			loadFont(font);
 		});
-	}, [layers, frameFont, loadFont]);
+	}, [layers, frameFont, loadFont, tokens]);
 
 	return null;
 };

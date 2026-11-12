@@ -1,0 +1,91 @@
+html,
+body {
+	margin: 0;
+	background: #f4f3f0;
+}
+
+.video-host {
+	display: grid;
+	place-items: center;
+	min-height: 100vh;
+}
+
+:root[data-recording] .video-host {
+	display: block;
+	min-height: 0;
+}
+
+.tv {
+	width: 500px;
+}
+
+.tv .ss-stage {
+	overflow: hidden;
+	background: #f4f3f0;
+}
+
+/* The editor's canvas, full bleed: the popover's positioner is placed
+   relative to this box once it's brought in from <body> */
+.tv-scene {
+	position: absolute;
+	inset: 0;
+	font-family: Geist, system-ui, sans-serif;
+	background-color: #f4f3f0;
+	background-image: radial-gradient(#d6d3cc 1px, transparent 1px);
+	background-size: 14px 14px;
+	background-position: 7px 7px;
+}
+
+/* The frame the card crosses */
+.tv-track {
+	position: absolute;
+	top: 24px;
+	left: 24px;
+	right: 24px;
+	height: 136px;
+	display: flex;
+	align-items: center;
+	/* Room at both ends for a spring's overshoot (a quarter of the travel at
+	   Bounce 0.6) to stay on the track */
+	padding: 0 64px;
+	border-radius: 14px;
+	background: #d8e2ff;
+}
+
+.tv-card {
+	display: grid;
+	place-items: center;
+	width: 72px;
+	height: 72px;
+	border-radius: 12px;
+	background: #fff;
+	box-shadow:
+		0 1px 2px rgb(0 0 0 / 0.06),
+		0 4px 12px rgb(21 93 252 / 0.12);
+	/* The selection outline the editor draws around the selected layer */
+	outline: 1.5px solid #3b82f6;
+	outline-offset: 3px;
+	will-change: transform;
+}
+
+.tv-card__label {
+	color: #18181b;
+	font-size: 12px;
+	font-weight: 500;
+}
+
+/* The editor's panel, docked: it runs off the right and bottom edges, with
+   the Motion pane at its top. Narrow enough that the row's value is in
+   frame and the popover, 24px to its left, keeps the canvas's gutter */
+.tv-panel {
+	position: absolute;
+	top: 184px;
+	left: 288px;
+	right: -12px;
+	bottom: -12px;
+	padding-right: 12px;
+	border: 1px solid var(--color-border, #e4e4e7);
+	border-radius: 12px 0 0;
+	background: var(--color-background, #fafafa);
+	box-shadow: 0 8px 24px rgb(0 0 0 / 0.06);
+}

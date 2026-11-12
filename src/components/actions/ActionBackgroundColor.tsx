@@ -5,7 +5,7 @@ export const ActionBackgroundColor = () => {
 		<ColorActionPopover
 			cssProperty="--background-color"
 			label="Background"
-			popoverTitle="Background Color"
+			popoverTitle="Background color"
 		/>
 	);
 };

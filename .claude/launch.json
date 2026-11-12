@@ -1,0 +1,17 @@
+{
+	"version": "0.0.1",
+	"configurations": [
+		{
+			"name": "docs",
+			"runtimeExecutable": "bun",
+			"runtimeArgs": ["run", "dev", "--port", "5173"],
+			"port": 5173
+		},
+		{
+			"name": "video",
+			"runtimeExecutable": "bun",
+			"runtimeArgs": ["run", "dev", "--port", "5180", "--strictPort"],
+			"port": 5180
+		}
+	]
+}

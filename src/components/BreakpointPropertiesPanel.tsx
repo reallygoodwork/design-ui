@@ -100,7 +100,7 @@ export const BreakpointPropertiesPanel = () => {
 					<Input
 						value={selectedBreakpoint.name}
 						onChange={handleNameChange}
-						className="flex h-7 w-full min-w-0 rounded-md border border-input bg-input px-2 py-1 text-base outline-none transition-[color,box-shadow] selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground sm:text-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+						className="flex h-7 w-full min-w-0 rounded-md border border-transparent bg-input px-2 py-1 text-control outline-none transition-[color,box-shadow] selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground pointer-coarse:text-base focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
 					/>
 				</DesignAction>
 
@@ -112,7 +112,7 @@ export const BreakpointPropertiesPanel = () => {
 					min={100}
 					max={5000}
 					step={10}
-					hasValue={true}
+					orientation="horizontal"
 				/>
 
 				<NumberFieldActionControl
@@ -122,7 +122,7 @@ export const BreakpointPropertiesPanel = () => {
 					min={100}
 					max={5000}
 					step={10}
-					hasValue={true}
+					orientation="horizontal"
 				/>
 
 				{/* Position */}
@@ -131,7 +131,7 @@ export const BreakpointPropertiesPanel = () => {
 					value={selectedBreakpoint.position.x}
 					onValueChange={handlePositionXChange}
 					step={10}
-					hasValue={true}
+					orientation="horizontal"
 				/>
 
 				<NumberFieldActionControl
@@ -139,13 +139,13 @@ export const BreakpointPropertiesPanel = () => {
 					value={selectedBreakpoint.position.y}
 					onValueChange={handlePositionYChange}
 					step={10}
-					hasValue={true}
+					orientation="horizontal"
 				/>
 
 				{/* Primary badge and delete */}
 				<div className="flex items-center justify-between pt-2">
 					{isPrimary ? (
-						<span className="rounded bg-primary/20 px-2 py-1 text-xs font-medium text-primary">
+						<span className="rounded bg-primary/20 px-2 py-1 text-control font-medium text-primary">
 							Primary Breakpoint
 						</span>
 					) : (
@@ -154,7 +154,7 @@ export const BreakpointPropertiesPanel = () => {
 					{!isPrimary && state.breakpoints.length > 1 && (
 						<button
 							type="button"
-							className="text-xs text-destructive hover:underline"
+							className="text-control text-destructive hover:underline"
 							onClick={handleDelete}
 						>
 							Delete Breakpoint

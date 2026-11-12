@@ -90,10 +90,10 @@ export const GridCanvas = ({ columns, rows, onChange }: GridCanvasProps) => {
 
 			{/* Grid Template Values Display */}
 			<div className="flex flex-col rounded-md border border-border bg-input p-2">
-				<div className="text-[10px] text-code-foreground">
+				<div className="text-caption text-code-foreground">
 					<code className="break-all">columns: {columns}</code>
 				</div>
-				<div className="text-[10px] text-code-foreground">
+				<div className="text-caption text-code-foreground">
 					<code className="break-all">rows: {rows}</code>
 				</div>
 			</div>

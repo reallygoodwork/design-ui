@@ -1,0 +1,61 @@
+.docs {
+	font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
+	--docs-accent: #155dfc;
+	--code-text: #e4e4e7;
+	--font-code: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html:has(.docs) {
+	scroll-behavior: smooth;
+}
+
+.docs code,
+.docs pre {
+	font-family: var(--font-code);
+}
+
+.docs [data-section] {
+	scroll-margin-top: 24px;
+}
+
+.tok-comment {
+	color: #8f8f96;
+}
+.tok-string {
+	color: #f0cf9a;
+}
+.tok-keyword {
+	color: #9dbcff;
+}
+.tok-tag {
+	color: #ffffff;
+	font-weight: 500;
+}
+.tok-number {
+	color: #a8e0c5;
+}
+
+/* The one load moment: the headline gets selected. */
+@keyframes docs-select {
+	from {
+		opacity: 0;
+		transform: scale(0.985);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.docs-selection {
+	animation: docs-select 420ms cubic-bezier(0.22, 1, 0.36, 1) 200ms backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html:has(.docs) {
+		scroll-behavior: auto;
+	}
+	.docs-selection {
+		animation: none;
+	}
+}

@@ -5,7 +5,15 @@ import type { LayerType, LayerWithStyles } from "../Types";
 export const textLayerType = {
 	type: "text",
 	name: "Text",
+	description: "A paragraph of text",
 	icon: <IconTypography />,
+	keybinding: {
+		key: "t",
+		label: "T",
+		labelMac: "T",
+		description: "Add text",
+		group: "Layers",
+	},
 	supportsChildren: false,
 	supportedCssProperties: [
 		"--width",
@@ -47,6 +55,8 @@ export const textLayerType = {
 		"--border-style",
 		"--border-color",
 		"--opacity",
+		"--transition-duration",
+		"--transition-timing-function",
 		"--position",
 		"position",
 		"top",
@@ -104,5 +114,66 @@ export const textLayerType = {
 		"h5",
 		"h6",
 		"label",
+	],
+	presets: [
+		...(
+			[
+				[1, "40px", "48px"],
+				[2, "32px", "40px"],
+				[3, "24px", "32px"],
+				[4, "20px", "28px"],
+				[5, "18px", "26px"],
+				[6, "16px", "24px"],
+			] as const
+		).map(([level, size, lineHeight]) => ({
+			id: `h${level}`,
+			label: `Heading ${level}`,
+			description:
+				level === 1
+					? "The page's title. Use one per page"
+					: `A level ${level} heading`,
+			group: "Text",
+			elementType: `h${level}`,
+			values: {
+				name: `Heading ${level}`,
+				value: "Heading",
+				cssVars: {
+					"--font-size": size,
+					"--line-height": lineHeight,
+					"--font-weight": "600",
+				},
+			},
+			keywords: [`h${level}`, "title", "headline"],
+		})),
+		{
+			id: "text",
+			label: "Paragraph",
+			description: "A paragraph of text",
+			group: "Text",
+			values: { name: "Paragraph" },
+			keywords: ["text", "p", "body", "copy"],
+		},
+		{
+			id: "label",
+			label: "Label",
+			description: "A short caption for a field or control",
+			group: "Text",
+			elementType: "label",
+			values: {
+				name: "Label",
+				value: "Label",
+				cssVars: { "--font-size": "14px" },
+			},
+			keywords: ["caption", "form"],
+		},
+		{
+			id: "span",
+			label: "Inline text",
+			description: "Text that sits within a line, not as its own block",
+			group: "Text",
+			elementType: "span",
+			values: { name: "Inline text" },
+			keywords: ["span", "inline"],
+		},
 	],
 } satisfies LayerType;

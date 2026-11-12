@@ -1,6 +1,13 @@
 import { useCallback, useMemo } from "react";
-import { getPropertyValue, isPrimaryBreakpoint } from "../lib/breakpointUtils";
+import {
+	getEffectiveStyles,
+	getPropertyValue,
+	isPrimaryBreakpoint,
+} from "../lib/breakpointUtils";
+import type { CSSVars } from "../lib/Types";
+import { useDesignerAction } from "./useDesignerAction";
 import { useDesignerContext } from "./useDesignerContext";
+import { useDesignerSelector } from "./useDesignerSelector";
 import { useSelectedLayers } from "./useSelectedLayers";
 
 export type BreakpointCssValue = {
@@ -28,6 +35,10 @@ export type BreakpointCssValue = {
 	 * Whether we're at the primary (smallest) breakpoint.
 	 */
 	isPrimary: boolean;
+	/**
+	 * Whether this breakpoint overrides a value from a smaller one.
+	 */
+	isOverride: boolean;
 	/**
 	 * Set the value at the current breakpoint.
 	 */
@@ -135,7 +146,78 @@ export const useBreakpointCss = (cssProperty: string): BreakpointCssValue => {
 		fromBreakpointId: valueInfo.fromBreakpointId,
 		fromBreakpointName,
 		isPrimary: valueInfo.isPrimary,
+		isOverride: !valueInfo.isPrimary && valueInfo.isExplicit,
 		setValue,
 		clearValue,
+	};
+};
+
+/**
+ * The selected layer's styles as they apply at the active breakpoint.
+ */
+export const useEffectiveCss = (): CSSVars => {
+	const [layer] = useSelectedLayers();
+	const activeId = useDesignerSelector((state) => state.activeBreakpointId);
+	const breakpoints = useDesignerSelector((state) => state.breakpoints);
+	return useMemo(() => {
+		if (!layer) return {};
+		return activeId
+			? getEffectiveStyles(layer, activeId, breakpoints)
+			: { ...layer.cssVars };
+	}, [layer, activeId, breakpoints]);
+};
+
+/**
+ * Read and write several related properties at the active breakpoint, for
+ * controls that edit them together (padding sides, width and height).
+ */
+export const useBreakpointCssGroup = (properties: readonly string[]) => {
+	const dispatch = useDesignerAction();
+	const [layer] = useSelectedLayers();
+	const activeId = useDesignerSelector((state) => state.activeBreakpointId);
+	const breakpoints = useDesignerSelector((state) => state.breakpoints);
+	const breakpointId = activeId ?? undefined;
+
+	const entries = properties.map((property) => {
+		if (!layer || !activeId || breakpoints.length === 0) {
+			const value = layer?.cssVars?.[property];
+			return { value, isExplicit: value !== undefined };
+		}
+		const { value, isExplicit } = getPropertyValue(
+			layer,
+			activeId,
+			property,
+			breakpoints
+		);
+		return { value, isExplicit };
+	});
+
+	const write = (css: CSSVars) => {
+		if (!layer) return;
+		dispatch({
+			type: "UPDATE_LAYER_CSS",
+			payload: { id: layer.id, css, breakpointId },
+		});
+	};
+	const setAll = (value: string) =>
+		write(Object.fromEntries(properties.map((p) => [p, value])));
+
+	const hasExplicit = entries.some((entry) => entry.isExplicit);
+	const isPrimary =
+		!activeId ||
+		breakpoints.length === 0 ||
+		isPrimaryBreakpoint(activeId, breakpoints);
+
+	return {
+		entries,
+		hasExplicit,
+		/** Showing values from a smaller breakpoint, none set here */
+		isInherited: !hasExplicit && entries.some((entry) => Boolean(entry.value)),
+		isPrimary,
+		isOverride: !isPrimary && hasExplicit,
+		setAll,
+		setOne: (property: string, value: string) => write({ [property]: value }),
+		write,
+		clearAll: () => setAll(""),
 	};
 };

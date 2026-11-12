@@ -1,10 +1,9 @@
 import { NumberField } from "@base-ui/react/number-field";
-import { IconMinus, IconPlus } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { formatCSSValue, parseCSSValue } from "../../lib/cssValueHelpers";
-import { ClearButton } from "../common/ClearButton";
+import { ScrubField } from "../common/ScrubField";
 import { Select } from "../common/Select";
 import { DesignAction } from "../DesignAction";
 
@@ -32,7 +31,7 @@ export const NumberFieldActionControl = ({
 	min,
 	max,
 	step = 1,
-	orientation = "vertical",
+	orientation = "horizontal",
 	cssProperty,
 	units,
 	defaultUnit = "px",
@@ -119,24 +118,35 @@ export const NumberFieldActionControl = ({
 		: [];
 
 	return (
-		<DesignAction label={label} orientation={orientation}>
-			<div className="flex items-center gap-1">
+		<DesignAction
+			label={label}
+			orientation={orientation}
+			clear={
+				externalOnClear || isSelfContained
+					? { hasValue, onClear: handleClear }
+					: undefined
+			}
+		>
+			<div className="flex min-w-0 flex-1 items-center gap-1">
 				<NumberField.Root
 					value={currentValue}
 					onValueChange={handleValueChange}
 					min={min}
 					max={max}
 					step={step}
-					className="flex items-center gap-1"
+					className="flex w-full min-w-0 flex-1 items-center gap-1"
 				>
-					<NumberField.Group className="inline-flex items-center gap-1 whitespace-nowrap rounded-md font-medium text-xs leading-none transition-all focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[4px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-3.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-input text-input-foreground hover:bg-input/80 h-7 px-2 py-1 has-[>svg]:px-2 border border-input">
-						<NumberField.Decrement className="flex items-center justify-center p-0 size-3.5 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:hover:text-muted-foreground">
-							<IconMinus />
-						</NumberField.Decrement>
-						<NumberField.Input className="w-12 bg-transparent text-center text-foreground text-xs tabular-nums outline-hidden placeholder:text-muted-foreground" />
-						<NumberField.Increment className="flex items-center justify-center p-0 size-3.5 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:hover:text-muted-foreground">
-							<IconPlus />
-						</NumberField.Increment>
+					<NumberField.Group className="relative h-7 w-full rounded-md bg-input">
+						<ScrubField
+							value={currentValue}
+							min={min}
+							max={max}
+							step={step}
+							onChange={handleValueChange}
+							className="h-full"
+						>
+							<NumberField.Input className="h-full w-full rounded-md bg-transparent px-2 text-foreground font-mono text-value outline-hidden focus-visible:ring-2 focus-visible:ring-ring" />
+						</ScrubField>
 					</NumberField.Group>
 				</NumberField.Root>
 				{units && units.length > 0 && (
@@ -148,7 +158,6 @@ export const NumberFieldActionControl = ({
 					/>
 				)}
 			</div>
-			<ClearButton hasValue={hasValue} handleClear={handleClear} />
 		</DesignAction>
 	);
 };

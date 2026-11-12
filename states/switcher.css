@@ -1,0 +1,147 @@
+.state-page {
+	container: state-page / inline-size;
+	margin-inline: calc(50% - 50vw);
+	padding: 24px;
+}
+
+.state-layout {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	max-width: 260px;
+	margin-inline: auto;
+}
+
+.state-switcher {
+	all: unset;
+	display: none;
+	flex-direction: column;
+	gap: 16px;
+	max-height: calc(100dvh - 48px);
+	overflow-y: auto;
+	scrollbar-width: none;
+	padding: 6px;
+	border-radius: 14px;
+	background: rgb(20 20 20 / 0.92);
+	box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+	font:
+		13px / 1 system-ui,
+		-apple-system,
+		BlinkMacSystemFont,
+		"Segoe UI",
+		sans-serif;
+	user-select: none;
+}
+
+.state-switcher-group {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.state-switcher-heading {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px 6px;
+	font-size: 11px;
+	font-weight: 500;
+	color: rgb(255 255 255 / 0.45);
+}
+
+.state-switcher button {
+	all: unset;
+	flex: none;
+	padding: 8px 10px;
+	border-radius: 8px;
+	font: inherit;
+	color: rgb(255 255 255 / 0.6);
+	cursor: pointer;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	transition: color 200ms ease-out;
+}
+
+.state-switcher button:hover {
+	color: rgb(255 255 255 / 0.85);
+}
+
+.state-switcher button[aria-pressed="true"] {
+	background: rgb(255 255 255 / 0.14);
+	color: rgb(255 255 255);
+}
+
+.state-switcher button:focus-visible {
+	outline: 2px solid rgb(255 255 255 / 0.7);
+	outline-offset: 2px;
+}
+
+.state-switcher-select {
+	position: relative;
+	align-self: flex-start;
+	max-width: 100%;
+	color: rgb(255 255 255);
+}
+
+.state-switcher-select select {
+	all: unset;
+	box-sizing: border-box;
+	max-width: 100%;
+	padding: 10px 36px 10px 16px;
+	border-radius: 999px;
+	background: rgb(20 20 20 / 0.92);
+	box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+	font:
+		500 13px / 1 system-ui,
+		-apple-system,
+		BlinkMacSystemFont,
+		"Segoe UI",
+		sans-serif;
+	cursor: pointer;
+}
+
+.state-switcher-select select:focus-visible {
+	outline: 2px solid rgb(255 255 255 / 0.7);
+	outline-offset: 2px;
+}
+
+.state-switcher-select svg {
+	position: absolute;
+	top: 50%;
+	right: 14px;
+	translate: 0 -50%;
+	pointer-events: none;
+	color: rgb(255 255 255 / 0.6);
+}
+
+/* 208px list + 24px gap + 260px panel */
+@container state-page (min-width: 492px) {
+	.state-layout {
+		display: grid;
+		grid-template-columns: 208px 260px;
+		justify-content: center;
+		gap: 24px;
+		align-items: start;
+		max-width: none;
+	}
+
+	.state-switcher {
+		display: flex;
+		position: sticky;
+		top: 24px;
+	}
+
+	.state-switcher-select {
+		display: none;
+	}
+}
+
+.state-switcher button[aria-pressed="true"] {
+	font-weight: 600;
+}
+.state-switcher button {
+	transition:
+		color 200ms ease-out,
+		font-weight 200ms ease-out;
+}

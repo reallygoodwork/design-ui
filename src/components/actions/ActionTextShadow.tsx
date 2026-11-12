@@ -1,47 +1,45 @@
-import { useSelectedLayers } from "../../hooks/useSelectedLayers";
+import { useEffectiveCss } from "../../hooks/useBreakpointCss";
 import { ColorActionPopover } from "./ColorActionPopover";
 import { NumericActionControl } from "./NumericActionControl";
 
 export const ActionTextShadow = () => {
-	const selectedLayers = useSelectedLayers();
-	const selectedLayer = selectedLayers[0];
-
-	const vars = selectedLayer?.cssVars;
+	const vars = useEffectiveCss();
 	const parts = [
-		vars?.["--text-shadow-offset-x"],
-		vars?.["--text-shadow-offset-y"],
-		vars?.["--text-shadow-blur-radius"],
+		vars["--text-shadow-offset-x"],
+		vars["--text-shadow-offset-y"],
+		vars["--text-shadow-blur-radius"],
 	];
 	const currentValue =
-		vars?.["--text-shadow-color"] || parts.some(Boolean)
+		vars["--text-shadow-color"] || parts.some(Boolean)
 			? parts.map((v) => v || "0").join(" ")
-			: "none";
+			: "";
 	return (
 		<ColorActionPopover
 			cssProperty="--text-shadow-color"
 			label="Shadow"
-			popoverTitle="Text Shadow"
+			popoverTitle="Text shadow"
 			triggerDisplayValue={currentValue}
 		>
 			<NumericActionControl
 				cssProperty="--text-shadow-blur-radius"
+				scale={{ px: 50 }}
+				min={0}
 				label="Blur"
 				defaultValue={1}
-				showSteppers={false}
 				orientation="horizontal"
 			/>
 			<NumericActionControl
 				cssProperty="--text-shadow-offset-x"
+				scale={{ px: 50 }}
 				label="Offset X"
 				defaultValue={1}
-				showSteppers={false}
 				orientation="horizontal"
 			/>
 			<NumericActionControl
 				cssProperty="--text-shadow-offset-y"
+				scale={{ px: 50 }}
 				label="Offset Y"
 				defaultValue={1}
-				showSteppers={false}
 				orientation="horizontal"
 			/>
 		</ColorActionPopover>

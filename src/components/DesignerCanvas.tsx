@@ -2,6 +2,7 @@ import {
 	type ReactNode,
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -17,6 +18,7 @@ import {
 } from "../hooks/useFrameRegistry";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
 import { calculateBoundingBox } from "../lib/breakpointUtils";
+import { isControlTarget } from "../lib/keyboardTargets";
 import { buildLayerIndex, getLayer } from "../lib/layerIndex";
 
 import { DimensionAble } from "./ables/DimensionAble";
@@ -180,11 +182,22 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		// Intentionally empty - all selection logic is handled in onSelectEnd
 	};
 
-	// Query selected layers within the active breakpoint
-	// This ensures Moveable targets the correct layer instance
-	const selectedLayerElements = selectedLayers.map((layer) =>
-		registry.queryLayer(state.activeBreakpointId, layer.id)
-	);
+	// Moveable targets the selected layers' elements in the active breakpoint.
+	// Look them up after the DOM commits, not while rendering: a layer added
+	// and selected in one step has no element yet during this render.
+	const [selectedLayerElements, setSelectedLayerElements] = useState<
+		(HTMLElement | null)[]
+	>([]);
+	useLayoutEffect(() => {
+		const next = selectedLayers.map((layer) =>
+			registry.queryLayer(state.activeBreakpointId, layer.id)
+		);
+		setSelectedLayerElements((prev) =>
+			prev.length === next.length && prev.every((el, i) => el === next[i])
+				? prev
+				: next
+		);
+	}, [registry, selectedLayers, state.activeBreakpointId]);
 
 	// Sync zoom changes from keyboard/controls to InfiniteViewer
 	useEffect(() => {
@@ -324,7 +337,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 			if (
 				(e.key === "Delete" || e.key === "Backspace") &&
 				state.selectedLayers.length > 0 &&
-				!isInputField(target)
+				!isControlTarget(target)
 			) {
 				e.preventDefault();
 				designerAction({

@@ -74,6 +74,7 @@ const setup = (
 };
 
 beforeEach(() => {
+	vi.stubEnv("VITE_GOOGLE_API_KEY", "test-key");
 	vi.stubGlobal(
 		"ResizeObserver",
 		class {

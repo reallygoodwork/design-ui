@@ -1,20 +1,29 @@
 import { Button } from "@base-ui/react/button";
 import { IconX } from "@tabler/icons-react";
+import { cn } from "../../lib/cn";
 
+/** Clears a value. Revealed by hovering or focusing its row, or on touch. */
 export const ClearButton = ({
 	hasValue,
 	handleClear,
+	label = "Clear",
+	className,
 }: {
 	hasValue: boolean;
 	handleClear: () => void;
-}) => {
-	return (
-		<Button
-			disabled={!hasValue}
-			onClick={handleClear}
-			className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-sm font-medium text-xs leading-none transition-all focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[4px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-input text-input-foreground hover:bg-input/80 size-5 justify-center p-0 active:scale-95 [&_svg:not([class*='size-'])]:size-3"
-		>
-			<IconX />
-		</Button>
-	);
-};
+	label?: string;
+	className?: string;
+}) => (
+	<Button
+		disabled={!hasValue}
+		onClick={handleClear}
+		aria-label={label}
+		title={label}
+		className={cn(
+			"relative inline-flex size-3.5 shrink-0 items-center justify-center rounded-sm after:absolute after:-inset-[5px] after:content-[''] text-muted-foreground opacity-0 transition-[opacity,scale] duration-100 hover:bg-foreground/10 hover:text-foreground focus-visible:opacity-100 focus-visible:outline-1 focus-visible:outline-ring active:scale-[0.96] group-focus-within/action:opacity-100 group-hover/action:opacity-100 pointer-coarse:opacity-100 disabled:invisible [&_svg]:pointer-events-none [&_svg]:size-2.5",
+			className
+		)}
+	>
+		<IconX />
+	</Button>
+);

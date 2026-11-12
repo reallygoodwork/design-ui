@@ -5,6 +5,7 @@ import {
 	IconGripVertical,
 	IconLock,
 	IconLockOpen,
+	IconPlus,
 } from "@tabler/icons-react";
 import { useRef, useState } from "react";
 import {
@@ -33,6 +34,7 @@ import {
 	isDescendant,
 } from "../lib/layerIndex";
 import type { Breakpoint, Layer } from "../lib/Types";
+import { type Category, CategoryChip } from "./common/CategoryChip";
 
 const findLayerById = (layers: Layer[], layerId: string): Layer | null =>
 	getLayer(buildLayerIndex(layers), layerId);
@@ -60,14 +62,22 @@ export interface RowState {
 }
 
 const ROW_BASE =
-	"flex cursor-default items-center gap-1 rounded-md pr-1 py-0.5 pl-[calc(calc(var(--tree-item-level)-1)*0.5rem)] text-sm outline-none h-7";
+	"flex min-w-0 cursor-default items-center gap-1 rounded-md pr-1 py-0.5 pl-[calc(calc(var(--tree-item-level)-1)*0.5rem)] text-control outline-none h-7";
 
-// Light: tint (accent) < hover (neutral-200) < selected (neutral-300).
-// Dark: round 2 values via dark: variants.
-const SELECTED_CLASS =
-	"bg-neutral-300 text-neutral-900 dark:bg-accent dark:text-accent-foreground";
-const HOVER_CLASS = "bg-neutral-200 dark:bg-accent/50";
-const TINT_CLASS = "bg-accent dark:bg-accent/30";
+/** Layer types share the hue of the pane that edits them most. */
+const layerCategory = (type: string): Category =>
+	type === "frame"
+		? "layout"
+		: type === "text"
+			? "type"
+			: type === "image"
+				? "image"
+				: "layer";
+
+// Tint < hover < selected, in both themes.
+const SELECTED_CLASS = "bg-selected text-foreground";
+const HOVER_CLASS = "bg-hover";
+const TINT_CLASS = "bg-hover/50";
 
 const rowBackground = (s: RowState) => {
 	if (s.isDropTarget) return "bg-primary/20 ring-2 ring-primary";
@@ -113,166 +123,177 @@ const LayerTreeItemContent = ({ layer }: { layer: Layer }) => {
 
 	return (
 		<TreeItemContent>
-			{({ isExpanded, hasChildItems }) => (
-				<div
-					className="group/pane-layer-tree-item relative flex flex-1 items-center gap-1"
-					data-editing={isEditing}
-				>
-					{/* Drag handle: overlaid (absolute) just left of the lock button so it takes no layout space; shown on hover/focus. Disabled for locked layers, which cannot be dragged. */}
-					<Button
-						slot="drag"
-						aria-label={`Drag ${layer.name}`}
-						isDisabled={layer.isLocked}
-						className="absolute top-1/2 right-5 z-[5] flex size-4 -translate-y-1/2 items-center justify-center rounded bg-background text-muted-foreground opacity-0 hover:bg-accent focus-visible:opacity-100 group-focus-within/pane-layer-tree-item:opacity-100 group-hover/pane-layer-tree-item:opacity-100 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-0 data-[disabled]:group-hover/pane-layer-tree-item:opacity-40"
-					>
-						<IconGripVertical className="size-3" />
-					</Button>
-
-					{/* Chevron for expandable items */}
-					{hasChildItems ? (
-						<Button
-							slot="chevron"
-							className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent/50"
-						>
-							<IconChevronRight
-								className={`size-3 transition-transform ${isExpanded ? "rotate-90" : ""}`}
-							/>
-						</Button>
-					) : (
-						<span className="size-4 shrink-0" />
-					)}
-
-					{/* Layer icon and name */}
-					{/* biome-ignore lint/a11y/noStaticElementInteractions: must stay non-interactive so the row press is not swallowed */}
+			{({ isExpanded, hasChildItems, isSelected }) => {
+				const canAdd =
+					isSelected && !!layerType?.supportsChildren && !layer.isLocked;
+				return (
 					<div
-						className="flex flex-1 cursor-default items-center gap-2 truncate bg-transparent border-none p-0 text-left"
-						onDoubleClick={handleDoubleClick}
+						className="group/pane-layer-tree-item relative flex min-w-0 flex-1 items-center gap-1"
+						data-editing={isEditing}
 					>
-						<span className="size-3.5 [&_svg:not([class*='size-'])]:size-3.5 shrink-0 text-muted-foreground opacity-80">
-							{layerType?.icon}
-						</span>
-						<span
-							className={`truncate text-xs leading-normal ${isEditing ? "opacity-0" : ""}`}
+						{/* Drag handle: overlaid (absolute) just left of the lock button so it takes no layout space; shown on hover/focus. Disabled for locked layers, which cannot be dragged. */}
+						<Button
+							slot="drag"
+							aria-label={`Drag ${layer.name}`}
+							isDisabled={layer.isLocked}
+							className={`absolute top-1/2 ${canAdd ? "right-10" : "right-5"} z-[5] flex size-4 -translate-y-1/2 items-center justify-center rounded bg-background text-muted-foreground opacity-0 hover:bg-hover focus-visible:opacity-100 group-focus-within/pane-layer-tree-item:opacity-100 group-hover/pane-layer-tree-item:opacity-100 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-0 data-[disabled]:group-hover/pane-layer-tree-item:opacity-40`}
 						>
-							{layer.name}
-						</span>
-					</div>
+							<IconGripVertical className="size-3" />
+						</Button>
 
-					{/* Inline rename input */}
-					{isEditing && (
-						<Input
-							data-slot="input"
-							value={layer.name}
-							className="absolute -top-0.5 right-8 left-8.25 z-10 h-6 min-w-0 rounded-md border border-input bg-input px-2 py-0.5 -translate-y-0.25 text-xs outline-none transition-[color,box-shadow] selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 leading-none"
-							onChange={(e) => handleLayerNameChange(e.target.value)}
-							ref={ref}
-							autoFocus
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === "Escape") {
-									setIsEditing(false);
-								}
-							}}
-						/>
-					)}
-
-					{/* Lock button */}
-					<button
-						type="button"
-						className={`flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 hover:bg-accent/50 group-hover/pane-layer-tree-item:opacity-100 ${layer.isLocked ? "opacity-100" : ""}`}
-						title={layer.isLocked ? "Unlock layer" : "Lock layer"}
-						onClick={(e) => {
-							e.stopPropagation();
-							handleLayerLockChange();
-						}}
-					>
-						{layer.isLocked ? (
-							<IconLock className="size-3" />
+						{/* Chevron for expandable items */}
+						{hasChildItems ? (
+							<Button
+								slot="chevron"
+								className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-hover/50"
+							>
+								<IconChevronRight
+									className={`size-3 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+								/>
+							</Button>
 						) : (
-							<IconLockOpen className="size-3" />
+							<span className="size-4 shrink-0" />
 						)}
-					</button>
-				</div>
-			)}
+
+						{/* Layer icon and name */}
+						{/* biome-ignore lint/a11y/noStaticElementInteractions: must stay non-interactive so the row press is not swallowed */}
+						<div
+							className="flex min-w-0 flex-1 cursor-default items-center gap-2 truncate bg-transparent border-none p-0 text-left"
+							onDoubleClick={handleDoubleClick}
+						>
+							<CategoryChip category={layerCategory(layer.type)} size="sm">
+								{layerType?.icon}
+							</CategoryChip>
+							<span
+								className={`truncate text-control leading-normal ${isEditing ? "opacity-0" : ""}`}
+								title={layer.name}
+							>
+								{layer.name}
+							</span>
+						</div>
+
+						{/* Inline rename input */}
+						{isEditing && (
+							<Input
+								data-slot="input"
+								value={layer.name}
+								className="absolute -top-0.5 right-8 left-8.25 z-10 h-6 min-w-0 rounded-md border border-input bg-input px-2 py-0.5 -translate-y-0.25 text-control outline-none transition-[color,box-shadow] selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring leading-none"
+								onChange={(e) => handleLayerNameChange(e.target.value)}
+								ref={ref}
+								autoFocus
+								onKeyDown={(e) => {
+									if (e.key === "Enter" || e.key === "Escape") {
+										setIsEditing(false);
+									}
+								}}
+							/>
+						)}
+
+						{/* Add a layer inside: shown on the selected layer when it can hold others */}
+						{canAdd && (
+							<button
+								type="button"
+								aria-label={`Add layer inside ${layer.name}`}
+								title={`Add layer inside ${layer.name}`}
+								className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-hover/50 hover:text-foreground"
+								onClick={(e) => {
+									e.stopPropagation();
+									designerAction({
+										type: "OPEN_ADD_LAYER_DIALOG",
+										payload: { layerId: layer.id, position: "inside" },
+									});
+								}}
+							>
+								<IconPlus className="size-3" />
+							</button>
+						)}
+
+						{/* Lock button */}
+						<button
+							type="button"
+							className={`flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 hover:bg-hover/50 group-hover/pane-layer-tree-item:opacity-100 ${layer.isLocked ? "opacity-100" : ""}`}
+							title={layer.isLocked ? "Unlock layer" : "Lock layer"}
+							onClick={(e) => {
+								e.stopPropagation();
+								handleLayerLockChange();
+							}}
+						>
+							{layer.isLocked ? (
+								<IconLock className="size-3" />
+							) : (
+								<IconLockOpen className="size-3" />
+							)}
+						</button>
+					</div>
+				);
+			}}
 		</TreeItemContent>
 	);
 };
 
 /**
- * Breakpoint section header in the layer tree.
+ * One frame in the list above the layers. Selecting it opens its settings and
+ * makes it the breakpoint that style edits apply to.
  */
-const BreakpointSectionHeader = ({
+const FrameRow = ({
 	breakpoint,
 	isActive,
-	isExpanded,
-	onToggle,
+	isSelected,
+	isPrimary,
 	onClick,
 }: {
 	breakpoint: Breakpoint;
 	isActive: boolean;
-	isExpanded: boolean;
-	onToggle: () => void;
+	isSelected: boolean;
+	isPrimary: boolean;
 	onClick: () => void;
-}) => {
-	const breakpoints = useDesignerSelector((state) => state.breakpoints);
-	const isPrimary = isPrimaryBreakpoint(breakpoint.id, breakpoints);
+}) => (
+	<button
+		type="button"
+		aria-current={isActive ? "true" : undefined}
+		onClick={onClick}
+		className={cn(
+			"flex h-7 w-full cursor-default items-center gap-2 rounded-md px-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+			isSelected
+				? SELECTED_CLASS
+				: isActive
+					? "bg-hover text-hover-foreground"
+					: "hover:bg-hover/50"
+		)}
+	>
+		<IconDeviceDesktop className="size-3.5 shrink-0 text-muted-foreground" />
+		<span className="min-w-0 flex-1 truncate text-control">
+			{breakpoint.name}
+		</span>
+		{isPrimary && (
+			<span className="rounded bg-primary/20 px-1.5 py-0.5 font-medium text-caption text-primary">
+				Primary
+			</span>
+		)}
+		<span className="font-mono text-muted-foreground text-value">
+			{breakpoint.width}×{breakpoint.height}
+		</span>
+	</button>
+);
 
-	return (
-		<div
-			className={cn(
-				"flex items-center gap-1.5 px-2 py-1.5 select-none rounded-md w-full",
-				isActive ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
-			)}
-		>
-			<button
-				type="button"
-				aria-label={`${isExpanded ? "Collapse" : "Expand"} ${breakpoint.name}`}
-				aria-expanded={isExpanded}
-				className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent/50"
-				onClick={onToggle}
-			>
-				<IconChevronRight
-					className={cn(
-						"size-3 transition-transform",
-						isExpanded && "rotate-90"
-					)}
-				/>
-			</button>
-			<button
-				type="button"
-				className="flex min-w-0 flex-1 items-center gap-1.5 cursor-pointer text-left"
-				onClick={onClick}
-			>
-				<IconDeviceDesktop className="size-3.5 text-muted-foreground" />
-				<span className="flex-1 text-xs font-medium truncate">
-					{breakpoint.name}
-				</span>
-				{isPrimary && (
-					<span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-						Primary
-					</span>
-				)}
-				<span className="text-[10px] text-muted-foreground tabular-nums">
-					{breakpoint.width}×{breakpoint.height}
-				</span>
-			</button>
-		</div>
-	);
-};
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+	<h3 className="px-2 pb-1 font-medium text-caption text-muted-foreground">
+		{children}
+	</h3>
+);
 
 export const PaneLayerTree = () => {
 	const breakpoints = useDesignerSelector((state) => state.breakpoints);
 	const activeBreakpointId = useDesignerSelector(
 		(state) => state.activeBreakpointId
 	);
+	const selectedBreakpointId = useDesignerSelector(
+		(state) => state.selectedBreakpointId
+	);
 	const layers = useLayers();
 	const layerTypes = useLayerTypes();
 	const selectedLayers = useSelectedLayers();
 	const designerAction = useDesignerAction();
-
-	// Track expanded breakpoint sections
-	const [expandedBreakpoints, setExpandedBreakpoints] = useState<Set<string>>(
-		() => new Set(breakpoints.map((bp) => bp.id))
-	);
 
 	// Get all expanded keys (all layers with children)
 	const getExpandedKeys = (layerList: Layer[]): string[] => {
@@ -336,47 +357,21 @@ export const PaneLayerTree = () => {
 		},
 	});
 
-	// Create a selection handler that includes the breakpointId
-	const createSelectionHandler = (breakpointId: string) => {
-		return (keys: "all" | Set<React.Key>) => {
-			if (keys === "all") {
-				return;
-			}
-
-			const keyArray = [...keys] as string[];
-
-			if (keyArray.length === 0) {
-				designerAction({ type: "DESELECT_ALL" });
-			} else {
-				const lastKey = keyArray[keyArray.length - 1];
-				designerAction({
-					type: "SELECT_LAYER",
-					payload: {
-						layerId: lastKey,
-						shiftKey: keyArray.length > 1,
-						breakpointId,
-					},
-				});
-			}
-		};
-	};
-
-	const handleBreakpointClick = (breakpointId: string) => {
+	// Selection leaves the active breakpoint alone: there is one tree, and the
+	// frame being edited is chosen separately.
+	const handleSelectionChange = (keys: "all" | Set<React.Key>) => {
+		if (keys === "all") return;
+		const keyArray = [...keys] as string[];
+		if (keyArray.length === 0) {
+			designerAction({ type: "DESELECT_ALL" });
+			return;
+		}
 		designerAction({
-			type: "SELECT_BREAKPOINT",
-			payload: { breakpointId },
-		});
-	};
-
-	const toggleBreakpointExpanded = (breakpointId: string) => {
-		setExpandedBreakpoints((prev) => {
-			const next = new Set(prev);
-			if (next.has(breakpointId)) {
-				next.delete(breakpointId);
-			} else {
-				next.add(breakpointId);
-			}
-			return next;
+			type: "SELECT_LAYER",
+			payload: {
+				layerId: keyArray[keyArray.length - 1],
+				shiftKey: keyArray.length > 1,
+			},
 		});
 	};
 
@@ -388,100 +383,77 @@ export const PaneLayerTree = () => {
 	// React Aria caches items by identity; invalidate when the tint changes
 	const subtreeDependency = [...selectedSubtreeIds].join(",");
 
-	const createRenderItem = (showSubtree: boolean) => {
-		const renderItem = (layer: Layer) => {
-			const hasChildren = layer.children && layer.children.length > 0;
-			const isInSelection = showSubtree && selectedSubtreeIds.has(layer.id);
+	const renderItem = (layer: Layer) => {
+		const hasChildren = layer.children && layer.children.length > 0;
+		const isInSelection = selectedSubtreeIds.has(layer.id);
 
-			return (
-				<TreeItem
-					key={layer.id}
-					data-in-selection={isInSelection ? "true" : undefined}
-					id={layer.id}
-					textValue={layer.name}
-					className={(state) => rowStateClass({ ...state, isInSelection })}
-				>
-					<LayerTreeItemContent layer={layer} />
-					{hasChildren && (
-						<Collection
-							items={layer.children}
-							dependencies={[subtreeDependency]}
-						>
-							{renderItem}
-						</Collection>
-					)}
-				</TreeItem>
-			);
-		};
-		return renderItem;
+		return (
+			<TreeItem
+				key={layer.id}
+				data-in-selection={isInSelection ? "true" : undefined}
+				id={layer.id}
+				textValue={layer.name}
+				className={(state) => rowStateClass({ ...state, isInSelection })}
+			>
+				<LayerTreeItemContent layer={layer} />
+				{hasChildren && (
+					<Collection items={layer.children} dependencies={[subtreeDependency]}>
+						{renderItem}
+					</Collection>
+				)}
+			</TreeItem>
+		);
 	};
 
-	// Sort breakpoints by width (mobile-first)
-	const sortedBreakpoints = sortBreakpointsByWidth(breakpoints);
+	// A single frame needs no list, and no headings to tell the lists apart
+	const showFrames = breakpoints.length > 1;
 
-	// If no breakpoints, show flat layer tree (backwards compatibility)
-	if (sortedBreakpoints.length === 0) {
-		return (
-			<Tree
-				aria-label="Layer tree"
-				selectionMode="single"
-				selectedKeys={new Set(selectedLayers.map((l) => l.id))}
-				onSelectionChange={createSelectionHandler("")}
-				expandedKeys={expandedKeys}
-				onExpandedChange={(keys) => setExpandedKeys(keys as Set<string>)}
-				dragAndDropHooks={dragAndDropHooks}
-				items={layers}
-				dependencies={[subtreeDependency]}
-				className="-m-1 flex flex-col gap-0.5 overflow-y-auto p-1 outline-none"
-			>
-				{createRenderItem(true)}
-			</Tree>
-		);
-	}
-
-	// Show breakpoints as collapsible sections
 	return (
-		<div className="-m-1 flex flex-col gap-1 overflow-y-auto p-1">
-			{sortedBreakpoints.map((breakpoint) => {
-				const isActive = activeBreakpointId === breakpoint.id;
-				const isExpanded = expandedBreakpoints.has(breakpoint.id);
-
-				return (
-					<div key={breakpoint.id} className="flex flex-col">
-						<BreakpointSectionHeader
-							breakpoint={breakpoint}
-							isActive={isActive}
-							isExpanded={isExpanded}
-							onToggle={() => toggleBreakpointExpanded(breakpoint.id)}
-							onClick={() => handleBreakpointClick(breakpoint.id)}
-						/>
-						{isExpanded && (
-							<div className="ml-2 border-l border-border pl-2">
-								<Tree
-									aria-label={`${breakpoint.name} layer tree`}
-									selectionMode="single"
-									selectedKeys={
-										isActive
-											? new Set(selectedLayers.map((l) => l.id))
-											: new Set()
-									}
-									onSelectionChange={createSelectionHandler(breakpoint.id)}
-									expandedKeys={expandedKeys}
-									onExpandedChange={(keys) =>
-										setExpandedKeys(keys as Set<string>)
-									}
-									dragAndDropHooks={dragAndDropHooks}
-									items={layers}
-									dependencies={[subtreeDependency, isActive]}
-									className="flex flex-col gap-0.5 outline-none"
-								>
-									{createRenderItem(isActive)}
-								</Tree>
-							</div>
-						)}
+		<div className="-m-1 flex min-w-0 flex-col gap-3 overflow-x-hidden overflow-y-auto p-1">
+			{showFrames && (
+				<section>
+					<SectionTitle>Frames</SectionTitle>
+					<div className="flex flex-col gap-0.5">
+						{sortBreakpointsByWidth(breakpoints).map((breakpoint) => (
+							<FrameRow
+								key={breakpoint.id}
+								breakpoint={breakpoint}
+								isActive={activeBreakpointId === breakpoint.id}
+								isSelected={selectedBreakpointId === breakpoint.id}
+								isPrimary={isPrimaryBreakpoint(breakpoint.id, breakpoints)}
+								onClick={() =>
+									designerAction({
+										type: "SELECT_BREAKPOINT",
+										payload: { breakpointId: breakpoint.id },
+									})
+								}
+							/>
+						))}
 					</div>
-				);
-			})}
+				</section>
+			)}
+			<section>
+				{showFrames && <SectionTitle>Layers</SectionTitle>}
+				<Tree
+					aria-label="Layer tree"
+					selectionMode="single"
+					selectedKeys={new Set(selectedLayers.map((l) => l.id))}
+					onSelectionChange={handleSelectionChange}
+					expandedKeys={expandedKeys}
+					onExpandedChange={(keys) => setExpandedKeys(keys as Set<string>)}
+					dragAndDropHooks={dragAndDropHooks}
+					items={layers}
+					dependencies={[subtreeDependency]}
+					className="flex min-w-0 flex-col gap-0.5 outline-none"
+					renderEmptyState={() => (
+						<p className="px-2 py-1 text-caption text-muted-foreground">
+							No layers yet. Press T for text, F for a frame or I for an image.
+						</p>
+					)}
+				>
+					{renderItem}
+				</Tree>
+			</section>
 		</div>
 	);
 };

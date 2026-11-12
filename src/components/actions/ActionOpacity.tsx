@@ -1,9 +1,8 @@
-import { Slider } from "@base-ui/react/slider";
 import { useBreakpointCss } from "../../hooks/useBreakpointCss";
-import { ClearButton } from "../common/ClearButton";
 import { InputGroup } from "../common/InputGroup";
 import { Tooltip } from "../common/Tooltip";
 import { DesignAction } from "../DesignAction";
+import { TokenSlot } from "../tokens/TokenSlot";
 
 const CSS_PROPERTY = "--opacity";
 const DEFAULT_PERCENT = 100;
@@ -45,10 +44,6 @@ export const ActionOpacity = () => {
 		if (!Number.isNaN(n)) setValue(toCssOpacity(n));
 	};
 
-	const handleSliderChange = (next: number | number[]) => {
-		setValue(toCssOpacity(Array.isArray(next) ? next[0] : next));
-	};
-
 	// Same convention as NumericActionControl: inherited values show as a
 	// placeholder with a tooltip, explicit overrides get a label marker.
 	const inheritanceTooltip =
@@ -60,36 +55,50 @@ export const ActionOpacity = () => {
 	const label = !isPrimary && isExplicit ? "Opacity \u2022" : "Opacity";
 
 	return (
-		<DesignAction label={label} orientation="horizontal">
-			<div className="flex items-center gap-1">
-				<Tooltip content={inheritanceTooltip}>
-					<div className="flex-1">
-						<InputGroup
-							value={isExplicit || isPrimary ? String(percent) : ""}
-							placeholder={String(percent)}
-							onChange={handleInputChange}
-						/>
-					</div>
-				</Tooltip>
-			</div>
-			<Slider.Root
-				value={[percent]}
-				onValueChange={handleSliderChange}
-				min={0}
-				max={100}
-				step={1}
+		<DesignAction
+			clear={{ hasValue: isExplicit, onClear: clearValue }}
+			label={label}
+			orientation="horizontal"
+			property={CSS_PROPERTY}
+		>
+			<TokenSlot
+				title="Opacity"
+				inherited={!isExplicit}
+				binding={{
+					type: "number",
+					cssProperty: CSS_PROPERTY,
+					value,
+					onChange: setValue,
+				}}
 			>
-				<Slider.Control className="flex w-16 touch-none items-center py-3 select-none pr-2">
-					<Slider.Track className="h-1 w-full rounded bg-input select-none">
-						<Slider.Indicator className="rounded bg-blue-600 select-none" />
-						<Slider.Thumb
-							aria-label="Opacity"
-							className="size-2.5 rounded bg-white outline outline-gray-300 select-none has-focus-visible:outline-2 has-focus-visible:outline-blue-800"
-						/>
-					</Slider.Track>
-				</Slider.Control>
-			</Slider.Root>
-			<ClearButton hasValue={isExplicit} handleClear={clearValue} />
+				<div className="flex min-w-0 flex-1 items-center gap-1">
+					<Tooltip
+						content={inheritanceTooltip}
+						triggerProps={{ render: <div /> }}
+					>
+						<div className="flex-1">
+							<InputGroup
+								fullWidth
+								value={isExplicit || isPrimary ? String(percent) : ""}
+								placeholder={String(percent)}
+								inherited={!isPrimary && !isExplicit && Boolean(value)}
+								onChange={handleInputChange}
+								suffix={
+									<span className="shrink-0 pr-2 font-mono text-muted-foreground text-value">
+										%
+									</span>
+								}
+								scrub={{
+									value: percent,
+									min: 0,
+									max: 100,
+									onChange: (next) => setValue(toCssOpacity(next)),
+								}}
+							/>
+						</div>
+					</Tooltip>
+				</div>
+			</TokenSlot>
 		</DesignAction>
 	);
 };

@@ -7,7 +7,7 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["**", "!**/*.md"]
+		"includes": ["**", "!**/*.md", "!video/kit"]
 	},
 	"formatter": {
 		"enabled": true,

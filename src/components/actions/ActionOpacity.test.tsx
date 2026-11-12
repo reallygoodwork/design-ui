@@ -49,7 +49,7 @@ const setup = (
 			payload: { layerId: "L", shiftKey: false, breakpointId },
 		});
 	});
-	return screen.getByRole("textbox") as HTMLInputElement;
+	return screen.getByRole("spinbutton") as HTMLInputElement;
 };
 
 const layer = () => ref.ctx?.state.layers[0];
@@ -100,9 +100,9 @@ describe("ActionOpacity", () => {
 	it("shows 50 for a legacy stored 50", () => {
 		const input = setup({ "--opacity": "50" });
 		expect(input.value).toBe("50");
-		expect(screen.getByRole("slider").getAttribute("aria-valuenow") ?? "").toBe(
-			"50"
-		);
+		expect(
+			screen.getByRole("spinbutton").getAttribute("aria-valuenow") ?? ""
+		).toBe("50");
 	});
 
 	it("writes on a non-primary breakpoint as an override", () => {
@@ -113,14 +113,15 @@ describe("ActionOpacity", () => {
 		expect(input.value).toBe("50");
 	});
 
-	it("writes from the slider path as a valid opacity", () => {
-		setup({ "--opacity": "1" });
-		const thumb = screen.getByRole("slider");
-		fireEvent.keyDown(thumb, { key: "ArrowLeft" });
+	it("writes a valid opacity when stepped or dragged, within 0-100", () => {
+		const input = setup({ "--opacity": "1" });
+		fireEvent.keyDown(input, { key: "ArrowDown" });
 		expect(layer()?.cssVars?.["--opacity"]).toBe("0.99");
-		fireEvent.keyDown(thumb, { key: "End" });
+		fireEvent.keyDown(input, { key: "ArrowUp" });
 		expect(layer()?.cssVars?.["--opacity"]).toBe("1");
-		fireEvent.keyDown(thumb, { key: "Home" });
+		fireEvent.pointerDown(input, { button: 0, pointerId: 1, clientX: 500 });
+		fireEvent.pointerMove(input, { pointerId: 1, clientX: 0 });
+		fireEvent.pointerUp(input, { pointerId: 1, clientX: 0 });
 		expect(layer()?.cssVars?.["--opacity"]).toBe("0");
 	});
 
@@ -128,9 +129,9 @@ describe("ActionOpacity", () => {
 		const input = setup({}, "desktop", { tablet: { "--opacity": "0.3" } });
 		expect(input.value).toBe("");
 		expect(input.placeholder).toBe("30");
-		expect(screen.getByRole("slider").getAttribute("aria-valuenow") ?? "").toBe(
-			"30"
-		);
+		expect(
+			screen.getByRole("spinbutton").getAttribute("aria-valuenow") ?? ""
+		).toBe("30");
 		expect(screen.getByText("Opacity")).toBeTruthy();
 		expect(screen.queryByText("Opacity \u2022")).toBeNull();
 		const buttons = screen.getAllByRole("button");

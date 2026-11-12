@@ -1,84 +1,28 @@
-import { useMemo } from "react";
-import { useDesignerAction } from "../../hooks/useDesignerAction";
+import { IconBorderInner } from "@tabler/icons-react";
+import { useEffectiveCss } from "../../hooks/useBreakpointCss";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
-import { ActionPopover } from "./ActionPopover";
-import { NumericActionControl } from "./NumericActionControl";
+import { LinkedValuesControl } from "./LinkedValuesControl";
+
+const FIELDS = [
+	{ property: "--row-gap", label: "Row", short: "R" },
+	{ property: "--column-gap", label: "Column", short: "C" },
+];
+
+const LAYOUTS_WITH_GAP = ["flex", "inline-flex", "grid", "inline-grid"];
 
 export const ActionGap = () => {
-	const selectedLayers = useSelectedLayers();
-	const designerAction = useDesignerAction();
-	const selectedLayer = selectedLayers[0];
+	const [layer] = useSelectedLayers();
+	const display = useEffectiveCss()["--display"];
 
-	const rowGapValue = selectedLayer?.cssVars?.["--row-gap"];
-	const columnGapValue = selectedLayer?.cssVars?.["--column-gap"];
-
-	const handleClear = () => {
-		if (selectedLayer) {
-			designerAction({
-				type: "UPDATE_LAYER_CSS",
-				payload: {
-					id: selectedLayer.id,
-					css: { "--row-gap": "", "--column-gap": "" },
-				},
-			});
-		}
-	};
-
-	// Determine preview text with units
-	const triggerDisplayValue = useMemo(() => {
-		const hasRowGap = Boolean(rowGapValue);
-		const hasColumnGap = Boolean(columnGapValue);
-
-		// If neither has a value, show placeholder
-		if (!hasRowGap && !hasColumnGap) {
-			return "";
-		}
-
-		// If both values are the same, show just one
-		if (hasRowGap && hasColumnGap && rowGapValue === columnGapValue) {
-			return rowGapValue;
-		}
-
-		// If one is missing, display it as 0
-		const displayRowGap = hasRowGap ? rowGapValue : "0";
-		const displayColumnGap = hasColumnGap ? columnGapValue : "0";
-
-		return `${displayRowGap} × ${displayColumnGap}`;
-	}, [rowGapValue, columnGapValue]);
-
-	const hasValue = Boolean(rowGapValue || columnGapValue);
-
-	if (
-		!selectedLayer ||
-		(selectedLayer.cssVars?.["--display"] !== "grid" &&
-			selectedLayer.cssVars?.["--display"] !== "flex" &&
-			selectedLayer.cssVars?.["--display"] !== "inline-grid" &&
-			selectedLayer.cssVars?.["--display"] !== "inline-flex")
-	)
-		return null;
+	if (!layer || !display || !LAYOUTS_WITH_GAP.includes(display)) return null;
 
 	return (
-		<ActionPopover
+		<LinkedValuesControl
 			label="Gap"
-			popoverTitle="Gap"
-			triggerDisplayValue={triggerDisplayValue ?? ""}
-			hasValue={hasValue}
-			onClear={handleClear}
-		>
-			<NumericActionControl
-				cssProperty="--row-gap"
-				label="Row"
-				defaultValue={0}
-				showSteppers={false}
-				orientation="horizontal"
-			/>
-			<NumericActionControl
-				cssProperty="--column-gap"
-				label="Column"
-				defaultValue={0}
-				showSteppers={false}
-				orientation="horizontal"
-			/>
-		</ActionPopover>
+			fields={FIELDS}
+			min={0}
+			expandLabel="Edit rows and columns"
+			icon={<IconBorderInner />}
+		/>
 	);
 };

@@ -31,7 +31,7 @@ describe("StructureAble.render", () => {
 	it("does not open the dialog without a target", () => {
 		const onOpen = vi.fn();
 		const { getByTitle } = renderAble(fakeMoveable([], onOpen));
-		getByTitle("Add element before").click();
+		getByTitle("Add layer before").click();
 		expect(onOpen).not.toHaveBeenCalled();
 	});
 
@@ -42,7 +42,7 @@ describe("StructureAble.render", () => {
 		layer.appendChild(inner);
 		const onOpen = vi.fn();
 		const { getByTitle } = renderAble(fakeMoveable([inner], onOpen));
-		getByTitle("Add element after").click();
+		getByTitle("Add layer after").click();
 		expect(onOpen).toHaveBeenCalledWith({ layerId: "a", position: "after" });
 	});
 });

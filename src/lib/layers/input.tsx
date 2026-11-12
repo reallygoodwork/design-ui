@@ -16,6 +16,8 @@ export const inputLayerType = {
 		"--min-height",
 		"--border-radius",
 		"--opacity",
+		"--transition-duration",
+		"--transition-timing-function",
 		"position",
 		"top",
 		"right",

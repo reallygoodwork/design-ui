@@ -1,94 +1,18 @@
-import { useMemo } from "react";
-import { useDesignerAction } from "../../hooks/useDesignerAction";
-import { useSelectedLayers } from "../../hooks/useSelectedLayers";
-import { ActionPopover } from "./ActionPopover";
-import { NumericActionControl } from "./NumericActionControl";
+import { IconBorderSides } from "@tabler/icons-react";
+import { LinkedValuesControl } from "./LinkedValuesControl";
 
-export const ActionMargin = () => {
-	const selectedLayers = useSelectedLayers();
-	const designerAction = useDesignerAction();
-	const selectedLayer = selectedLayers[0];
+const FIELDS = [
+	{ property: "--margin-block-start", label: "Top", short: "T" },
+	{ property: "--margin-inline-end", label: "Right", short: "R" },
+	{ property: "--margin-block-end", label: "Bottom", short: "B" },
+	{ property: "--margin-inline-start", label: "Left", short: "L" },
+];
 
-	// Get all margin values (logical properties, same model as ActionPadding)
-	const marginTop = selectedLayer?.cssVars?.["--margin-block-start"];
-	const marginRight = selectedLayer?.cssVars?.["--margin-inline-end"];
-	const marginBottom = selectedLayer?.cssVars?.["--margin-block-end"];
-	const marginLeft = selectedLayer?.cssVars?.["--margin-inline-start"];
-
-	// Create display value for trigger
-	const triggerDisplayValue = useMemo(() => {
-		const values = [marginTop, marginRight, marginBottom, marginLeft];
-		const hasAnyValue = values.some((v) => v);
-
-		if (!hasAnyValue) return "";
-
-		// If all values are the same, show single value
-		const uniqueValues = [...new Set(values.filter(Boolean))];
-		if (uniqueValues.length === 1) {
-			return uniqueValues[0];
-		}
-
-		// Show abbreviated format: top right bottom left
-		return values.map((v) => v || "0").join(" ");
-	}, [marginTop, marginRight, marginBottom, marginLeft]);
-
-	const hasValue = useMemo(() => {
-		return Boolean(marginTop || marginRight || marginBottom || marginLeft);
-	}, [marginTop, marginRight, marginBottom, marginLeft]);
-
-	const handleClear = () => {
-		if (selectedLayer) {
-			designerAction({
-				type: "UPDATE_LAYER_CSS",
-				payload: {
-					id: selectedLayer.id,
-					css: {
-						"--margin-block-start": "",
-						"--margin-inline-end": "",
-						"--margin-block-end": "",
-						"--margin-inline-start": "",
-					},
-				},
-			});
-		}
-	};
-
-	return (
-		<ActionPopover
-			label="Margin"
-			popoverTitle="Margin"
-			triggerDisplayValue={triggerDisplayValue ?? ""}
-			hasValue={hasValue}
-			onClear={handleClear}
-		>
-			<NumericActionControl
-				cssProperty="--margin-block-start"
-				label="Top"
-				defaultValue={0}
-				showSteppers={false}
-				orientation="horizontal"
-			/>
-			<NumericActionControl
-				cssProperty="--margin-inline-end"
-				label="Right"
-				defaultValue={0}
-				showSteppers={false}
-				orientation="horizontal"
-			/>
-			<NumericActionControl
-				cssProperty="--margin-block-end"
-				label="Bottom"
-				defaultValue={0}
-				showSteppers={false}
-				orientation="horizontal"
-			/>
-			<NumericActionControl
-				cssProperty="--margin-inline-start"
-				label="Left"
-				defaultValue={0}
-				showSteppers={false}
-				orientation="horizontal"
-			/>
-		</ActionPopover>
-	);
-};
+export const ActionMargin = () => (
+	<LinkedValuesControl
+		label="Margin"
+		fields={FIELDS}
+		expandLabel="Edit each side"
+		icon={<IconBorderSides />}
+	/>
+);

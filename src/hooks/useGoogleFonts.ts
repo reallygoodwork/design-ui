@@ -1,6 +1,20 @@
 import { useCallback, useEffect, useRef } from "react";
 import { primaryFontFamily } from "../lib/fontFamily";
 
+/** Installed fonts, which Google Fonts rejects with a 400. */
+export const SYSTEM_FONTS = [
+	"Arial",
+	"Helvetica",
+	"Georgia",
+	"Times New Roman",
+	"Courier New",
+	"Verdana",
+	"Tahoma",
+	"Trebuchet MS",
+	"Impact",
+	"Comic Sans MS",
+];
+
 const loadedFonts = new Set<string>();
 const fontLinkElements = new Map<string, HTMLLinkElement>();
 
@@ -16,7 +30,7 @@ export const useGoogleFonts = () => {
 	const loadFont = useCallback(
 		(rawFontFamily: string, options?: UseGoogleFontsOptions) => {
 			const fontFamily = primaryFontFamily(rawFontFamily);
-			if (!fontFamily) return;
+			if (!fontFamily || SYSTEM_FONTS.includes(fontFamily)) return;
 			const { weights = [400, 500, 600, 700], display = "swap" } =
 				options || {};
 
@@ -61,6 +75,7 @@ export const useGoogleFonts = () => {
 
 	const preloadFont = useCallback((fontFamily: string) => {
 		// Preload without adding to loaded set - useful for hover states
+		if (SYSTEM_FONTS.includes(fontFamily)) return;
 		const formattedFamily = fontFamily.replace(/\s+/g, "+");
 		const fontUrl = `https://fonts.googleapis.com/css2?family=${formattedFamily}:wght@400;700&display=swap`;
 

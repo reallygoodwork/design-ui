@@ -17,7 +17,7 @@ export const DesignPaneTitle = ({
 	return (
 		<div
 			data-slot="designer-pane-title"
-			className="flex h-7 items-center px-4 font-medium text-xs"
+			className="flex h-7 items-center px-4 font-medium text-control"
 		>
 			{children}
 		</div>
