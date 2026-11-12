@@ -119,4 +119,5 @@ export const frameLayer = {
 			keywords: [element],
 		})),
 	],
+	html: { content: "children" },
 } satisfies LayerDefinition;

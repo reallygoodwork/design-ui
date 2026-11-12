@@ -37,6 +37,8 @@ type TokensStore = {
 	tokens: readonly Token[];
 	/** Replaces the token set. Not part of layer undo history. */
 	setTokens: (update: (tokens: readonly Token[]) => readonly Token[]) => void;
+	/** Replaces tokens and dimensions with saved ones, without logging a change. */
+	loadTokens: (tokens: readonly Token[], dimensions: TokenDimensions) => void;
 	dimensions: TokenDimensions;
 	/** Replaces the dimensions (themes, brands…). Not part of layer undo history. */
 	setDimensions: (
@@ -124,6 +126,16 @@ export const TokensProvider = ({
 		seen.current = { tokens, dimensions };
 	}, [tokens, dimensions, logTokens, logDimensions]);
 
+	// Shows saved tokens as they are: not an edit, so not logged.
+	const loadTokens = useCallback(
+		(next: readonly Token[], nextDimensions: TokenDimensions) => {
+			seen.current = { tokens: next, dimensions: nextDimensions };
+			setTokenState(next);
+			setDimensionState(nextDimensions);
+		},
+		[]
+	);
+
 	const breakpoints = useDesignerSelector((state) => state.breakpoints);
 	const breakpointOrder = useMemo(
 		() => sortBreakpointsByWidth(breakpoints).map((bp) => bp.id),
@@ -153,6 +165,7 @@ export const TokensProvider = ({
 		() => ({
 			tokens,
 			setTokens,
+			loadTokens,
 			dimensions,
 			setDimensions,
 			tableOpen,
@@ -182,6 +195,7 @@ export const TokensProvider = ({
 			issues,
 			hover,
 			preview,
+			loadTokens,
 		]
 	);
 
@@ -194,6 +208,7 @@ export const TokensProvider = ({
 const NO_TOKENS: TokensStore = {
 	tokens: EMPTY,
 	setTokens: () => {},
+	loadTokens: () => {},
 	dimensions: NO_DIMENSIONS,
 	setDimensions: () => {},
 	tableOpen: false,

@@ -59,6 +59,18 @@ export type LayerDefinition = {
 	presets?: LayerPreset[];
 	/** One line saying what the layer is for, shown in Add layer. */
 	description?: string;
+	/**
+	 * How the layer becomes HTML when a design is exported or rendered outside
+	 * the editor. Without it, a layer exports as a div holding its children.
+	 */
+	html?: LayerHtml;
+};
+
+/** What a layer's element holds: other layers, its text, or nothing (an image or field). */
+export type LayerHtml = {
+	content: "children" | "text" | "image" | "input";
+	/** Styles the editor's renderer adds, so exports match the canvas. */
+	baseStyle?: Record<string, string>;
 };
 
 export type LayerPreset = {

@@ -9,12 +9,28 @@
  *   claude mcp add coral -- bun /path/to/design-ui/agent/mcp-server.ts
  * then open the editor (bun run dev → /demo/). The Activity tab shows
  * "Agent connected".
+ *
+ * Give it a design file to work without a browser:
+ *   bun agent/mcp-server.ts design.json
+ * With no editor open, it answers from the file and saves each change.
+ * When an editor connects, it shows the file there, relays as above, and
+ * saves what the editor sends back. Agents always edit as the editor role,
+ * so the design's rules apply either way.
  */
 import { randomUUID } from "node:crypto";
+import { readFileSync, renameSync, writeFileSync } from "node:fs";
+import { resolve as resolvePath } from "node:path";
 import {
 	AGENT_PORT,
+	type AgentRequest,
 	type AgentResponse,
+	createHeadlessEditor,
+	type DesignDocument,
 	type EditorEvent,
+	type HeadlessEditor,
+	handleAgentRequest,
+	loadDocument,
+	type ServerEvent,
 	type TaskView,
 } from "@design-ui/core";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -26,6 +42,52 @@ const port = Number(process.env.CORAL_AGENT_PORT ?? AGENT_PORT);
 const REQUEST_TIMEOUT = Number(process.env.CORAL_AGENT_TIMEOUT_MS ?? 15_000);
 // stdout belongs to MCP; anything for people goes to stderr.
 const say = (...parts: unknown[]) => console.error("[coral-agent]", ...parts);
+
+/* ── The design file, when there is one ───────────────────────────────── */
+
+// The first argument that isn't a flag. (--role is accepted for clarity;
+// agents always edit as the editor role.)
+const filePath = process.argv
+	.slice(2)
+	.find((arg, i, all) => !arg.startsWith("--") && all[i - 1] !== "--role");
+const file = filePath ? resolvePath(filePath) : null;
+
+const readDesign = (path: string): DesignDocument => {
+	let text: string;
+	try {
+		text = readFileSync(path, "utf8");
+	} catch {
+		say(
+			`Can't read ${path}. Pass an existing design file (exported from the editor).`
+		);
+		process.exit(1);
+	}
+	const loaded = loadDocument(text);
+	if (!loaded.ok) {
+		for (const p of loaded.problems)
+			say(`${path}: ${p.path || "(root)"}: ${p.message}`);
+		process.exit(1);
+	}
+	return loaded.document;
+};
+
+/** Writes the design, all at once, so a crash never leaves half a file. */
+const saveDesign = (document: DesignDocument) => {
+	if (!file) return;
+	const tmp = `${file}.tmp`;
+	writeFileSync(tmp, `${JSON.stringify(document, null, 2)}\n`);
+	renameSync(tmp, file);
+};
+
+let headless: HeadlessEditor | null = null;
+const setDesign = (document: DesignDocument) => {
+	headless = createHeadlessEditor(document);
+	headless.onChange(() => headless && saveDesign(headless.document()));
+};
+if (file) {
+	setDesign(readDesign(file));
+	say(`working on ${file}`);
+}
 
 /* ── The editor end ───────────────────────────────────────────────────── */
 
@@ -50,6 +112,25 @@ const pending = new Map<
 >();
 const waiting: ((task: TaskView) => void)[] = [];
 
+/** Something an editor sent unasked. */
+const onEditorEvent = (ws: WebSocket, message: EditorEvent) => {
+	// The editor's design changed: it's the latest, so keep and save it.
+	if (message.event === "document") {
+		if (file) {
+			setDesign(message.document);
+			saveDesign(message.document);
+		}
+		return;
+	}
+	if (message.event === "active" || message.event === "task_assigned")
+		active = ws;
+	if (message.event === "task_assigned") {
+		const next = waiting.shift();
+		// Only wakes a waiting call; the editor's task list is the record.
+		if (next) next(message.task);
+	}
+};
+
 const wss = new WebSocketServer({ port, host: "127.0.0.1" });
 wss.on("listening", () =>
 	say(`waiting for the editor on ws://localhost:${port}`)
@@ -60,6 +141,14 @@ wss.on("connection", (ws) => {
 	alive.set(ws, true);
 	ws.on("pong", () => alive.set(ws, true));
 	say(`editor connected (${editors.length} open)`);
+	// Show the file's design in the editor that just opened.
+	if (headless)
+		ws.send(
+			JSON.stringify({
+				event: "load_document",
+				document: headless.document(),
+			} satisfies ServerEvent)
+		);
 	ws.on("message", (data) => {
 		let message: AgentResponse | EditorEvent;
 		try {
@@ -68,13 +157,7 @@ wss.on("connection", (ws) => {
 			return;
 		}
 		if ("event" in message) {
-			if (message.event === "active" || message.event === "task_assigned")
-				active = ws;
-			if (message.event === "task_assigned") {
-				const next = waiting.shift();
-				// Only wakes a waiting call; the editor's task list is the record.
-				if (next) next(message.task);
-			}
+			onEditorEvent(ws, message);
 			return;
 		}
 		const call = pending.get(message.id);
@@ -123,6 +206,20 @@ const NO_EDITOR = `No editor is connected. Open the Coral editor (bun run dev, t
 const ask = (method: string, params?: unknown): Promise<unknown> =>
 	new Promise((resolve, reject) => {
 		const editor = current();
+		if (!editor && headless) {
+			// No editor open: answer from the design file.
+			try {
+				resolve(
+					handleAgentRequest(
+						{ id: randomUUID(), method, params } as AgentRequest,
+						headless
+					)
+				);
+			} catch (error) {
+				reject(error);
+			}
+			return;
+		}
 		if (!editor) return reject(new Error(NO_EDITOR));
 		const id = randomUUID();
 		const timer = setTimeout(() => {
@@ -352,6 +449,54 @@ server.registerTool(
 		inputSchema: { task_id: z.string(), summary: z.string().min(1) },
 	},
 	({ task_id, summary }) => run("resolve_task", { taskId: task_id, summary })
+);
+
+server.registerTool(
+	"get_rules",
+	{
+		title: "Get the editing rules",
+		description:
+			"The design's editing rules. You edit as the editor role, so every change is checked against them: what can change, which values are allowed, and which layers are locked.",
+		inputSchema: {},
+		annotations: { readOnlyHint: true },
+	},
+	() => run("get_rules")
+);
+
+server.registerTool(
+	"allowed_changes",
+	{
+		title: "What can change on a layer",
+		description:
+			"What the rules let you change on one layer: editable properties (null means any), value limits per property (tokens only, ranges, lists), whether its content and structure can change, which children it can take, and whether larger breakpoints can override it. Check before changing a layer.",
+		inputSchema: { layer_id: z.string() },
+		annotations: { readOnlyHint: true },
+	},
+	({ layer_id }) => run("allowed_changes", { layerId: layer_id })
+);
+
+server.registerTool(
+	"check_document",
+	{
+		title: "Check the design against its rules",
+		description:
+			"Lists every place the design breaks its own rules, with the rule and the layer. Empty when it follows them.",
+		inputSchema: {},
+		annotations: { readOnlyHint: true },
+	},
+	() => run("check_document")
+);
+
+server.registerTool(
+	"export_html",
+	{
+		title: "Export the design as HTML and CSS",
+		description:
+			"The design as { html, css }: responsive, with a min-width media query per breakpoint and tokens as CSS custom properties.",
+		inputSchema: {},
+		annotations: { readOnlyHint: true },
+	},
+	() => run("export_html")
 );
 
 await server.connect(new StdioServerTransport());

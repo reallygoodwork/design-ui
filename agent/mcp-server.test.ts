@@ -257,9 +257,13 @@ describe.skipIf(!hasBun)("the MCP server", () => {
 		const tools = (await client.listTools()).tools.map((t) => t.name);
 		expect(tools.sort()).toEqual(
 			[
+				"allowed_changes",
 				"apply_changes",
+				"check_document",
 				"claim_task",
+				"export_html",
 				"get_design",
+				"get_rules",
 				"list_tasks",
 				"reply",
 				"resolve_task",

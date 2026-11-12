@@ -10,8 +10,11 @@ import type {
 	AnnotationTarget,
 } from "./annotations";
 import type { ChangeEntry } from "./changeLog";
+import type { DesignDocument } from "./document";
+import { exportHtml } from "./export";
+import { normalize } from "./layerTree";
 import type { Action } from "./reducer";
-import type { Rejection } from "./rules";
+import { allowed, checkDocument, type Rejection, type Rule } from "./rules";
 import type { Token, TokenDimensions } from "./tokens";
 import type { Breakpoint, CSSVars, Layer } from "./types";
 
@@ -40,18 +43,26 @@ export type AgentRequest =
 			id: string;
 			method: "resolve_task";
 			params: { taskId: string; summary: string };
-	  };
+	  }
+	| { id: string; method: "get_rules" }
+	| { id: string; method: "allowed_changes"; params: { layerId: string } }
+	| { id: string; method: "check_document" }
+	| { id: string; method: "export_html" };
 
 export type AgentResponse =
 	| { id: string; ok: true; result: unknown }
 	| { id: string; ok: false; error: string };
 
-/** Pushed by the editor, unasked. */
 /** Pushed by the editor, unasked. `active` marks the editor the designer is using. */
 export type EditorEvent =
 	| { event: "task_assigned"; task: TaskView }
 	| { event: "hello"; editor: string }
-	| { event: "active" };
+	| { event: "active" }
+	/** The design, after it changed, so a server working on a file can save it. */
+	| { event: "document"; document: DesignDocument };
+
+/** Sent by a server working on a file when an editor connects: show this design. */
+export type ServerEvent = { event: "load_document"; document: DesignDocument };
 
 /** A task as an agent sees it: what to do, where, and what's there now. */
 export type TaskView = {
@@ -84,6 +95,8 @@ export type AgentEditor = {
 	 * Editors without rules can leave it out.
 	 */
 	checkRules?: (actions: Action[]) => (Rejection & { index: number }) | null;
+	/** The editing rules. Editors without rules can leave it out. */
+	rules?: () => Rule[];
 	/** Changes tokens on the agent's behalf; the log credits the agent with `reason`. */
 	setTokens: (
 		update: (tokens: readonly Token[]) => readonly Token[],
@@ -319,6 +332,60 @@ export function designView(editor: AgentEditor) {
 
 const isTask = (a: Annotation) => a.kind === "task";
 
+/** The requests about rules and output, which only read the design. */
+function answerRulesRequest(
+	request: Extract<
+		AgentRequest,
+		{
+			method:
+				| "get_rules"
+				| "allowed_changes"
+				| "check_document"
+				| "export_html";
+		}
+	>,
+	editor: AgentEditor
+) {
+	switch (request.method) {
+		case "get_rules":
+			return {
+				rules: editor.rules?.() ?? [],
+				note: "You edit as the editor role: every change is checked against these rules. Use allowed_changes before changing a layer.",
+			};
+		case "allowed_changes": {
+			const { layerId } = request.params;
+			const layers = editor.layers();
+			const { nodes } = normalize(layers);
+			if (!nodes[layerId]) throw new Error(`No layer with id ${layerId}`);
+			return allowed(
+				{
+					nodes,
+					breakpoints: editor.breakpoints(),
+					rules: editor.rules?.() ?? [],
+				},
+				layerId,
+				"editor"
+			);
+		}
+		case "check_document":
+			return {
+				violations: checkDocument({
+					layers: editor.layers(),
+					breakpoints: editor.breakpoints(),
+					rules: editor.rules?.() ?? [],
+				}),
+			};
+		case "export_html":
+			return exportHtml({
+				layers: editor.layers(),
+				breakpoints: editor.breakpoints(),
+				frameStyles: editor.frameStyles(),
+				tokens: editor.tokens(),
+				tokenDimensions: editor.dimensions(),
+			});
+	}
+}
+
 /** Answers one request from an agent. Throws with a readable message on bad input. */
 export function handleAgentRequest(
 	request: AgentRequest,
@@ -407,6 +474,11 @@ export function handleAgentRequest(
 			editor.resolve(t.id);
 			return { resolved: t.id };
 		}
+		case "get_rules":
+		case "allowed_changes":
+		case "check_document":
+		case "export_html":
+			return answerRulesRequest(request, editor);
 		default:
 			throw new Error(
 				`Unknown method ${(request as { method: string }).method}`

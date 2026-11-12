@@ -30,6 +30,8 @@ type ChangeLogStore = {
 	logTokens: (before: readonly Token[], after: readonly Token[]) => void;
 	/** Credits the next token edit to someone else, like an agent, with a reason. */
 	attributeNextTokenEdit: (meta: ActionMeta) => void;
+	/** Replaces the log with a saved one, e.g. when a design loads. Undo starts fresh. */
+	replaceAll: (entries: ChangeEntry[]) => void;
 	/** Records a change to themes or other mode sets. */
 	logDimensions: (before: TokenDimensions, after: TokenDimensions) => void;
 	/** Called with each new entry, e.g. to turn an agent's reason into a note. */
@@ -42,6 +44,7 @@ const NO_LOG: ChangeLogStore = {
 	entries: [],
 	logTokens: () => {},
 	attributeNextTokenEdit: () => {},
+	replaceAll: () => {},
 	logDimensions: () => {},
 	onEntry: () => () => {},
 };
@@ -185,6 +188,11 @@ export const ChangeLogProvider = ({
 					undoable: false,
 				});
 			},
+			replaceAll: (next) => {
+				undoStack.current = [];
+				redoStack.current = [];
+				update(() => next);
+			},
 			attributeNextTokenEdit: (meta) => {
 				nextTokenMeta.current = meta;
 			},
@@ -207,7 +215,7 @@ export const ChangeLogProvider = ({
 				};
 			},
 		}),
-		[entries, append]
+		[entries, append, update]
 	);
 
 	return (

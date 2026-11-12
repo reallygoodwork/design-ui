@@ -155,4 +155,5 @@ export const textLayer = {
 			keywords: ["span", "inline"],
 		},
 	],
+	html: { content: "text" },
 } satisfies LayerDefinition;

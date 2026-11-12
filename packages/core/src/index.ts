@@ -12,6 +12,8 @@ export * from "./cssPropertyMapping";
 export * from "./cssText";
 export * from "./document";
 export * from "./easing";
+export * from "./export";
+export * from "./headless";
 export * from "./layerIndex";
 export * from "./layerPresets";
 export * from "./layers/frame";

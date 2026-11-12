@@ -19,6 +19,7 @@ import { DesignerHeader } from "./components/DesignerHeader";
 import { DesignerPane } from "./components/DesignerPane";
 import { DesignPanel } from "./components/DesignerPanel";
 import { DesignToolbarContainer } from "./components/DesignToolbarContainer";
+import { ExportMenu } from "./components/ExportMenu";
 import { ConnectAgentButton, HelpMenu } from "./components/help/HelpMenu";
 import { HelpProvider } from "./components/help/HelpProvider";
 import { PaneLayerTree } from "./components/PaneLayerTree";
@@ -215,6 +216,7 @@ function App() {
 						</a>
 						<div className="ml-auto flex items-center gap-2">
 							<RoleSwitch role={role} onChange={setRole} />
+							<ExportMenu />
 							<ConnectAgentButton />
 							<HelpMenu />
 						</div>

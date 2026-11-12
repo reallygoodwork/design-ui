@@ -3,10 +3,12 @@ import {
 	type AgentEditor,
 	type AgentRequest,
 	type AgentResponse,
+	type DesignDocument,
 	denormalize,
 	type EditorEvent,
 	firstRejection,
 	handleAgentRequest,
+	type ServerEvent,
 	taskView,
 } from "@design-ui/core";
 import {
@@ -22,6 +24,7 @@ import {
 import { DesignerContext } from "../context/DesignerContext";
 import { useAnnotations } from "./useAnnotations";
 import { useChangeLog } from "./useChangeLog";
+import { useDesignerApi } from "./useDesignerApi";
 import { useTokens } from "./useTokens";
 
 const RETRY_DELAYS = [1000, 3000, 6000];
@@ -84,6 +87,7 @@ export const AgentLinkProvider = ({
 			dispatch: (action, reason, taskId) => {
 				store?.dispatchWithMeta(action, { actor: AGENT, reason, taskId });
 			},
+			rules: () => store?.getState().rules ?? [],
 			// Agents are always held to the rules, as the editor role.
 			checkRules: (actions) =>
 				store ? firstRejection(store.getState(), actions, "editor") : null,
@@ -98,6 +102,48 @@ export const AgentLinkProvider = ({
 		}),
 		[store]
 	);
+
+	// Set once a server sends a design file: from then on, every change here
+	// goes back to it to save.
+	const fileBacked = useRef(false);
+	const loadDocument = useCallback(
+		(doc: DesignDocument) => {
+			store?.dispatch({ type: "LOAD_DOCUMENT", payload: doc });
+			latest.current.tokens.loadTokens(doc.tokens, doc.tokenDimensions);
+			latest.current.notes.replaceAll(doc.annotations);
+			latest.current.log.replaceAll(doc.changes);
+			fileBacked.current = true;
+		},
+		[store]
+	);
+
+	// Send the design back after changes settle, so the file stays current.
+	const { exportDocument } = useDesignerApi();
+	const exportRef = useRef(exportDocument);
+	exportRef.current = exportDocument;
+	const pushTimer = useRef<ReturnType<typeof setTimeout>>();
+	const pushDocument = useCallback(() => {
+		if (!fileBacked.current) return;
+		clearTimeout(pushTimer.current);
+		pushTimer.current = setTimeout(() => {
+			if (socket.current?.readyState !== WebSocket.OPEN) return;
+			socket.current.send(
+				JSON.stringify({
+					event: "document",
+					document: exportRef.current(),
+				} satisfies EditorEvent)
+			);
+		}, 300);
+	}, []);
+	useEffect(() => store?.subscribe(pushDocument), [store, pushDocument]);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: these changing is the signal to save
+	useEffect(pushDocument, [
+		tokens.tokens,
+		tokens.dimensions,
+		notes.annotations,
+		log.entries,
+		pushDocument,
+	]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: `attempt` reconnects on request
 	useEffect(() => {
@@ -140,10 +186,15 @@ export const AgentLinkProvider = ({
 			retryTimer.current = setTimeout(() => setAttempt((n) => n + 1), delay);
 		};
 		ws.onmessage = (message) => {
-			let request: AgentRequest;
+			let request: AgentRequest | ServerEvent;
 			try {
 				request = JSON.parse(String(message.data));
 			} catch {
+				return;
+			}
+			// A server working on a design file: show that design here.
+			if ("event" in request) {
+				if (request.event === "load_document") loadDocument(request.document);
 				return;
 			}
 			let response: AgentResponse;

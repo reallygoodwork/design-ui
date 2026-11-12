@@ -21,6 +21,14 @@ import type {
 	LayerNode,
 } from "./types";
 
+/** The parts of a design document the store holds (see document.ts). */
+type DesignDocumentParts = {
+	layers: Layer[];
+	breakpoints: Breakpoint[];
+	frameStyles: CSSVars;
+	rules: Rule[];
+};
+
 /**
  * The undoable part of the state. Snapshots share structure with the live state.
  */
@@ -226,6 +234,14 @@ export type Action =
 	| {
 			type: "SET_BREAKPOINTS";
 			payload: Breakpoint[];
+	  }
+	/** Shows a saved design: its layers, breakpoints, frame styles and rules. Clears history. */
+	| {
+			type: "LOAD_DOCUMENT";
+			payload: Pick<
+				DesignDocumentParts,
+				"layers" | "breakpoints" | "frameStyles" | "rules"
+			>;
 	  }
 	/** Replaces the editing rules. Only builders can. */
 	| { type: "SET_RULES"; payload: Rule[] }
@@ -684,6 +700,21 @@ const handlers: ActionHandlers = {
 			state.activeBreakpointId ?? action.payload[0]?.id ?? null,
 	}),
 	// Increment centerRequestId to signal DesignerCanvas to re-center
+	LOAD_DOCUMENT: (state, action) => {
+		const { layers, breakpoints, frameStyles, rules } = action.payload;
+		return {
+			...state,
+			...normalize(layers),
+			breakpoints,
+			frameStyles,
+			rules,
+			selectedLayers: [],
+			selectedBreakpointId: null,
+			activeBreakpointId: breakpoints[0]?.id ?? null,
+			history: { past: [], future: [] },
+			lastCoalesceKey: null,
+		};
+	},
 	SET_RULES: (state, action) =>
 		addHistoryEntry(state, { rules: action.payload }),
 	SET_ROLE: (state, action) => ({ ...state, role: action.payload }),

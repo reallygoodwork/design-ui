@@ -56,4 +56,5 @@ export const inputLayer = {
 	},
 	elementType: "input",
 	availableElementTypes: ["input", "textarea", "select"],
+	html: { content: "input" },
 } satisfies LayerDefinition;

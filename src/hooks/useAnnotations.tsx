@@ -36,6 +36,8 @@ type AnnotationsStore = {
 	assign: (id: string, to: Actor | undefined) => void;
 	/** Marks a task as being worked on. */
 	claim: (id: string, by: Actor) => void;
+	/** Replaces every annotation with saved ones, e.g. when a design loads. */
+	replaceAll: (annotations: Annotation[]) => void;
 	remove: (id: string) => void;
 	/** Clicking the canvas picks a layer to comment on. */
 	commentMode: boolean;
@@ -157,6 +159,7 @@ export const AnnotationsProvider = ({
 						a.id === id ? { ...a, assignedTo: to, claimedBy: undefined } : a
 					)
 				),
+			replaceAll: (next) => update(() => next),
 			claim: (id, by) =>
 				update((all) =>
 					all.map((a) => (a.id === id ? { ...a, claimedBy: by } : a))
@@ -186,6 +189,7 @@ const NONE: AnnotationsStore = {
 	setStatus: () => {},
 	assign: () => {},
 	claim: () => {},
+	replaceAll: () => {},
 	remove: () => {},
 	commentMode: false,
 	setCommentMode: () => {},

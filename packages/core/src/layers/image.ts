@@ -72,4 +72,5 @@ export const imageLayer = {
 			keywords: ["img", "photo", "picture"],
 		},
 	],
+	html: { content: "image", baseStyle: { display: "block" } },
 } satisfies LayerDefinition;
