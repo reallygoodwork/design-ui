@@ -72,7 +72,7 @@ export const ToggleGroupControl = ({
 								</Toggle>
 							)}
 						/>
-						<Tooltip.Portal>
+						<Tooltip.Portal className="ds">
 							<Tooltip.Positioner sideOffset={6}>
 								<Tooltip.Popup className="ds-tooltip ds-tooltip-chip">
 									{option.label}

@@ -165,7 +165,7 @@ const SideTokens = ({
 	return (
 		<Popover.Root open={open} onOpenChange={onOpenChange}>
 			{children}
-			<Popover.Portal>
+			<Popover.Portal className="ds">
 				<Popover.Positioner
 					anchor={() => document.querySelector("[data-box-model]")}
 					sideOffset={24}
@@ -575,7 +575,7 @@ const BoxTokens = ({ group }: { group: Group }) => {
 					<TokenIcon aria-hidden="true" className="size-3.5" />
 					Use a token…
 				</Popover.Trigger>
-				<Popover.Portal>
+				<Popover.Portal className="ds">
 					<Popover.Positioner
 						anchor={() => document.querySelector("[data-box-model]")}
 						sideOffset={24}

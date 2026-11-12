@@ -19,17 +19,20 @@ import { DesignerHeader } from "./components/DesignerHeader";
 import { DesignerPane } from "./components/DesignerPane";
 import { DesignPanel } from "./components/DesignerPanel";
 import { DesignToolbarContainer } from "./components/DesignToolbarContainer";
+import { EditorPreviewToggle } from "./components/EditorPreviewToggle";
 import { ExportMenu } from "./components/ExportMenu";
 import { ConnectAgentButton, HelpMenu } from "./components/help/HelpMenu";
 import { HelpProvider } from "./components/help/HelpProvider";
 import { PaneLayerTree } from "./components/PaneLayerTree";
 import { RuleNotice } from "./components/RuleNotice";
+import { RulesPanel } from "./components/RulesPanel";
 import { TokensPane } from "./components/tokens/TokensPane";
 import { TokenTable } from "./components/tokens/TokenTable";
 import { demoAnnotations } from "./demo/annotations";
 import { demoBreakpoints, demoLayers, demoRules } from "./demo/design";
 import { demoTokenDimensions, demoTokens } from "./demo/tokens";
 import { useSelectedBreakpoint } from "./hooks/useActiveBreakpoint";
+import { useCanSetRules } from "./hooks/useAllowed";
 import { useDesignerAction } from "./hooks/useDesignerAction";
 import { useDesignerApi } from "./hooks/useDesignerApi";
 import { useTokens } from "./hooks/useTokens";
@@ -55,6 +58,7 @@ const FitFramesOnLoad = () => {
 /** A selected frame shows its own settings. Otherwise, the layer's styles. */
 const Inspector = () => {
 	const selectedBreakpoint = useSelectedBreakpoint();
+	const canSetRules = useCanSetRules();
 	if (selectedBreakpoint) {
 		return (
 			<div className="h-full overflow-y-auto">
@@ -77,6 +81,16 @@ const Inspector = () => {
 					hint: "The CSS the selected layer produces",
 					content: <CSSPanel />,
 				},
+				...(canSetRules
+					? [
+							{
+								label: "Rules",
+								value: "rules",
+								hint: "What editors and agents can change",
+								content: <RulesPanel />,
+							},
+						]
+					: []),
 			]}
 		/>
 	);
@@ -216,6 +230,7 @@ function App() {
 						</a>
 						<div className="ml-auto flex items-center gap-2">
 							<RoleSwitch role={role} onChange={setRole} />
+							<EditorPreviewToggle />
 							<ExportMenu />
 							<ConnectAgentButton />
 							<HelpMenu />

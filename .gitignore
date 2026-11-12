@@ -34,3 +34,6 @@ CLAUDE.md
 .playwright-mcp
 # Rendered videos
 video/out
+
+# The built editor stylesheet (bun run build:css)
+build

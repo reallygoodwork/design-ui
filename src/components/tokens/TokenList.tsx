@@ -27,7 +27,7 @@ export const TokenGlyph = ({
 				style={{
 					background: value
 						? `linear-gradient(${value}, ${value}), repeating-conic-gradient(#d4d4d8 0% 25%, #fff 0% 50%) 0 0 / 6px 6px`
-						: "repeating-linear-gradient(45deg, var(--destructive) 0 1px, transparent 1px 4px)",
+						: "repeating-linear-gradient(45deg, var(--ds-destructive) 0 1px, transparent 1px 4px)",
 				}}
 			/>
 		);

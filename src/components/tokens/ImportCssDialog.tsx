@@ -116,7 +116,7 @@ export const ImportCssDialog = ({
 
 	return (
 		<Dialog.Root open={open} onOpenChange={onOpenChange}>
-			<Dialog.Portal>
+			<Dialog.Portal className="ds">
 				<Dialog.Backdrop className="ds-backdrop fixed inset-0 z-50 bg-black/50" />
 				<Dialog.Popup className="ds-dialog ds-surface fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[calc(100%-32px)] max-w-xl -translate-x-1/2 -translate-y-1/2 flex-col gap-3 p-5">
 					<Dialog.Title className="text-heading">

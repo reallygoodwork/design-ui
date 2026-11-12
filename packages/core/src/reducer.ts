@@ -117,6 +117,11 @@ export type State = {
 	 */
 	role: Role;
 	/**
+	 * A builder seeing the editor as an editor would: the rules apply, and
+	 * the controls for setting them are hidden.
+	 */
+	previewAsEditor: boolean;
+	/**
 	 * The last change the rules blocked, so the editor can say why. `at`
 	 * tells two blocks of the same change apart.
 	 */
@@ -246,6 +251,8 @@ export type Action =
 	/** Replaces the editing rules. Only builders can. */
 	| { type: "SET_RULES"; payload: Rule[] }
 	| { type: "SET_ROLE"; payload: Role }
+	/** Turns the editor preview on or off. */
+	| { type: "SET_PREVIEW"; payload: boolean }
 	| {
 			type: "CENTER_ON_BREAKPOINTS";
 	  };
@@ -543,6 +550,7 @@ export const initialState: State = withDerived({
 	pan: { x: 0, y: 0 },
 	rules: [],
 	role: "builder",
+	previewAsEditor: false,
 	rejection: null,
 	centerRequestId: 0,
 });
@@ -718,6 +726,10 @@ const handlers: ActionHandlers = {
 	SET_RULES: (state, action) =>
 		addHistoryEntry(state, { rules: action.payload }),
 	SET_ROLE: (state, action) => ({ ...state, role: action.payload }),
+	SET_PREVIEW: (state, action) => ({
+		...state,
+		previewAsEditor: action.payload,
+	}),
 	CENTER_ON_BREAKPOINTS: (state) => ({
 		...state,
 		centerRequestId: state.centerRequestId + 1,
@@ -781,9 +793,14 @@ export type StoreEvent = {
 	meta: ActionMeta;
 };
 
+/** The role the person here is working as, counting the editor preview. */
+export const effectiveRole = (
+	state: Pick<State, "role" | "previewAsEditor">
+): Role => (state.previewAsEditor ? "editor" : state.role);
+
 /** The role an action is checked as. Agents never bypass rules. */
 export const roleFor = (state: State, meta: ActionMeta): Role =>
-	meta.actor?.kind === "agent" ? "editor" : state.role;
+	meta.actor?.kind === "agent" ? "editor" : effectiveRole(state);
 
 /**
  * The first action in a run that the rules would block, checking each one

@@ -27,7 +27,11 @@ export default defineConfig({
 				extends: true,
 				test: {
 					name: "editor",
-					include: ["src/**/*.test.{ts,tsx}", "agent/**/*.test.ts"],
+					include: [
+						"src/**/*.test.{ts,tsx}",
+						"agent/**/*.test.ts",
+						"scripts/**/*.test.ts",
+					],
 					environment: "jsdom",
 				},
 			},

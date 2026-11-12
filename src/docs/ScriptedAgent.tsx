@@ -144,7 +144,7 @@ const Player = () => {
 					{applied} of {script.length} applied
 				</span>
 			</div>
-			<ol className="overflow-x-auto bg-(--code) py-3 font-(family-name:--font-code) text-xs leading-6">
+			<ol className="overflow-x-auto bg-(--ds-code) py-3 font-(family-name:--font-code) text-xs leading-6">
 				{script.map((action, index) => (
 					<li
 						key={JSON.stringify(action)}

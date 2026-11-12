@@ -253,7 +253,7 @@ const InsertTokenPopover = ({
 				<IconPlus className="size-3.5" />
 				Insert token
 			</Popover.Trigger>
-			<Popover.Portal>
+			<Popover.Portal className="ds">
 				<Popover.Positioner
 					side="right"
 					align="start"

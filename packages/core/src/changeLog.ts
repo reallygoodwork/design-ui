@@ -1,4 +1,5 @@
 import type { Action, State } from "./reducer";
+import type { Rule } from "./rules";
 import type { Token } from "./tokens";
 import type { CSSVars, LayerNode } from "./types";
 
@@ -237,6 +238,8 @@ export function describeAction(
 				changes: [],
 			};
 		}
+		case "SET_RULES":
+			return { ...base, ...describeRules(prev, next) };
 		default:
 			return {
 				...base,
@@ -247,6 +250,43 @@ export function describeAction(
 			};
 	}
 }
+
+const ruleLayers = (rule: Rule) => rule.target.layerIds ?? [];
+
+/** Where a rule applies, by name: "on Page", or by id for wider rules. */
+const ruleWhere = (state: State, rule: Rule) => {
+	const ids = ruleLayers(rule).filter((id) => state.nodes[id]);
+	return ids.length && !rule.target.layerTypes?.length
+		? `on ${ids.map((id) => name(state.nodes, id)).join(", ")}`
+		: `“${rule.id}”`;
+};
+
+/** "Added a rule on Page", "Changed the rules on Page and Title" */
+const describeRules = (
+	prev: State,
+	next: State
+): Pick<ChangeEntry, "kind" | "summary" | "layerIds" | "changes"> => {
+	const before = new Map(prev.rules.map((r) => [r.id, r]));
+	const after = new Map(next.rules.map((r) => [r.id, r]));
+	const added = next.rules.filter((r) => !before.has(r.id));
+	const removed = prev.rules.filter((r) => !after.has(r.id));
+	const changed = next.rules.filter(
+		(r) =>
+			before.has(r.id) && JSON.stringify(before.get(r.id)) !== JSON.stringify(r)
+	);
+	const parts = [
+		...added.map((r) => `Added a rule ${ruleWhere(next, r)}`),
+		...changed.map((r) => `Changed the rule ${ruleWhere(next, r)}`),
+		...removed.map((r) => `Removed the rule ${ruleWhere(prev, r)}`),
+	];
+	const touched = [...added, ...changed, ...removed].flatMap(ruleLayers);
+	return {
+		kind: "document",
+		summary: parts.join("; ") || "Rules unchanged",
+		layerIds: [...new Set(touched)].filter((id) => next.nodes[id]),
+		changes: [],
+	};
+};
 
 /** Whether an action went into undo history: a new step, or more of the same run. */
 export const committed = (prev: State, next: State) => {

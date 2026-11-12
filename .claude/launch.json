@@ -12,6 +12,12 @@
 			"runtimeExecutable": "bun",
 			"runtimeArgs": ["run", "dev", "--port", "5180", "--strictPort"],
 			"port": 5180
+		},
+		{
+			"name": "plain-host",
+			"runtimeExecutable": "bun",
+			"runtimeArgs": ["run", "example:plain-host"],
+			"port": 5190
 		}
 	]
 }

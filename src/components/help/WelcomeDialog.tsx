@@ -83,7 +83,7 @@ export const WelcomeDialog = ({
 				if (!next) setStep(0);
 			}}
 		>
-			<Dialog.Portal>
+			<Dialog.Portal className="ds">
 				<Dialog.Backdrop className="ds-backdrop fixed inset-0 z-50 bg-black/50" />
 				<Dialog.Popup className="ds-dialog ds-surface ds fixed top-1/2 left-1/2 z-50 w-[calc(100%-32px)] max-w-md -translate-x-1/2 -translate-y-1/2 p-6 font-sans">
 					<p className="mb-2 text-caption text-muted-foreground">

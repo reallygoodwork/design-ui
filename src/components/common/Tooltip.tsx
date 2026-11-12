@@ -22,7 +22,7 @@ export const Tooltip = ({
 		<BaseTooltip.Provider>
 			<BaseTooltip.Root>
 				<BaseTooltip.Trigger {...triggerProps}>{children}</BaseTooltip.Trigger>
-				<BaseTooltip.Portal>
+				<BaseTooltip.Portal className="ds">
 					<BaseTooltip.Positioner sideOffset={6} className="z-50">
 						<BaseTooltip.Popup className="ds-tooltip ds-tooltip-chip">
 							{content}

@@ -324,10 +324,10 @@ const Graph = () => {
 				style: {
 					...edge.style,
 					opacity: on ? 1 : 0.12,
-					stroke: on && litSet ? "var(--accent)" : undefined,
+					stroke: on && litSet ? "var(--ds-accent)" : undefined,
 				},
-				labelStyle: { fontSize: 10, fill: "var(--muted-foreground)" },
-				labelBgStyle: { fill: "var(--background)" },
+				labelStyle: { fontSize: 10, fill: "var(--ds-muted-foreground)" },
+				labelBgStyle: { fill: "var(--ds-background)" },
 			};
 		});
 

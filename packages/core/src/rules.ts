@@ -539,3 +539,62 @@ export const checkDocument = (doc: {
 		return [...valueViolations(ctx, node, a), ...childViolations(ctx, node, a)];
 	});
 };
+
+/** The id of the rule a builder sets on one layer from the editor. */
+export const layerRuleId = (layerId: string) => `layer-${layerId}`;
+
+const coversOnly = (rule: Rule, layerId: string) =>
+	!rule.target.layerTypes?.length &&
+	rule.target.layerIds?.length === 1 &&
+	rule.target.layerIds[0] === layerId;
+
+/** The rule that covers this one layer and nothing else, if there is one. */
+export const ownRule = (
+	rules: readonly Rule[],
+	layerId: string
+): Rule | undefined => rules.find((rule) => coversOnly(rule, layerId));
+
+/** Drops limits that say nothing, so an emptied rule can be removed. */
+const tidy = ({ values, content, structure, ...rest }: Rule): Rule => {
+	const kept = Object.fromEntries(
+		Object.entries(structure ?? {}).filter(
+			([key, value]) =>
+				value !== undefined && !(key === "locked" && value === false)
+		)
+	);
+	return {
+		...rest,
+		...(values && Object.keys(values).length ? { values } : {}),
+		...(content === "locked" ? { content } : {}),
+		...(Object.keys(kept).length ? { structure: kept } : {}),
+	};
+};
+
+const limitsNothing = (rule: Rule) =>
+	!rule.editableProperties &&
+	!rule.values &&
+	!rule.content &&
+	!rule.structure &&
+	rule.breakpointOverrides === undefined;
+
+/**
+ * The rules after changing the one that covers this layer alone, creating
+ * it when there isn't one. A rule left limiting nothing is removed.
+ */
+export const updateLayerRule = (
+	rules: readonly Rule[],
+	layerId: string,
+	change: (rule: Rule) => Rule
+): Rule[] => {
+	const current = ownRule(rules, layerId);
+	const next = tidy(
+		change(
+			current ?? { id: layerRuleId(layerId), target: { layerIds: [layerId] } }
+		)
+	);
+	const keep = !limitsNothing(next);
+	if (!current) return keep ? [...rules, next] : [...rules];
+	return rules.flatMap((rule) =>
+		rule === current ? (keep ? [next] : []) : [rule]
+	);
+};

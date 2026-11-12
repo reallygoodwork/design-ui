@@ -17,7 +17,9 @@
 		"format:check": "biome format .",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"schema": "bun packages/core/scripts/write-schema.ts"
+		"schema": "bun packages/core/scripts/write-schema.ts",
+		"build:css": "bun scripts/build-css.ts",
+		"example:plain-host": "vite --config examples/plain-host/vite.config.ts"
 	},
 	"dependencies": {
 		"@design-ui/core": "workspace:*",

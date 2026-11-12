@@ -47,7 +47,7 @@ export const HelpMenu = () => {
 			>
 				<IconHelpCircle className="size-4" aria-hidden="true" />
 			</Menu.Trigger>
-			<Menu.Portal>
+			<Menu.Portal className="ds">
 				<Menu.Positioner sideOffset={6} align="end" className="z-50">
 					<Menu.Popup
 						className={cn("ds-popup ds-surface ds min-w-56 p-1 font-sans")}

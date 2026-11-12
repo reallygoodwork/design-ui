@@ -89,7 +89,7 @@ export const Code = ({
 	const lines = code.split("\n");
 	return (
 		<div
-			className={cn("relative min-w-0 rounded-lg bg-(--code)", className)}
+			className={cn("relative min-w-0 rounded-lg bg-(--ds-code)", className)}
 			style={{ color: "var(--code-text)" }}
 		>
 			{title && (

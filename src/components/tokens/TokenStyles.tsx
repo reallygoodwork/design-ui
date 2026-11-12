@@ -86,7 +86,7 @@ export const useTokenOverlayCss = () => {
 			)
 			.map(
 				(layer) =>
-					`.designer-layer[data-layer-id=${attr(layer.id)}]>:first-child{outline:2px solid var(--accent);outline-offset:2px}`
+					`.designer-layer[data-layer-id=${attr(layer.id)}]>:first-child{outline:2px solid var(--ds-accent);outline-offset:2px}`
 			)
 			.join("");
 	}, [hover, tokens, tokenMode, breakpointOrder, layers]);

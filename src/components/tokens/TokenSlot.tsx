@@ -23,7 +23,7 @@ const TokenPopover = ({
 }) => (
 	<Popover.Root open={open} onOpenChange={onOpenChange}>
 		{children}
-		<Popover.Portal>
+		<Popover.Portal className="ds">
 			<Popover.Positioner
 				anchor={() =>
 					anchorRef.current?.closest("[data-slot=action]") ?? anchorRef.current

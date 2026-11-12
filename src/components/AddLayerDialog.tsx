@@ -151,7 +151,7 @@ export const AddLayerDialog = () => {
 				if (!open) close();
 			}}
 		>
-			<Dialog.Portal>
+			<Dialog.Portal className="ds">
 				<Dialog.Backdrop className="ds-backdrop fixed inset-0 z-50 bg-black/40" />
 				<Dialog.Popup className="ds-dialog ds-surface ds fixed top-[15vh] left-1/2 z-50 flex max-h-[70vh] w-[calc(100%-32px)] max-w-[480px] -translate-x-1/2 flex-col overflow-hidden font-sans text-foreground">
 					<Command

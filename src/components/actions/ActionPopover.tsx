@@ -103,7 +103,7 @@ export const ActionPopover = ({
 						</>
 					)}
 				</Popover.Trigger>
-				<Popover.Portal>
+				<Popover.Portal className="ds">
 					<Popover.Positioner
 						// Beside the whole row, so it opens just outside the panel
 						anchor={() =>

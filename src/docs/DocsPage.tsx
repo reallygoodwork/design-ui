@@ -413,7 +413,7 @@ const prompts = [
 ];
 
 const Prompt = ({ title, text }: { title: string; text: string }) => (
-	<div className="flex items-start gap-3 rounded-lg bg-(--code) p-4">
+	<div className="flex items-start gap-3 rounded-lg bg-(--ds-code) p-4">
 		<div className="min-w-0 flex-1">
 			<div className="font-medium text-sm text-white">{title}</div>
 			<p className="mt-1 text-sm text-zinc-300 leading-relaxed">{text}</p>

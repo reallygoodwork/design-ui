@@ -39,7 +39,7 @@ export const ExportMenu = () => {
 				<IconDownload aria-hidden="true" className="size-3.5" />
 				Export
 			</Menu.Trigger>
-			<Menu.Portal>
+			<Menu.Portal className="ds">
 				<Menu.Positioner sideOffset={6} align="end" className="z-50">
 					<Menu.Popup className="ds-popup ds-surface ds min-w-60 p-1 font-sans">
 						<Menu.Item

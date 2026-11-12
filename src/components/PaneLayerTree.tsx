@@ -15,6 +15,7 @@ import {
 	IconLock,
 	IconLockOpen,
 	IconPlus,
+	IconShieldLock,
 } from "@tabler/icons-react";
 import { useRef, useState } from "react";
 import {
@@ -126,6 +127,13 @@ const LayerTreeItemContent = ({ layer }: { layer: Layer }) => {
 		(s) => s.nodes[layer.id]?.parentId ?? undefined
 	);
 	const parentLimits = useAllowed(parentId);
+	// Rules written for this layer by name, marked so builders can find them.
+	const namedRules = useDesignerSelector((s) =>
+		s.rules
+			.filter((r) => r.target.layerIds?.includes(layer.id))
+			.map((r) => r.id)
+			.join(", ")
+	);
 
 	return (
 		<TreeItemContent>
@@ -180,6 +188,16 @@ const LayerTreeItemContent = ({ layer }: { layer: Layer }) => {
 								{layer.name}
 							</span>
 						</div>
+
+						{namedRules && (
+							<span
+								className="flex size-4 shrink-0 items-center justify-center text-muted-foreground"
+								title={`Editing rules: ${namedRules}`}
+							>
+								<IconShieldLock className="size-3" aria-hidden="true" />
+								<span className="sr-only">Has editing rules</span>
+							</span>
+						)}
 
 						{/* Inline rename input */}
 						{isEditing && (

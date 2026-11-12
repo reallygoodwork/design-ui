@@ -95,7 +95,7 @@ export const ConnectAgentDialog = ({
 	onOpenChange: (open: boolean) => void;
 }) => (
 	<Dialog.Root open={open} onOpenChange={onOpenChange}>
-		<Dialog.Portal>
+		<Dialog.Portal className="ds">
 			<Dialog.Backdrop className="ds-backdrop fixed inset-0 z-50 bg-black/50" />
 			<Dialog.Popup className="ds-dialog ds-surface ds fixed top-1/2 left-1/2 z-50 w-[calc(100%-32px)] max-w-lg -translate-x-1/2 -translate-y-1/2 p-6 font-sans">
 				<Dialog.Title className="mb-2 text-heading font-semibold">

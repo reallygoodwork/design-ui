@@ -3,6 +3,7 @@ import {
 	type Allowed,
 	allowed,
 	checkAction,
+	effectiveRole,
 	type Rejection,
 	type RulesContext,
 } from "@design-ui/core";
@@ -18,10 +19,16 @@ export const EVERYTHING: Allowed = {
 	breakpointOverrides: true,
 };
 
+/** The role the person here works as, counting the editor preview. */
+export const useRole = () => useDesignerSelector(effectiveRole);
+
+/** Whether the person here can set rules: a builder, not previewing. */
+export const useCanSetRules = () => useRole() === "builder";
+
 const useRulesContext = (): RulesContext & { role: "builder" | "editor" } => {
 	const nodes = useDesignerSelector((s) => s.nodes);
 	const rules = useDesignerSelector((s) => s.rules);
-	const role = useDesignerSelector((s) => s.role);
+	const role = useRole();
 	const breakpoints = useDesignerSelector((s) => s.breakpoints);
 	return useMemo(
 		() => ({ nodes, rules, role, breakpoints }),

@@ -54,7 +54,7 @@ export const Select = ({
 					/>
 				</BaseSelect.Icon>
 			</BaseSelect.Trigger>
-			<BaseSelect.Portal>
+			<BaseSelect.Portal className="ds">
 				<BaseSelect.Positioner
 					className="outline-none select-none z-10"
 					sideOffset={4}

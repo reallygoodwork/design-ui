@@ -106,7 +106,7 @@ export const TokenValueField = ({
 							>
 								<TokenGlyph type="color" value={shown || undefined} />
 							</Popover.Trigger>
-							<Popover.Portal>
+							<Popover.Portal className="ds">
 								<Popover.Positioner
 									anchor={anchorRef}
 									side="right"
@@ -169,7 +169,7 @@ export const TokenValueField = ({
 					>
 						<IconMathFunction className="size-3.5" />
 					</Popover.Trigger>
-					<Popover.Portal>
+					<Popover.Portal className="ds">
 						<Popover.Positioner
 							anchor={anchorRef}
 							side="right"
@@ -218,7 +218,7 @@ export const TokenValueField = ({
 						<TokenIcon className="size-3.5" />
 					)}
 				</Popover.Trigger>
-				<Popover.Portal>
+				<Popover.Portal className="ds">
 					<Popover.Positioner
 						anchor={anchorRef}
 						side="right"

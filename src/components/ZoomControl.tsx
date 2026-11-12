@@ -56,7 +56,7 @@ export const ZoomControl = () => {
 				{displayZoom}
 				<IconChevronDown className="size-3" />
 			</BaseMenu.Trigger>
-			<BaseMenu.Portal>
+			<BaseMenu.Portal className="ds">
 				<BaseMenu.Positioner className="z-50" sideOffset={8} align="end">
 					<BaseMenu.Popup className="ds-popup ds-surface min-w-[8rem] overflow-hidden p-1">
 						<fieldset>
