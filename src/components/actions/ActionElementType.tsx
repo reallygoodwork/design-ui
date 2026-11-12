@@ -18,11 +18,7 @@ export const ActionElementType = () => {
 	);
 
 	// Only show if layer type has available element types
-	if (
-		!layerType ||
-		!layerType.availableElementTypes ||
-		layerType.availableElementTypes.length === 0
-	) {
+	if (!layerType?.availableElementTypes?.length) {
 		return null;
 	}
 

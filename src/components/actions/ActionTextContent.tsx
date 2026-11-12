@@ -7,7 +7,7 @@ export const ActionTextContent = () => {
 	const selectedLayer = selectedLayers[0];
 	const designerAction = useDesignerAction();
 
-	if (!selectedLayer || selectedLayer.type !== "text") return null;
+	if (selectedLayer?.type !== "text") return null;
 
 	return (
 		<DesignAction label="Text Content" orientation="vertical">

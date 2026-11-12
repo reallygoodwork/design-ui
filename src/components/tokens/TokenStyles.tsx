@@ -18,24 +18,23 @@ const attr = (value: string) => JSON.stringify(value);
 
 /**
  * Puts each token's value on each breakpoint frame as a custom property, so
- * layers can use `var(--token)`. Also outlines the layers using a hovered
- * token, and shows a token on one property before it's applied.
+ * layers can use `var(--token)`.
  */
 export const TokenStyles = () => {
 	const store = useTokens();
-	const layers = useLayers();
+	const { tokens, mode: tokenMode, breakpointOrder } = store;
 
 	const frameCss = useMemo(
 		() =>
-			store.breakpointOrder
+			breakpointOrder
 				.map((id) => {
 					const vars = tokensToCssVars(
-						store.tokens,
-						modeAt(store, id),
-						store.breakpointOrder
+						tokens,
+						modeAt({ mode: tokenMode }, id),
+						breakpointOrder
 					);
 					// `light-dark()` follows color-scheme, so a light or dark theme sets it.
-					const theme = store.mode.theme;
+					const theme = tokenMode.theme;
 					const scheme =
 						theme === "light" || theme === "dark"
 							? `color-scheme:${theme};`
@@ -45,28 +44,43 @@ export const TokenStyles = () => {
 						Object.entries(vars)
 							.map(([name, value]) => `${name}:${value};`)
 							.join("");
-					return `.breakpoint-frame[data-breakpoint-id=${attr(id)}] [data-slot="designer-frame"]{${body}}`;
+					// Set on the shadow host; custom properties inherit into the frame.
+					return `.breakpoint-frame[data-breakpoint-id=${attr(id)}] .breakpoint-content{${body}}`;
 				})
 				.join("\n"),
-		[store.tokens, store.mode, store.breakpointOrder]
+		[tokens, tokenMode, breakpointOrder]
 	);
 
+	if (store.tokens.length === 0) return null;
+	return <style data-slot="token-styles">{frameCss}</style>;
+};
+
+/**
+ * Outlines the layers using a hovered token, and shows a token on one
+ * property before it's applied. Frames render this inside their shadow root,
+ * since document styles can't reach design content.
+ */
+export const useTokenOverlayCss = () => {
+	const store = useTokens();
+	const layers = useLayers();
+	const { tokens, mode: tokenMode, breakpointOrder, hover } = store;
+
 	const hoverCss = useMemo(() => {
-		if (!store.hover) return "";
-		const byPath = indexTokens(store.tokens);
-		const mode = modeAt(store, store.breakpointOrder[0]);
+		if (!hover) return "";
+		const byPath = indexTokens(tokens);
+		const mode = modeAt({ mode: tokenMode }, breakpointOrder[0]);
 		return flatten(layers)
 			.filter((layer) =>
 				Object.values(layer.cssVars ?? {}).some((value) => {
-					const token = tokenFromCssValue(value, store.tokens);
+					const token = tokenFromCssValue(value, tokens);
 					return (
 						token &&
 						resolveToken(
 							token.path,
 							mode,
 							byPath,
-							store.breakpointOrder
-						).deps.includes(store.hover as string)
+							breakpointOrder
+						).deps.includes(hover as string)
 					);
 				})
 			)
@@ -75,7 +89,7 @@ export const TokenStyles = () => {
 					`.designer-layer[data-layer-id=${attr(layer.id)}]>:first-child{outline:2px solid var(--accent);outline-offset:2px}`
 			)
 			.join("");
-	}, [store.hover, store.tokens, layers]);
+	}, [hover, tokens, tokenMode, breakpointOrder, layers]);
 
 	// A preview can cover several properties, like all four padding sides.
 	const previewCss = store.preview
@@ -88,8 +102,5 @@ export const TokenStyles = () => {
 				.join("")}}`
 		: "";
 
-	if (store.tokens.length === 0) return null;
-	return (
-		<style data-slot="token-styles">{frameCss + hoverCss + previewCss}</style>
-	);
+	return hoverCss + previewCss;
 };

@@ -2,6 +2,7 @@ import { act, cleanup, render } from "@testing-library/react";
 import { type ReactElement, useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDesignerAction } from "../hooks/useDesignerAction";
+import { useDesignerSelector } from "../hooks/useDesignerSelector";
 import { breakpoints, makeLayer, renderInDesigner } from "../test/fixtures";
 import { DimensionAble } from "./ables/DimensionAble";
 import { BreakpointHeader } from "./BreakpointHeader";
@@ -43,11 +44,28 @@ vi.mock("react-selecto", async () => {
 
 vi.mock("react-infinite-viewer", async () => {
 	const React = await import("react");
+	// The viewer's first child is its zoomed viewport; the canvas portals its
+	// selection stand-ins into it.
 	return {
 		default: React.forwardRef(
-			({ children }: { children?: React.ReactNode }, _ref) => (
-				<div>{children}</div>
-			)
+			({ children }: { children?: React.ReactNode }, ref) => {
+				const viewport = React.useRef<HTMLDivElement>(null);
+				React.useImperativeHandle(ref, () => ({
+					getViewport: () => viewport.current,
+					getContainer: () => viewport.current,
+					getElement: () => viewport.current,
+					getZoom: () => 1,
+					getScrollLeft: () => 0,
+					getScrollTop: () => 0,
+					getContainerWidth: () => 0,
+					getContainerHeight: () => 0,
+					setZoom: () => {},
+					resize: () => {},
+					scrollTo: () => true,
+					scrollBy: () => true,
+				}));
+				return <div ref={viewport}>{children}</div>;
+			}
 		),
 	};
 });
@@ -83,8 +101,10 @@ describe("drag disabled", () => {
 
 type Dispatch = ReturnType<typeof useDesignerAction>;
 let dispatch: Dispatch;
+let selected: string[] = [];
 const Probe = () => {
 	const action = useDesignerAction();
+	selected = useDesignerSelector((state) => state.selectedLayers);
 	useEffect(() => {
 		dispatch = action;
 	}, [action]);
@@ -257,7 +277,6 @@ describe("moveable control clicks", () => {
 				selected: [],
 			});
 		});
-	const targets = () => moveableProps.current?.target as unknown[] | undefined;
 
 	let box: HTMLElement;
 	let handle: HTMLElement;
@@ -291,12 +310,12 @@ describe("moveable control clicks", () => {
 
 	it("ignores a click inside the control box (no DESELECT_ALL)", () => {
 		selectEnd(handle);
-		expect(targets()?.length).toBe(1);
+		expect(selected).toEqual(["a"]);
 	});
 
 	it("does not ignore a click on a design layer", () => {
 		document.elementsFromPoint = () => [];
 		selectEnd(layer);
-		expect(targets()?.length ?? 0).toBe(0);
+		expect(selected).toEqual([]);
 	});
 });

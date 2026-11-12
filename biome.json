@@ -38,7 +38,10 @@
 				"useSelfClosingElements": "error"
 			},
 			"complexity": {
-				"noExcessiveCognitiveComplexity": "warn",
+				"noExcessiveCognitiveComplexity": {
+					"level": "warn",
+					"options": { "maxAllowedComplexity": 25 }
+				},
 				"noForEach": "off"
 			},
 			"performance": {

@@ -7,6 +7,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { createPortal } from "react-dom";
 import InfiniteViewer, { type OnPinch } from "react-infinite-viewer";
 import Moveable, { type MoveableRefTargetType } from "react-moveable";
 import Selecto from "react-selecto";
@@ -18,6 +19,7 @@ import {
 } from "../hooks/useFrameRegistry";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
 import { calculateBoundingBox } from "../lib/breakpointUtils";
+import { centeredScroll, shouldRecenter } from "../lib/canvasCentering";
 import { isControlTarget } from "../lib/keyboardTargets";
 import { buildLayerIndex, getLayer } from "../lib/layerIndex";
 
@@ -42,6 +44,29 @@ const getLayersAtPoint = (
 		breakpointId,
 	};
 };
+
+type Ghost = {
+	id: string;
+	breakpointId?: string;
+	left: number;
+	top: number;
+	width: number;
+	height: number;
+};
+
+const ghostSelector = (id: string) =>
+	`[data-selection-ghost="${CSS.escape(id)}"]`;
+
+const sameGhosts = (a: Ghost[], b: Ghost[]) =>
+	a.length === b.length &&
+	a.every(
+		(g, i) =>
+			g.id === b[i].id &&
+			g.left === b[i].left &&
+			g.top === b[i].top &&
+			g.width === b[i].width &&
+			g.height === b[i].height
+	);
 
 export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 	const { state } = useDesignerContext();
@@ -124,6 +149,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 				type: "DESELECT_ALL",
 			});
 			setClickState(null);
+			recenterIfDrifted();
 			return;
 		}
 
@@ -199,6 +225,39 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		);
 	}, [registry, selectedLayers, state.activeBreakpointId]);
 
+	/**
+	 * Moveable can't measure inside a shadow root: its parent walk stops at the
+	 * root. So it targets a stand-in for each selected layer, placed over the
+	 * layer in canvas units, outside the shadow root.
+	 */
+	const [ghosts, setGhosts] = useState<Ghost[]>([]);
+	const [viewport, setViewport] = useState<HTMLElement | null>(null);
+	useLayoutEffect(() => {
+		setViewport(viewerRef.current?.getViewport() ?? null);
+	}, []);
+	const measureGhosts = useCallback(() => {
+		const viewport = viewerRef.current?.getViewport();
+		const zoom = viewerRef.current?.getZoom() ?? 1;
+		if (!viewport) return;
+		const base = viewport.getBoundingClientRect();
+		const next = selectedLayerElements.flatMap((el) => {
+			if (!el) return [];
+			const r = el.getBoundingClientRect();
+			return [
+				{
+					id: el.dataset.layerId ?? "",
+					breakpointId: el.dataset.breakpointId,
+					left: (r.left - base.left) / zoom,
+					top: (r.top - base.top) / zoom,
+					width: r.width / zoom,
+					height: r.height / zoom,
+				},
+			];
+		});
+		setGhosts((prev) => (sameGhosts(prev, next) ? prev : next));
+		requestAnimationFrame(() => moveableRef.current?.updateRect());
+	}, [selectedLayerElements]);
+
 	// Sync zoom changes from keyboard/controls to InfiniteViewer
 	useEffect(() => {
 		if (viewerRef.current) {
@@ -206,70 +265,99 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		}
 	}, [state.zoom]);
 
-	// Helper function to center on all breakpoint frames
-	const centerOnBreakpoints = useCallback(() => {
+	/** The visible part of the canvas, in canvas units. */
+	const getView = useCallback(() => {
 		const viewer = viewerRef.current;
-		if (!viewer) return;
+		if (!viewer) return null;
+		const zoom = viewer.getZoom();
+		return {
+			x: viewer.getScrollLeft(),
+			y: viewer.getScrollTop(),
+			width: viewer.getContainerWidth() / zoom,
+			height: viewer.getContainerHeight() / zoom,
+		};
+	}, []);
 
-		// Ensure InfiniteViewer has calculated all dimensions
-		viewer.resize();
-
-		// Calculate the center of all breakpoint frames
-		if (state.breakpoints.length > 0) {
-			const boundingBox = calculateBoundingBox(state.breakpoints);
-			// Calculate center point of the bounding box
-			const centerX = boundingBox.x + boundingBox.width / 2;
-			const centerY = boundingBox.y + boundingBox.height / 2;
-
-			// Get current scroll position and viewport size
-			const currentScrollLeft = viewer.getScrollLeft();
-			const currentScrollTop = viewer.getScrollTop();
-			const viewportWidth = viewer.getContainerWidth();
-			const viewportHeight = viewer.getContainerHeight();
-			const zoom = viewer.getZoom();
-
-			// Calculate where we need to scroll to center on the bounding box
-			const targetScrollLeft = centerX * zoom - viewportWidth / 2;
-			const targetScrollTop = centerY * zoom - viewportHeight / 2;
-
-			// Calculate deltas
-			const deltaX = targetScrollLeft - currentScrollLeft;
-			const deltaY = targetScrollTop - currentScrollTop;
-
-			// Scroll by the delta to center
-			viewer.scrollBy(deltaX, deltaY);
-		} else if (state.frameSize) {
-			// Fallback: use scrollCenter for legacy frameSize (deprecated, kept for backwards compatibility)
-			viewer.scrollCenter({
-				horizontal: true,
-				vertical: true,
+	/**
+	 * Put the artboards in the middle of the canvas. `animate` glides there,
+	 * unless the person prefers reduced motion.
+	 */
+	const centerOnBreakpoints = useCallback(
+		({ animate = false }: { animate?: boolean } = {}) => {
+			const viewer = viewerRef.current;
+			if (!viewer) return;
+			viewer.resize();
+			if (state.breakpoints.length === 0) return;
+			const view = getView();
+			if (!view) return;
+			// getScrollLeft/scrollTo work in canvas units, not screen pixels.
+			const target = centeredScroll(
+				calculateBoundingBox(state.breakpoints),
+				view
+			);
+			const reduceMotion = window.matchMedia?.(
+				"(prefers-reduced-motion: reduce)"
+			).matches;
+			viewer.scrollTo(target.x, target.y, {
+				duration: animate && !reduceMotion ? 300 : 0,
+				easing: (t: number) => 1 - (1 - t) ** 3,
 			});
-		}
-	}, [state.breakpoints, state.frameSize]);
-
-	// Check if we have content to center on (breakpoints or deprecated frameSize)
-	const hasContentToCenter = useMemo(
-		() => state.breakpoints.length > 0 || Boolean(state.frameSize),
-		[state.breakpoints.length, state.frameSize]
+		},
+		[state.breakpoints, getView]
 	);
+
+	// Clicking off a layer may glide the artboards back to the middle.
+	const recenterIfDrifted = () => {
+		const view = getView();
+		if (!view || state.breakpoints.length === 0) return;
+		if (shouldRecenter(view, calculateBoundingBox(state.breakpoints))) {
+			centerOnBreakpoints({ animate: true });
+		}
+	};
+
+	// Keep the same point in the middle when the canvas changes size, e.g. the
+	// window resizes or a panel opens, so centered artboards stay centered.
+	useEffect(() => {
+		const viewer = viewerRef.current;
+		const el = viewer?.getContainer();
+		// Missing outside browsers, e.g. in jsdom tests.
+		if (!viewer || !el || typeof ResizeObserver === "undefined") return;
+		let last = { width: el.clientWidth, height: el.clientHeight };
+		const observer = new ResizeObserver(() => {
+			const next = { width: el.clientWidth, height: el.clientHeight };
+			const zoom = viewer.getZoom();
+			viewer.resize();
+			viewer.scrollBy(
+				(last.width - next.width) / 2 / zoom,
+				(last.height - next.height) / 2 / zoom
+			);
+			last = next;
+		});
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, []);
+
+	const hasContentToCenter = state.breakpoints.length > 0;
 
 	// Center on initial mount
 	const [hasCentered, setHasCentered] = useState(false);
 	useEffect(() => {
-		if (viewerRef.current && !hasCentered && hasContentToCenter) {
+		if (hasCentered || !hasContentToCenter) return;
+		// A frame later, so a viewer torn down by a remount (StrictMode) isn't
+		// left with a pending scroll.
+		const frame = requestAnimationFrame(() => {
 			centerOnBreakpoints();
 			setHasCentered(true);
-		}
+		});
+		return () => cancelAnimationFrame(frame);
 	}, [hasContentToCenter, hasCentered, centerOnBreakpoints]);
 
 	// Respond to explicit center requests (e.g., from zoom-to-fit)
 	useEffect(() => {
-		if (state.centerRequestId > 0) {
-			// Use requestAnimationFrame to ensure zoom is applied first
-			requestAnimationFrame(() => {
-				centerOnBreakpoints();
-			});
-		}
+		if (state.centerRequestId === 0) return;
+		// A frame later, so the new zoom is applied first
+		const frame = requestAnimationFrame(() => centerOnBreakpoints());
+		return () => cancelAnimationFrame(frame);
 	}, [state.centerRequestId, centerOnBreakpoints]);
 
 	// Update Moveable when zoom changes so it recalculates positions and scales correctly
@@ -280,34 +368,8 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		}
 	}, [state.zoom]);
 
-	// Track selected layers' CSS vars for dependency tracking
-	// Include all properties that could affect element dimensions
-	const selectedLayersCSSVars = useMemo(() => {
-		if (selectedLayers.length === 0) return "";
-		return selectedLayers
-			.map((layer) =>
-				JSON.stringify([layer.cssVars ?? {}, layer.breakpointCssVars ?? {}])
-			)
-			.join("|")
-			.concat(`|${state.activeBreakpointId ?? ""}`);
-	}, [selectedLayers, state.activeBreakpointId]);
-
-	// Update Moveable when selected layers' CSS vars change
-	// This ensures the control box updates immediately when any dimension-affecting CSS is updated
-	useEffect(() => {
-		if (moveableRef.current && selectedLayersCSSVars) {
-			// Wait for DOM to update before recalculating rect
-			requestAnimationFrame(() => {
-				if (moveableRef.current) {
-					moveableRef.current.updateRect();
-				}
-			});
-		}
-	}, [selectedLayersCSSVars]);
-
-	// Frame geometry key: moving or resizing a frame moves the selected layer
-	// without changing its CSS vars, so Moveable must be told to re-measure.
-	const hasSelection = selectedLayers.length > 0;
+	// Re-measure after anything that can move or resize a selected layer:
+	// the selection, any layer edit, or an artboard moving or resizing.
 	const breakpointGeometryKey = useMemo(
 		() =>
 			state.breakpoints
@@ -318,13 +380,18 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 				.join("|"),
 		[state.breakpoints]
 	);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: nodes, frame styles and geometry trigger a re-measure; they aren't read
+	useLayoutEffect(() => {
+		measureGhosts();
+	}, [measureGhosts, state.nodes, state.frameStyles, breakpointGeometryKey]);
 
+	// A layer can also resize on its own, e.g. an image loading.
 	useEffect(() => {
-		if (!hasSelection || !breakpointGeometryKey) return;
-		requestAnimationFrame(() => {
-			moveableRef.current?.updateRect();
-		});
-	}, [breakpointGeometryKey, hasSelection]);
+		if (typeof ResizeObserver === "undefined") return;
+		const observer = new ResizeObserver(() => measureGhosts());
+		for (const el of selectedLayerElements) if (el) observer.observe(el);
+		return () => observer.disconnect();
+	}, [selectedLayerElements, measureGhosts]);
 
 	// Handle keyboard shortcuts: Delete/Backspace for deletion, Cmd/Ctrl+Z for undo, Cmd/Ctrl+Y for redo
 	useEffect(() => {
@@ -416,16 +483,6 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 						designerAction({ type: "SET_ZOOM", payload: newZoom });
 						// Signal to center on all breakpoints
 						designerAction({ type: "CENTER_ON_BREAKPOINTS" });
-					} else if (state.frameSize) {
-						// Fallback for legacy frameSize
-						e.preventDefault();
-						const padding = 200;
-						const availableWidth = window.innerWidth - padding;
-						const availableHeight = window.innerHeight - padding;
-						const zoomX = availableWidth / state.frameSize.width;
-						const zoomY = availableHeight / state.frameSize.height;
-						const newZoom = Math.min(zoomX, zoomY, 10);
-						designerAction({ type: "SET_ZOOM", payload: newZoom });
 					}
 					return true;
 				case "2":
@@ -453,13 +510,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		return () => {
 			window.removeEventListener("keydown", handleKeyDown);
 		};
-	}, [
-		state.selectedLayers,
-		state.zoom,
-		state.frameSize,
-		state.breakpoints,
-		designerAction,
-	]);
+	}, [state.selectedLayers, state.zoom, state.breakpoints, designerAction]);
 
 	return (
 		<div
@@ -551,13 +602,37 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 				onScroll={handleScroll}
 			>
 				{children}
+				{/* InfiniteViewer zooms its first child, so stand-ins go in there. */}
+				{viewport &&
+					createPortal(
+						ghosts.map((g) => (
+							<div
+								key={g.id}
+								aria-hidden="true"
+								data-selection-ghost={g.id}
+								data-layer-id={g.id}
+								data-breakpoint-id={g.breakpointId}
+								className="pointer-events-none absolute"
+								style={{
+									left: g.left,
+									top: g.top,
+									width: g.width,
+									height: g.height,
+								}}
+							/>
+						)),
+						viewport
+					)}
 				<Moveable
 					ables={[DimensionAble, StructureAble]}
 					ref={moveableRef}
-					target={selectedLayerElements as MoveableRefTargetType}
+					target={
+						(ghosts.length === 1
+							? ghostSelector(ghosts[0].id)
+							: ghosts.map((g) => ghostSelector(g.id))) as MoveableRefTargetType
+					}
 					draggable={false}
 					edgeDraggable={false}
-					// scrollable={true}
 					props={{
 						dimensionViewable: true,
 						structureViewable: true,

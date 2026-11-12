@@ -2,57 +2,28 @@
 
 A React-based design tool built with Vite, TypeScript, and Tailwind CSS.
 
-## Getting Started
+## Getting started
 
-### Prerequisites
+You need [Bun](https://bun.sh) 1.2 or later.
 
-- Node.js (v16 or higher recommended)
-- npm or yarn
-
-### Installation
-
-1. Clone the repository:
 ```bash
 git clone <repository-url>
 cd coral-design
+bun install
+bun run dev
 ```
 
-2. Install dependencies:
-```bash
-npm install
-```
+The docs open at `http://localhost:5173` and the editor at `http://localhost:5173/demo/`.
 
-### Running Locally
+### Other commands
 
-#### Development Server
-
-Start the development server:
-```bash
-npm run dev
-```
-
-The application will be available at `http://localhost:5173`
-
-#### Storybook
-
-Run Storybook for component development:
-```bash
-npm run storybook
-```
-
-Storybook will be available at `http://localhost:6006`
-
-### Build
-
-Create a production build:
-```bash
-npm run build
-```
-
-Preview the production build:
-```bash
-npm run preview
-```
+| Command | What it does |
+| --- | --- |
+| `bun run test` | Run the tests |
+| `bun run lint` | Check formatting and lint rules |
+| `bun run build` | Build the docs and the editor into `dist/` |
+| `bun run preview` | Serve the production build |
+| `bun run agent` | Start the MCP server for an agent |
 
 ## Working with an agent
 
@@ -74,11 +45,9 @@ The agent's tools: `get_design`, `list_tasks`, `wait_for_task`, `claim_task`, `a
 
 `useDesignerApi()` gives host apps the same abilities: `dispatch(action, { actor, reason })`, `annotate(…)`, and `exportDocument()`.
 
-## Tech Stack
+## Tech stack
 
-- React 18
-- TypeScript
-- Vite
-- Tailwind CSS 4
-- Base UI
-- Storybook
+- React 18, TypeScript and Vite
+- Tailwind CSS 4 and Base UI
+- Vitest and Testing Library
+- Biome for linting and formatting

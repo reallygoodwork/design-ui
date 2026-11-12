@@ -13,7 +13,6 @@ type DesignerProviderProps = {
 	defaultLayers?: Layer[];
 	layers?: Layer[];
 	onLayersChange?: (layers: Layer[]) => void;
-	frameSize?: { width: number; height: number };
 	defaultLayerTypes?: LayerType[];
 	breakpoints?: Breakpoint[];
 	frameStyles?: CSSVars;
@@ -24,7 +23,6 @@ export const DesignerProvider = ({
 	defaultLayers,
 	layers,
 	onLayersChange,
-	frameSize,
 	defaultLayerTypes,
 	breakpoints,
 	frameStyles,
@@ -33,7 +31,6 @@ export const DesignerProvider = ({
 		defaultLayers,
 		layers,
 		onLayersChange,
-		frameSize,
 		layerTypes: defaultLayerTypes,
 		breakpoints,
 		frameStyles,

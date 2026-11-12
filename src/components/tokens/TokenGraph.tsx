@@ -116,8 +116,153 @@ const readsOf = (token: Token) => [
 	),
 ];
 
+type ByPath = ReturnType<typeof indexTokens>;
+type LayerUses = Map<string, { layer: Layer; properties: Set<string> }>;
+const ARROW = { type: MarkerType.ArrowClosed, width: 14, height: 14 };
+
+/** How many steps each token is from a raw value. Primitives are 0. */
+const tokenDepths = (tokens: readonly Token[], byPath: ByPath) => {
+	const depth = new Map<string, number>();
+	const depthOf = (path: string, seen: string[] = []): number => {
+		if (depth.has(path)) return depth.get(path) as number;
+		const token = byPath.get(path);
+		if (!token || seen.includes(path)) return 0;
+		const reads = readsOf(token).filter((ref) => byPath.has(ref));
+		const d = reads.length
+			? 1 + Math.max(...reads.map((ref) => depthOf(ref, [...seen, path])))
+			: 0;
+		depth.set(path, d);
+		return d;
+	};
+	for (const token of tokens) depthOf(token.path);
+	return depth;
+};
+
+/** One edge per reference from a token to another token. */
+const tokenEdges = (tokens: readonly Token[], byPath: ByPath): Edge[] => {
+	const edges: Edge[] = [];
+	for (const token of tokens) {
+		const defaults = new Set(referencesOf(token.value));
+		for (const ref of readsOf(token)) {
+			if (!byPath.has(ref)) continue;
+			const composed = isComposed(token.value) && defaults.has(ref);
+			const viaAlias = aliasOf(token.value) === ref;
+			// A reference only some modes use is labelled with them.
+			const modes = (token.modes ?? [])
+				.filter((entry) => referencesOf(entry.value).includes(ref))
+				.map((entry) => Object.values(entry.when).join(" · "));
+			const label = composed
+				? "fx"
+				: defaults.has(ref)
+					? undefined
+					: modes.join(", ");
+			edges.push({
+				id: `${ref}->${token.path}`,
+				source: ref,
+				target: token.path,
+				label,
+				animated: composed,
+				style: { strokeDasharray: viaAlias || composed ? undefined : "4 3" },
+				markerEnd: ARROW,
+			});
+		}
+	}
+	return edges;
+};
+
+/**
+ * The layers that use tokens, and which properties. Adds a token-to-layer
+ * edge to `edges` for each use.
+ */
+const layerUsage = (
+	layers: Layer[],
+	tokens: readonly Token[],
+	edges: Edge[]
+): LayerUses => {
+	const uses: LayerUses = new Map();
+	for (const layer of flatten(layers)) {
+		const all = [
+			...Object.entries(layer.cssVars ?? {}),
+			...Object.values(layer.breakpointCssVars ?? {}).flatMap((vars) =>
+				Object.entries(vars)
+			),
+		];
+		const id = `${LAYER_PREFIX}${layer.id}`;
+		for (const [property, value] of all) {
+			const token = tokenFromCssValue(value, tokens);
+			if (!token) continue;
+			const entry = uses.get(id) ?? { layer, properties: new Set() };
+			entry.properties.add(property);
+			uses.set(id, entry);
+			const edgeId = `${token.path}->${id}`;
+			if (!edges.some((e) => e.id === edgeId)) {
+				edges.push({
+					id: edgeId,
+					source: token.path,
+					target: id,
+					label: property.slice(2),
+					markerEnd: ARROW,
+				});
+			}
+		}
+	}
+	return uses;
+};
+
+/** Tokens in columns by depth, sorted by type then path; layers last. */
+const layoutNodes = (
+	tokens: readonly Token[],
+	byPath: ByPath,
+	depth: Map<string, number>,
+	uses: LayerUses,
+	resolve: (path: string) => { value?: string; error?: unknown }
+): GraphNode[] => {
+	const columns = new Map<number, string[]>();
+	const ordered = [...tokens].sort(
+		(a, b) => a.type.localeCompare(b.type) || a.path.localeCompare(b.path)
+	);
+	for (const token of ordered) {
+		const d = depth.get(token.path) ?? 0;
+		columns.set(d, [...(columns.get(d) ?? []), token.path]);
+	}
+	const position = (column: number, index: number) => ({
+		x: column * COLUMN,
+		y: index * ROW,
+	});
+
+	const nodes: GraphNode[] = [];
+	for (const [d, paths] of columns) {
+		paths.forEach((path, index) => {
+			const resolved = resolve(path);
+			nodes.push({
+				id: path,
+				type: "token",
+				position: position(d, index),
+				data: {
+					kind: "token",
+					token: byPath.get(path) as Token,
+					value: resolved.value,
+					broken: Boolean(resolved.error),
+					dim: false,
+				},
+			});
+		});
+	}
+	const layerColumn = Math.max(0, ...depth.values()) + 1;
+	[...uses.entries()].forEach(([id, { layer, properties }], index) => {
+		nodes.push({
+			id,
+			type: "layer",
+			position: position(layerColumn, index),
+			data: { kind: "layer", layer, properties: [...properties], dim: false },
+		});
+	});
+	return nodes;
+};
+
 const Graph = () => {
 	const store = useTokens();
+	const { tokens, mode: tokenMode, breakpointOrder } = store;
 	const layers = useLayers();
 	const dispatch = useDesignerAction();
 	const { fitView } = useReactFlow();
@@ -126,136 +271,15 @@ const Graph = () => {
 	const [showLayers, setShowLayers] = useState(true);
 
 	const graph = useMemo(() => {
-		const byPath = indexTokens(store.tokens);
-		const mode = modeAt(store, store.breakpointOrder[0]);
-
-		// Depth: how many steps from a raw value. Primitives on the left.
-		const depth = new Map<string, number>();
-		const depthOf = (path: string, seen: string[] = []): number => {
-			if (depth.has(path)) return depth.get(path) as number;
-			const token = byPath.get(path);
-			if (!token || seen.includes(path)) return 0;
-			const reads = readsOf(token).filter((ref) => byPath.has(ref));
-			const d = reads.length
-				? 1 + Math.max(...reads.map((ref) => depthOf(ref, [...seen, path])))
-				: 0;
-			depth.set(path, d);
-			return d;
-		};
-		for (const token of store.tokens) depthOf(token.path);
-
-		const edges: Edge[] = [];
-		for (const token of store.tokens) {
-			const defaults = new Set(referencesOf(token.value));
-			for (const ref of readsOf(token)) {
-				if (!byPath.has(ref)) continue;
-				const composed = isComposed(token.value) && defaults.has(ref);
-				const viaAlias = aliasOf(token.value) === ref;
-				// A reference only some modes use is labelled with them.
-				const modes = (token.modes ?? [])
-					.filter((entry) => referencesOf(entry.value).includes(ref))
-					.map((entry) => Object.values(entry.when).join(" · "));
-				edges.push({
-					id: `${ref}->${token.path}`,
-					source: ref,
-					target: token.path,
-					label: composed
-						? "fx"
-						: !defaults.has(ref)
-							? modes.join(", ")
-							: undefined,
-					animated: composed,
-					style: { strokeDasharray: viaAlias || composed ? undefined : "4 3" },
-					markerEnd: { type: MarkerType.ArrowClosed, width: 14, height: 14 },
-				});
-			}
-		}
-
-		const layerUses = new Map<
-			string,
-			{ layer: Layer; properties: Set<string> }
-		>();
-		if (showLayers) {
-			for (const layer of flatten(layers)) {
-				const all = [
-					...Object.entries(layer.cssVars ?? {}),
-					...Object.values(layer.breakpointCssVars ?? {}).flatMap((vars) =>
-						Object.entries(vars)
-					),
-				];
-				for (const [property, value] of all) {
-					const token = tokenFromCssValue(value, store.tokens);
-					if (!token) continue;
-					const id = `${LAYER_PREFIX}${layer.id}`;
-					const entry = layerUses.get(id) ?? { layer, properties: new Set() };
-					entry.properties.add(property);
-					layerUses.set(id, entry);
-					const edgeId = `${token.path}->${id}`;
-					if (!edges.some((e) => e.id === edgeId)) {
-						edges.push({
-							id: edgeId,
-							source: token.path,
-							target: id,
-							label: property.slice(2),
-							markerEnd: {
-								type: MarkerType.ArrowClosed,
-								width: 14,
-								height: 14,
-							},
-						});
-					}
-				}
-			}
-		}
-
-		const maxDepth = Math.max(0, ...depth.values());
-		const columns = new Map<number, string[]>();
-		const ordered = [...store.tokens].sort(
-			(a, b) => a.type.localeCompare(b.type) || a.path.localeCompare(b.path)
-		);
-		for (const token of ordered) {
-			const d = depth.get(token.path) ?? 0;
-			columns.set(d, [...(columns.get(d) ?? []), token.path]);
-		}
-		const position = (column: number, index: number) => ({
-			x: column * COLUMN,
-			y: index * ROW,
-		});
-
-		const nodes: GraphNode[] = [];
-		for (const [d, paths] of columns) {
-			paths.forEach((path, index) => {
-				const token = byPath.get(path) as Token;
-				const resolved = resolveToken(
-					path,
-					mode,
-					byPath,
-					store.breakpointOrder
-				);
-				nodes.push({
-					id: path,
-					type: "token",
-					position: position(d, index),
-					data: {
-						kind: "token",
-						token,
-						value: resolved.value,
-						broken: Boolean(resolved.error),
-						dim: false,
-					},
-				});
-			});
-		}
-		[...layerUses.entries()].forEach(([id, { layer, properties }], index) => {
-			nodes.push({
-				id,
-				type: "layer",
-				position: position(maxDepth + 1, index),
-				data: { kind: "layer", layer, properties: [...properties], dim: false },
-			});
-		});
-		return { nodes, edges };
-	}, [store.tokens, store.mode, store.breakpointOrder, layers, showLayers]);
+		const byPath = indexTokens(tokens);
+		const mode = modeAt({ mode: tokenMode }, breakpointOrder[0]);
+		const depth = tokenDepths(tokens, byPath);
+		const edges = tokenEdges(tokens, byPath);
+		const uses = showLayers ? layerUsage(layers, tokens, edges) : new Map();
+		const resolve = (path: string) =>
+			resolveToken(path, mode, byPath, breakpointOrder);
+		return { nodes: layoutNodes(tokens, byPath, depth, uses, resolve), edges };
+	}, [tokens, tokenMode, breakpointOrder, layers, showLayers]);
 
 	// Everything upstream and downstream of a node.
 	const connected = (id: string) => {

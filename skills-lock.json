@@ -1,59 +1,59 @@
 {
-  "version": 1,
-  "skills": {
-    "better-accessibility": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-accessibility/SKILL.md",
-      "computedHash": "7fe3f3727dc1c15b5148e1b8d47f1b025f9886348ec8a33f4c4536aa5372cbbe"
-    },
-    "better-colors": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-colors/SKILL.md",
-      "computedHash": "b24b63ebd25658a95e5f791cd83552aca6554dd6746aa6065d930a9492fb9886"
-    },
-    "better-interface": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-interface/SKILL.md",
-      "computedHash": "c4f8a7862c00e63ae0df73fa29137f01a7fdd16354919e718dcf7e9f1a3f9445"
-    },
-    "better-layout": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-layout/SKILL.md",
-      "computedHash": "822bb216c43ce743221b1afe42a21c7efc80d85b71847cf109c33af9513da655"
-    },
-    "better-typography": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-typography/SKILL.md",
-      "computedHash": "6546baea71117ed05b74dd9fb4ebf25300b3a8c9fab1751fd9981701550bd1b7"
-    },
-    "better-ui": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-ui/SKILL.md",
-      "computedHash": "8a21f243313aa3b7f6bb5e13d241eef07926fe52bc0a866d154a10f88b7c007a"
-    },
-    "better-writing": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-writing/SKILL.md",
-      "computedHash": "5dcd97f7df29f92ef99901601b2a63e2c709f49f9748fd6b61c751b667468564"
-    },
-    "interface-review": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/interface-review/SKILL.md",
-      "computedHash": "3b04fd6eb5fef3b49c76b6af2b0bb542bbadcdbd88beed7ca11ab54d5a207750"
-    },
-    "state-machine": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/state-machine/SKILL.md",
-      "computedHash": "f5b8d15d09ad91de8ad969fc6314f3e45a3cc625e0ea8046f109add9e86a33eb"
-    }
-  }
+	"version": 1,
+	"skills": {
+		"better-accessibility": {
+			"source": "jakubkrehel/skills",
+			"sourceType": "github",
+			"skillPath": "skills/better-accessibility/SKILL.md",
+			"computedHash": "7fe3f3727dc1c15b5148e1b8d47f1b025f9886348ec8a33f4c4536aa5372cbbe"
+		},
+		"better-colors": {
+			"source": "jakubkrehel/skills",
+			"sourceType": "github",
+			"skillPath": "skills/better-colors/SKILL.md",
+			"computedHash": "b24b63ebd25658a95e5f791cd83552aca6554dd6746aa6065d930a9492fb9886"
+		},
+		"better-interface": {
+			"source": "jakubkrehel/skills",
+			"sourceType": "github",
+			"skillPath": "skills/better-interface/SKILL.md",
+			"computedHash": "c4f8a7862c00e63ae0df73fa29137f01a7fdd16354919e718dcf7e9f1a3f9445"
+		},
+		"better-layout": {
+			"source": "jakubkrehel/skills",
+			"sourceType": "github",
+			"skillPath": "skills/better-layout/SKILL.md",
+			"computedHash": "822bb216c43ce743221b1afe42a21c7efc80d85b71847cf109c33af9513da655"
+		},
+		"better-typography": {
+			"source": "jakubkrehel/skills",
+			"sourceType": "github",
+			"skillPath": "skills/better-typography/SKILL.md",
+			"computedHash": "6546baea71117ed05b74dd9fb4ebf25300b3a8c9fab1751fd9981701550bd1b7"
+		},
+		"better-ui": {
+			"source": "jakubkrehel/skills",
+			"sourceType": "github",
+			"skillPath": "skills/better-ui/SKILL.md",
+			"computedHash": "8a21f243313aa3b7f6bb5e13d241eef07926fe52bc0a866d154a10f88b7c007a"
+		},
+		"better-writing": {
+			"source": "jakubkrehel/skills",
+			"sourceType": "github",
+			"skillPath": "skills/better-writing/SKILL.md",
+			"computedHash": "5dcd97f7df29f92ef99901601b2a63e2c709f49f9748fd6b61c751b667468564"
+		},
+		"interface-review": {
+			"source": "jakubkrehel/skills",
+			"sourceType": "github",
+			"skillPath": "skills/interface-review/SKILL.md",
+			"computedHash": "3b04fd6eb5fef3b49c76b6af2b0bb542bbadcdbd88beed7ca11ab54d5a207750"
+		},
+		"state-machine": {
+			"source": "jakubkrehel/skills",
+			"sourceType": "github",
+			"skillPath": "skills/state-machine/SKILL.md",
+			"computedHash": "f5b8d15d09ad91de8ad969fc6314f3e45a3cc625e0ea8046f109add9e86a33eb"
+		}
+	}
 }

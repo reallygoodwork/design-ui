@@ -89,11 +89,3 @@ export type Keybinding = {
 	description: string;
 	group: string;
 };
-
-export type FrameSize = {
-	width: number;
-	height: number;
-	unit?: Unit;
-};
-
-type Unit = "px" | "mm" | "in" | "cm" | "pt";

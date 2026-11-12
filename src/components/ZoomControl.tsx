@@ -9,7 +9,6 @@ export const ZoomControl = () => {
 	const dispatch = useDesignerAction();
 	const currentZoom = useZoom();
 	const breakpoints = useDesignerSelector((state) => state.breakpoints);
-	const frameSize = useDesignerSelector((state) => state.frameSize);
 
 	const handleZoomIn = () => {
 		const newZoom = Math.min(10, currentZoom + 0.1);
@@ -41,12 +40,6 @@ export const ZoomControl = () => {
 			dispatch({ type: "SET_ZOOM", payload: newZoom });
 			// Signal to center on all breakpoints
 			dispatch({ type: "CENTER_ON_BREAKPOINTS" });
-		} else if (frameSize) {
-			// Fallback to legacy frameSize
-			const zoomX = availableWidth / frameSize.width;
-			const zoomY = availableHeight / frameSize.height;
-			const newZoom = Math.min(zoomX, zoomY, 10);
-			dispatch({ type: "SET_ZOOM", payload: newZoom });
 		}
 	};
 

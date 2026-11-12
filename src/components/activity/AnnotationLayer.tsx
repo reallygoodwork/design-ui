@@ -1,26 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import { useAnnotations } from "../../hooks/useAnnotations";
 import { useDesignerSelector } from "../../hooks/useDesignerSelector";
+import {
+	type FrameRegistry,
+	useFrameRegistry,
+} from "../../hooks/useFrameRegistry";
 import { type Annotation, layerOf } from "../../lib/annotations";
 import { cn } from "../../lib/cn";
 import { AnnotationThread, Avatar, Composer } from "./AnnotationThread";
 
 type Box = { x: number; y: number; width: number; height: number };
 
-const attr = (value: string) => JSON.stringify(value);
-
-/** A layer's box on one frame, relative to `root`. */
+/** A layer's box on one frame (or the first that has it), relative to `root`. */
 const boxOf = (
+	registry: FrameRegistry,
 	root: HTMLElement,
 	layerId: string,
 	breakpointId: string | null
 ): Box | null => {
-	const frame = breakpointId
-		? `.breakpoint-frame[data-breakpoint-id=${attr(breakpointId)}] `
-		: "";
-	const el = document.querySelector(
-		`${frame}.designer-layer[data-layer-id=${attr(layerId)}]`
-	);
+	const el = registry.queryLayer(breakpointId, layerId);
 	if (!el) return null;
 	const r = el.getBoundingClientRect();
 	const base = root.getBoundingClientRect();
@@ -43,6 +41,7 @@ const isTyping = (target: EventTarget | null) =>
  * on it. C toggles comment mode; Escape leaves it.
  */
 export const AnnotationLayer = () => {
+	const registry = useFrameRegistry();
 	const {
 		annotations,
 		commentMode,
@@ -84,7 +83,7 @@ export const AnnotationLayer = () => {
 						target?.kind === "layer" && target.breakpointId
 							? target.breakpointId
 							: activeBreakpointId;
-					const box = boxOf(root, id, bp) ?? boxOf(root, id, null);
+					const box = boxOf(registry, root, id, bp);
 					if (box) next[id] = box;
 				}
 				const serial = JSON.stringify(next);
@@ -120,21 +119,16 @@ export const AnnotationLayer = () => {
 		};
 		document.addEventListener("keydown", onKey);
 		return () => document.removeEventListener("keydown", onKey);
-	}, [commentMode, setCommentMode, setDraft]);
+	}, [commentMode, setCommentMode]);
 
+	// The deepest layer under the point, through the registry, since design
+	// content lives in shadow roots.
 	const layerAt = (x: number, y: number) => {
-		for (const el of document.elementsFromPoint(x, y)) {
-			const layer = el.closest<HTMLElement>(".designer-layer");
-			if (layer?.dataset.layerId) {
-				return {
-					layerId: layer.dataset.layerId,
-					breakpointId:
-						layer.closest<HTMLElement>(".breakpoint-frame")?.dataset
-							.breakpointId,
-				};
-			}
-		}
-		return null;
+		const { layerIds, breakpointId } = registry.layersAtPoint(x, y);
+		const layerId = layerIds.at(-1);
+		return layerId
+			? { layerId, breakpointId: breakpointId ?? undefined }
+			: null;
 	};
 
 	const cardFor = card ? byLayer.get(card) : undefined;
@@ -146,7 +140,6 @@ export const AnnotationLayer = () => {
 			className="pointer-events-none absolute inset-0 z-40 overflow-hidden"
 		>
 			{commentMode && (
-				// biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only picking surface; the panel has a keyboard way to comment
 				<div
 					aria-hidden="true"
 					className="pointer-events-auto absolute inset-0 cursor-crosshair"
@@ -155,7 +148,7 @@ export const AnnotationLayer = () => {
 						const root = rootRef.current;
 						setHovered(
 							hit && root
-								? boxOf(root, hit.layerId, hit.breakpointId ?? null)
+								? boxOf(registry, root, hit.layerId, hit.breakpointId ?? null)
 								: null
 						);
 					}}

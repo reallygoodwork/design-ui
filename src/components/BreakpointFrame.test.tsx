@@ -31,9 +31,17 @@ const Frames = ({ onDispatch }: { onDispatch?: (d: Dispatch) => void }) => {
 	);
 };
 
+/** A frame's content root, inside its shadow root. */
+const frameRoot = (container: HTMLElement, bp: string) =>
+	container
+		.querySelector(
+			`.breakpoint-frame[data-breakpoint-id="${bp}"] .breakpoint-content`
+		)
+		?.shadowRoot?.querySelector('[data-slot="designer-frame"]') as HTMLElement;
+
 const find = (container: HTMLElement, bp: string, id: string) =>
-	container.querySelector(
-		`.breakpoint-frame[data-breakpoint-id="${bp}"] [data-layer-id="${id}"]`
+	frameRoot(container, bp).querySelector(
+		`[data-layer-id="${id}"]`
 	) as HTMLElement;
 
 const textLayer = makeLayer("t", undefined, {
@@ -126,10 +134,7 @@ describe("frame styles", () => {
 				<Frames />
 			</DesignerProvider>
 		);
-	const root = (c: HTMLElement, bp: string) =>
-		c.querySelector(
-			`.breakpoint-frame[data-breakpoint-id="${bp}"] .breakpoint-content`
-		) as HTMLElement;
+	const root = frameRoot;
 
 	it("applies frame styles as real properties on every frame root", () => {
 		const { container } = renderWithFrame();
@@ -187,6 +192,7 @@ describe("frame root", () => {
 		c.querySelector(
 			`.breakpoint-frame[data-breakpoint-id="${bp}"] .breakpoint-content`
 		) as HTMLElement;
+	const contentRoot = frameRoot;
 
 	it(".breakpoint-content is a DIV", () => {
 		const { container } = renderInDesigner(<Frames />);
@@ -205,9 +211,9 @@ describe("frame root", () => {
 				<Frames />
 			</DesignerProvider>
 		);
-		const layerEls = container.querySelectorAll(
-			".breakpoint-content .designer-layer"
-		);
+		const layerEls = ["mobile", "tablet", "desktop"].flatMap((bp) => [
+			...frameRoot(container, bp).querySelectorAll(".designer-layer"),
+		]);
 		expect(layerEls.length).toBeGreaterThan(0);
 		for (const el of layerEls) {
 			expect(el.closest("button")).toBeNull();
@@ -234,7 +240,7 @@ describe("frame root", () => {
 		const before = getByTestId("sel").textContent;
 		fireEvent.click(find(container, "tablet", "inner"));
 		expect(getByTestId("sel").textContent).toBe(before);
-		fireEvent.click(content(container, "tablet"));
+		fireEvent.click(contentRoot(container, "tablet"));
 		expect(getByTestId("sel").textContent).toBe("tablet");
 	});
 });
@@ -252,10 +258,7 @@ describe("default colour", () => {
 		elementType: "p",
 		cssVars: { "--color": "#0000ff" },
 	});
-	const root = (c: HTMLElement, bp: string) =>
-		c.querySelector(
-			`.breakpoint-frame[data-breakpoint-id="${bp}"] .breakpoint-content`
-		) as HTMLElement;
+	const root = frameRoot;
 	const inner = (c: HTMLElement, bp: string, id: string) =>
 		find(c, bp, id).firstElementChild as HTMLElement;
 
@@ -335,5 +338,33 @@ describe("layout", () => {
 			expect(find(container, bp, "c").parentElement).toBe(b);
 			expect(find(container, bp, "d").parentElement).toBe(b);
 		}
+	});
+});
+
+describe("style isolation", () => {
+	const host = (c: HTMLElement, bp: string) =>
+		c.querySelector(
+			`.breakpoint-frame[data-breakpoint-id="${bp}"] .breakpoint-content`
+		) as HTMLElement;
+
+	it("renders design content in an open shadow root, not the page", () => {
+		const { container } = renderInDesigner(<Frames />, {
+			layers: [makeLayer("a")],
+		});
+		for (const bp of ["mobile", "tablet", "desktop"]) {
+			expect(host(container, bp).shadowRoot).not.toBeNull();
+			expect(host(container, bp).querySelector(".designer-layer")).toBeNull();
+			expect(find(container, bp, "a")).not.toBeNull();
+		}
+	});
+
+	it("resets the host so editor and page styles don't reach the design", () => {
+		const { container } = renderInDesigner(<Frames />, {
+			layers: [makeLayer("a")],
+		});
+		const css = host(container, "mobile").shadowRoot?.querySelector(
+			"style"
+		)?.textContent;
+		expect(css).toContain(":host{all:initial");
 	});
 });

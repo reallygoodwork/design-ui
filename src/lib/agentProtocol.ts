@@ -113,6 +113,69 @@ const stringValues = (value: unknown) =>
 		([k, v]) => k.startsWith("--") && typeof v === "string"
 	);
 
+type PayloadCheck = (
+	p: Record<string, unknown>,
+	ctx: {
+		ids: Set<string>;
+		breakpoints: Breakpoint[];
+		/** Null when `id` names an existing layer, otherwise why not. */
+		layer: (id: unknown) => string | null;
+	}
+) => string | null;
+
+const CSS_PROBLEM = "css must map --custom-properties to strings";
+
+/** Every listed layer exists, or the first problem. */
+const layersProblem: PayloadCheck = (p, { layer }) => {
+	if (!Array.isArray(p.layerIds) || p.layerIds.length === 0)
+		return "layerIds must list layers";
+	for (const id of p.layerIds) {
+		const problem = layer(id);
+		if (problem) return problem;
+	}
+	return null;
+};
+
+/** What each action's payload must hold, by action type. */
+const PAYLOAD_CHECKS: Record<string, PayloadCheck> = {
+	UPDATE_LAYER_CSS: (p, { breakpoints, layer }) => {
+		if (!stringValues(p.css)) return CSS_PROBLEM;
+		if (
+			p.breakpointId !== undefined &&
+			!breakpoints.some((bp) => bp.id === p.breakpointId)
+		) {
+			return `No breakpoint ${String(p.breakpointId)}; use one of ${breakpoints.map((bp) => bp.id).join(", ")}`;
+		}
+		return layer(p.id);
+	},
+	UPDATE_LAYER_VALUE: (p, { layer }) =>
+		typeof p.value === "string" ? layer(p.id) : "value must be a string",
+	UPDATE_LAYER_NAME: (p, { layer }) =>
+		typeof p.name === "string" ? layer(p.layerId) : "name must be a string",
+	UPDATE_LAYER_ELEMENT_TYPE: (p, { layer }) =>
+		typeof p.elementType === "string"
+			? layer(p.layerId)
+			: "elementType must be a string",
+	ADD_LAYER: (p, { ids, layer }) => {
+		const l = p.layer;
+		if (
+			!isRecord(l) ||
+			typeof l.id !== "string" ||
+			typeof l.type !== "string" ||
+			typeof l.name !== "string"
+		) {
+			return "layer needs id, type and name";
+		}
+		if (ids.has(l.id)) return `A layer with id ${l.id} already exists`;
+		if (!["before", "inside", "after"].includes(String(p.position)))
+			return "position is before, inside or after";
+		return layer(p.targetLayerId);
+	},
+	DELETE_LAYERS: layersProblem,
+	MOVE_LAYER: (p, ctx) => layersProblem(p, ctx) ?? ctx.layer(p.targetId),
+	UPDATE_FRAME_STYLES: (p) => (stringValues(p.css) ? null : CSS_PROBLEM),
+};
+
 /** Why an agent's action can't be applied, or null when it can. */
 export function actionProblem(
 	action: unknown,
@@ -130,61 +193,7 @@ export function actionProblem(
 		typeof id === "string" && ids.has(id)
 			? null
 			: `No layer with id ${String(id)}`;
-	switch (action.type) {
-		case "UPDATE_LAYER_CSS":
-			if (!stringValues(p.css))
-				return "css must map --custom-properties to strings";
-			if (
-				p.breakpointId !== undefined &&
-				!breakpoints.some((bp) => bp.id === p.breakpointId)
-			) {
-				return `No breakpoint ${String(p.breakpointId)}; use one of ${breakpoints.map((bp) => bp.id).join(", ")}`;
-			}
-			return layer(p.id);
-		case "UPDATE_LAYER_VALUE":
-			return typeof p.value === "string"
-				? layer(p.id)
-				: "value must be a string";
-		case "UPDATE_LAYER_NAME":
-			return typeof p.name === "string"
-				? layer(p.layerId)
-				: "name must be a string";
-		case "UPDATE_LAYER_ELEMENT_TYPE":
-			return typeof p.elementType === "string"
-				? layer(p.layerId)
-				: "elementType must be a string";
-		case "ADD_LAYER": {
-			const l = p.layer;
-			if (
-				!isRecord(l) ||
-				typeof l.id !== "string" ||
-				typeof l.type !== "string" ||
-				typeof l.name !== "string"
-			) {
-				return "layer needs id, type and name";
-			}
-			if (ids.has(l.id)) return `A layer with id ${l.id} already exists`;
-			if (!["before", "inside", "after"].includes(String(p.position)))
-				return "position is before, inside or after";
-			return layer(p.targetLayerId);
-		}
-		case "DELETE_LAYERS":
-		case "MOVE_LAYER": {
-			if (!Array.isArray(p.layerIds) || p.layerIds.length === 0)
-				return "layerIds must list layers";
-			for (const id of p.layerIds) {
-				const problem = layer(id);
-				if (problem) return problem;
-			}
-			return action.type === "MOVE_LAYER" ? layer(p.targetId) : null;
-		}
-		case "UPDATE_FRAME_STYLES":
-			return stringValues(p.css)
-				? null
-				: "css must map --custom-properties to strings";
-		default:
-			return null;
-	}
+	return PAYLOAD_CHECKS[action.type]?.(p, { ids, breakpoints, layer }) ?? null;
 }
 
 const TOKEN_TYPES = new Set([

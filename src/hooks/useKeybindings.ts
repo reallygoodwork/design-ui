@@ -72,7 +72,13 @@ const duplicateSelection = (
 	const index = buildLayerIndex(state.layers);
 	for (const id of state.selectedLayers) {
 		const layer = getLayer(index, id);
-		if (layer) insertAndSelect(state, dispatch, withNewIds(layer), id);
+		if (layer)
+			insertAndSelect(
+				state,
+				dispatch,
+				{ ...withNewIds(layer), name: `${layer.name} copy` },
+				id
+			);
 	}
 	return true;
 };

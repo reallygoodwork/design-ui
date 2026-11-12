@@ -191,6 +191,171 @@ const isValidCss = (type: TokenType, value: string | undefined) =>
  * slots, or write the expression with `{token.path}` references. Shows the
  * value it resolves to now, and whether the browser accepts it.
  */
+/** The function's value, or "" until every slot has one. */
+const buildFromTemplate = (
+	template: Template,
+	slotValue: (slot: Slot) => string
+) =>
+	template.slots.every((slot) => slotValue(slot).trim())
+		? template.build(
+				Object.fromEntries(
+					template.slots.map((slot) => [slot.id, slotValue(slot)])
+				)
+			)
+		: "";
+
+/** The tokens an expression reads; unknown ones are marked. */
+const ReadsList = ({
+	refs,
+	known,
+}: {
+	refs: string[];
+	known: (ref: string) => boolean;
+}) =>
+	refs.length > 0 ? (
+		<ul aria-label="Reads" className="flex flex-wrap gap-1">
+			{refs.map((ref) => (
+				<li
+					key={ref}
+					className={cn(
+						"rounded px-1.5 py-px font-mono text-caption",
+						known(ref)
+							? "bg-accent/10 text-accent-text"
+							: "bg-destructive/12 text-destructive"
+					)}
+				>
+					{ref}
+				</li>
+			))}
+		</ul>
+	) : null;
+
+/** Picks a token of any type to insert into an expression. */
+const InsertTokenPopover = ({
+	type,
+	exclude,
+	onPick,
+}: {
+	/** The type it opens on: the composed token's own. */
+	type: TokenType;
+	exclude?: string;
+	onPick: (path: string) => void;
+}) => {
+	const store = useTokens();
+	const types = INSERT_TYPES.filter((t) =>
+		store.tokens.some((token) => token.type === t)
+	);
+	const [insertType, setInsertType] = useState<TokenType>(type);
+	const [inserting, setInserting] = useState(false);
+	return (
+		<Popover.Root open={inserting} onOpenChange={setInserting}>
+			<Popover.Trigger className="flex h-6 items-center gap-1 self-start rounded-md px-1.5 text-control text-muted-foreground hover:bg-hover hover:text-foreground">
+				<IconPlus className="size-3.5" />
+				Insert token
+			</Popover.Trigger>
+			<Popover.Portal>
+				<Popover.Positioner
+					side="right"
+					align="start"
+					sideOffset={12}
+					collisionPadding={8}
+				>
+					<Popover.Popup className="ds-popup ds-surface z-50 flex w-72 flex-col gap-2 p-3 outline-hidden">
+						<div
+							role="tablist"
+							aria-label="Token type"
+							className="flex flex-wrap gap-0.5"
+						>
+							{types.map((t) => (
+								<button
+									key={t}
+									type="button"
+									role="tab"
+									aria-selected={insertType === t}
+									onClick={() => setInsertType(t)}
+									className={cn(
+										"h-6 rounded-md px-2 text-control text-muted-foreground hover:text-foreground",
+										insertType === t && "bg-selected text-foreground"
+									)}
+								>
+									{INSERT_LABEL[t]}
+								</button>
+							))}
+						</div>
+						<TokenList
+							key={insertType}
+							className="max-h-64"
+							type={insertType}
+							exclude={exclude}
+							onPick={(path) => {
+								setInserting(false);
+								onPick(path);
+							}}
+						/>
+					</Popover.Popup>
+				</Popover.Positioner>
+			</Popover.Portal>
+		</Popover.Root>
+	);
+};
+
+type ResolveError = NonNullable<ReturnType<typeof resolveTokenValue>["error"]>;
+
+type ComposeStatus = { tone: "empty" | "ok" | "error"; text: string };
+
+/** Why a composed value can't be used, or that it can. */
+const composeStatus = (
+	candidate: string,
+	valid: boolean,
+	selfReference: boolean,
+	error: ResolveError | undefined
+): ComposeStatus => {
+	const problem = (text: string) => ({ tone: "error" as const, text });
+	if (!candidate) return { tone: "empty", text: "Fill in every slot" };
+	if (valid)
+		return { tone: "ok", text: "Valid CSS, follows every token it reads" };
+	if (selfReference) return problem("It can't read itself");
+	if (error?.kind === "unresolved")
+		return problem(`{${error.missing}} isn't a token`);
+	if (error?.kind === "circular") return problem("That makes a loop");
+	return problem("The browser can't read this");
+};
+
+/** The value the composition resolves to, and whether it can be used. */
+const ComposeResult = ({
+	type,
+	value,
+	valid,
+	status,
+}: {
+	type: TokenType;
+	value?: string;
+	valid: boolean;
+	status: ComposeStatus;
+}) => (
+	<div className="flex flex-col gap-1 rounded-md bg-input/60 p-2">
+		<span className="flex items-center gap-2 text-control">
+			<TokenGlyph type={type} value={valid ? value : undefined} />
+			<span
+				className="min-w-0 flex-1 truncate font-mono text-value"
+				title={value}
+			>
+				{value ?? "—"}
+			</span>
+		</span>
+		<span
+			className={cn(
+				"flex items-center gap-1 text-caption",
+				valid ? "text-muted-foreground" : "text-destructive"
+			)}
+		>
+			{status.tone === "ok" && <IconCheck className="size-3" />}
+			{status.tone === "error" && <IconX className="size-3" />}
+			{status.text}
+		</span>
+	</div>
+);
+
 export const TokenComposer = ({
 	type,
 	value,
@@ -211,21 +376,11 @@ export const TokenComposer = ({
 	const template = templates.find((t) => t.id === templateId) ?? templates[0];
 	const [slots, setSlots] = useState<Record<string, string>>({});
 	const [expression, setExpression] = useState(isComposed(value) ? value : "");
-	const [insertType, setInsertType] = useState<TokenType>(type);
-	const [inserting, setInserting] = useState(false);
 	const textRef = useRef<HTMLTextAreaElement>(null);
 
 	const slotValue = (slot: Slot) =>
 		slots[`${template?.id}:${slot.id}`] ?? slot.initial;
-	const built = template
-		? template.slots.every((slot) => slotValue(slot).trim())
-			? template.build(
-					Object.fromEntries(
-						template.slots.map((slot) => [slot.id, slotValue(slot)])
-					)
-				)
-			: ""
-		: "";
+	const built = template ? buildFromTemplate(template, slotValue) : "";
 	const candidate = tab === "function" ? built : expression.trim();
 
 	const byPath = useMemo(() => indexTokens(store.tokens), [store.tokens]);
@@ -245,7 +400,6 @@ export const TokenComposer = ({
 		const at = el?.selectionStart ?? expression.length;
 		const end = el?.selectionEnd ?? at;
 		setExpression(expression.slice(0, at) + token + expression.slice(end));
-		setInserting(false);
 		requestAnimationFrame(() => {
 			el?.focus();
 			el?.setSelectionRange(at + token.length, at + token.length);
@@ -323,116 +477,21 @@ export const TokenComposer = ({
 						placeholder="color-mix(in oklch, {color.brand} 40%, white)"
 						className="h-20 resize-none rounded-md bg-input p-2 font-mono text-value outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					/>
-					<Popover.Root open={inserting} onOpenChange={setInserting}>
-						<Popover.Trigger className="flex h-6 items-center gap-1 self-start rounded-md px-1.5 text-control text-muted-foreground hover:bg-hover hover:text-foreground">
-							<IconPlus className="size-3.5" />
-							Insert token
-						</Popover.Trigger>
-						<Popover.Portal>
-							<Popover.Positioner
-								side="right"
-								align="start"
-								sideOffset={12}
-								collisionPadding={8}
-							>
-								<Popover.Popup className="ds-popup ds-surface z-50 flex w-72 flex-col gap-2 p-3 outline-hidden">
-									<div
-										role="tablist"
-										aria-label="Token type"
-										className="flex flex-wrap gap-0.5"
-									>
-										{INSERT_TYPES.filter((t) =>
-											store.tokens.some((token) => token.type === t)
-										).map((t) => (
-											<button
-												key={t}
-												type="button"
-												role="tab"
-												aria-selected={insertType === t}
-												onClick={() => setInsertType(t)}
-												className={cn(
-													"h-6 rounded-md px-2 text-control text-muted-foreground hover:text-foreground",
-													insertType === t && "bg-selected text-foreground"
-												)}
-											>
-												{INSERT_LABEL[t]}
-											</button>
-										))}
-									</div>
-									<TokenList
-										key={insertType}
-										className="max-h-64"
-										type={insertType}
-										exclude={exclude}
-										onPick={insert}
-									/>
-								</Popover.Popup>
-							</Popover.Positioner>
-						</Popover.Portal>
-					</Popover.Root>
+					<InsertTokenPopover type={type} exclude={exclude} onPick={insert} />
 				</div>
 			)}
 
-			{refs.length > 0 && (
-				<ul aria-label="Reads" className="flex flex-wrap gap-1">
-					{refs.map((ref) => {
-						const known = byPath.has(ref) && ref !== exclude;
-						return (
-							<li
-								key={ref}
-								className={cn(
-									"rounded px-1.5 py-px font-mono text-caption",
-									known
-										? "bg-accent/10 text-accent-text"
-										: "bg-destructive/12 text-destructive"
-								)}
-							>
-								{ref}
-							</li>
-						);
-					})}
-				</ul>
-			)}
+			<ReadsList
+				refs={refs}
+				known={(ref) => byPath.has(ref) && ref !== exclude}
+			/>
 
-			<div className="flex flex-col gap-1 rounded-md bg-input/60 p-2">
-				<span className="flex items-center gap-2 text-control">
-					<TokenGlyph type={type} value={valid ? result?.value : undefined} />
-					<span
-						className="min-w-0 flex-1 truncate font-mono text-value"
-						title={result?.value}
-					>
-						{result?.value ?? "—"}
-					</span>
-				</span>
-				<span
-					className={cn(
-						"flex items-center gap-1 text-caption",
-						valid ? "text-muted-foreground" : "text-destructive"
-					)}
-				>
-					{candidate ? (
-						valid ? (
-							<>
-								<IconCheck className="size-3" /> Valid CSS, follows every token
-								it reads
-							</>
-						) : (
-							<>
-								<IconX className="size-3" />
-								{selfReference
-									? "It can't read itself"
-									: result?.error?.kind === "unresolved"
-										? `{${result.error.missing}} isn't a token`
-										: result?.error?.kind === "circular"
-											? "That makes a loop"
-											: "The browser can't read this"}
-							</>
-						)
-					) : (
-						"Fill in every slot"
-					)}
-				</span>
-			</div>
+			<ComposeResult
+				type={type}
+				value={result?.value}
+				valid={valid}
+				status={composeStatus(candidate, valid, selfReference, result?.error)}
+			/>
 
 			<button
 				type="button"

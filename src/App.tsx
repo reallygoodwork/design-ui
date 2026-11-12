@@ -19,7 +19,6 @@ import { PaneLayerTree } from "./components/PaneLayerTree";
 import { TokensPane } from "./components/tokens/TokensPane";
 import { TokenTable } from "./components/tokens/TokenTable";
 import { demoAnnotations } from "./demo/annotations";
-import { worstCaseBreakpoints, worstCaseLayers } from "./demo/fixtures";
 import { demoTokenDimensions, demoTokens } from "./demo/tokens";
 import { useSelectedBreakpoint } from "./hooks/useActiveBreakpoint";
 import { useDesignerAction } from "./hooks/useDesignerAction";
@@ -175,8 +174,6 @@ const Inspector = () => {
 const LeftPanel = () => {
 	const { tableMaximized, setTableMaximized } = useTokens();
 	return (
-		// biome-ignore lint/a11y/noStaticElementInteractions: listens for clicks on the tabs inside
-		// biome-ignore lint/a11y/useKeyWithClickEvents: the tabs handle their own keys; Enter and Space click them
 		<div
 			className="contents"
 			onClickCapture={(event) => {
@@ -246,53 +243,18 @@ const DemoAgentEdit = () => {
 	return null;
 };
 
-const DATASETS = [
-	{ label: "Demo", value: "demo" },
-	{ label: "Worst case", value: "worst" },
-	{ label: "Empty", value: "empty" },
-];
-
-const dataset = () =>
-	import.meta.env.DEV
-		? (new URLSearchParams(window.location.search).get("data") ?? "demo")
-		: "demo";
-
-/** Swaps the sample data while developing. Never ships. */
-const DevDataToggle = () => {
-	if (!import.meta.env.DEV) return null;
-	const current = dataset();
-	return (
-		<div className="fixed bottom-4 left-4 z-50 flex gap-0.5 rounded-md bg-neutral-200 p-0.5 font-sans text-caption text-neutral-900">
-			{DATASETS.map(({ label, value }) => (
-				<a
-					key={value}
-					href={`?data=${value}`}
-					target="_top"
-					className={`rounded px-2 py-1 ${value === current ? "bg-white" : ""}`}
-				>
-					{label}
-				</a>
-			))}
-		</div>
-	);
-};
-
 function App() {
-	const data = dataset();
-	const layers =
-		data === "worst" ? worstCaseLayers : data === "empty" ? [] : initialLayers;
-	const breakpoints =
-		data === "worst" ? worstCaseBreakpoints : initialBreakpoints;
-
 	return (
 		<div className="flex h-screen w-screen isolate ds">
-			<DevDataToggle />
 			<Designer
-				layers={layers}
-				breakpoints={breakpoints}
+				layers={initialLayers}
+				breakpoints={initialBreakpoints}
+				// Like <body> styles. Design content starts from browser defaults,
+				// so the demo sets its own font.
+				frameStyles={{ "--font-family": tokenCssValue("font.family.body") }}
 				tokens={demoTokens}
 				tokenDimensions={demoTokenDimensions}
-				annotations={data === "demo" ? demoAnnotations : []}
+				annotations={demoAnnotations}
 				// While developing, connect to a local agent: bun run agent
 				agentUrl={
 					import.meta.env.DEV ? `ws://localhost:${AGENT_PORT}` : undefined
@@ -335,7 +297,7 @@ function App() {
 						</DesignPanel>
 
 						<FitFramesOnLoad />
-						{data === "demo" && <DemoAgentEdit />}
+						<DemoAgentEdit />
 					</DesignerContent>
 				</HelpProvider>
 			</Designer>

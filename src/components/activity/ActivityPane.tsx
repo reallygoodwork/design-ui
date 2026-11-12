@@ -238,6 +238,74 @@ const AgentStatusLine = () => {
 	);
 };
 
+type FeedItem = { at: string; key: string; node: React.ReactNode };
+
+/**
+ * The feed, newest first. In the full feed a note about a change sits under
+ * that change; showing comments only, it stands on its own.
+ */
+const feedItems = (
+	entries: ReturnType<typeof useChangeLog>["entries"],
+	annotations: Annotation[],
+	filter: Filter,
+	showResolved: boolean
+): FeedItem[] => {
+	const visible = (a: Annotation) => showResolved || a.status === "open";
+	const byEntry = new Map<string, Annotation[]>();
+	for (const a of annotations) {
+		if (a.entryId)
+			byEntry.set(a.entryId, [...(byEntry.get(a.entryId) ?? []), a]);
+	}
+	const items: FeedItem[] = [];
+	if (filter !== "comments") {
+		for (const entry of entries) {
+			items.push({
+				at: entry.at,
+				key: entry.id,
+				node: (
+					<ChangeRow
+						entry={entry}
+						notes={(byEntry.get(entry.id) ?? []).filter(visible)}
+					/>
+				),
+			});
+		}
+	}
+	if (filter !== "changes") {
+		for (const a of annotations) {
+			if (!visible(a) || (a.entryId && filter !== "comments")) continue;
+			items.push({
+				at: a.at,
+				key: a.id,
+				node: (
+					<li className="px-2 py-1.5">
+						<AnnotationThread annotation={a} />
+					</li>
+				),
+			});
+		}
+	}
+	return items.sort((a, b) => b.at.localeCompare(a.at));
+};
+
+/** Copies text, or downloads it as design.json when the clipboard is blocked. Returns whether it copied. */
+const copyOrDownload = async (json: string) => {
+	try {
+		await navigator.clipboard.writeText(json);
+		return true;
+	} catch {
+		const url = URL.createObjectURL(
+			new Blob([json], { type: "application/json" })
+		);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = "design.json";
+		a.click();
+		URL.revokeObjectURL(url);
+		return false;
+	}
+};
+
 /**
  * Everything that happened to the design, newest first: changes (with who and
  * why, undone ones struck through) and the comments, notes, decisions and
@@ -254,63 +322,14 @@ export const ActivityPane = () => {
 	const [writing, setWriting] = useState(false);
 	const [copied, setCopied] = useState(false);
 
-	const byEntry = new Map<string, Annotation[]>();
-	for (const a of annotations) {
-		if (a.entryId)
-			byEntry.set(a.entryId, [...(byEntry.get(a.entryId) ?? []), a]);
-	}
-	const visible = (a: Annotation) => showResolved || a.status === "open";
-
-	type Item = { at: string; key: string; node: React.ReactNode };
-	const items: Item[] = [];
-	if (filter !== "comments") {
-		for (const entry of entries) {
-			items.push({
-				at: entry.at,
-				key: entry.id,
-				node: (
-					<ChangeRow
-						entry={entry}
-						notes={(byEntry.get(entry.id) ?? []).filter(visible)}
-					/>
-				),
-			});
-		}
-	}
-	for (const a of annotations) {
-		// Under its change in the full feed; on its own when showing comments only.
-		if (!visible(a) || (a.entryId && filter !== "comments")) continue;
-		if (filter === "changes") continue;
-		items.push({
-			at: a.at,
-			key: a.id,
-			node: (
-				<li className="px-2 py-1.5">
-					<AnnotationThread annotation={a} />
-				</li>
-			),
-		});
-	}
-	items.sort((a, b) => b.at.localeCompare(a.at));
+	const items = feedItems(entries, annotations, filter, showResolved);
 	const open = annotations.filter((a) => a.status === "open").length;
 	const resolvedCount = annotations.length - open;
 
 	const copy = async () => {
-		const json = JSON.stringify(exportDocument(), null, 2);
-		try {
-			await navigator.clipboard.writeText(json);
+		if (await copyOrDownload(JSON.stringify(exportDocument(), null, 2))) {
 			setCopied(true);
 			setTimeout(() => setCopied(false), 1500);
-		} catch {
-			// Clipboard blocked: offer the file instead.
-			const url = URL.createObjectURL(
-				new Blob([json], { type: "application/json" })
-			);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = "design.json";
-			a.click();
-			URL.revokeObjectURL(url);
 		}
 	};
 

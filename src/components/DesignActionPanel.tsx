@@ -15,6 +15,7 @@ import { ActionElementType } from "./actions/ActionElementType";
 import { ActionFontFamily } from "./actions/ActionFontFamily";
 import { ActionFontSize } from "./actions/ActionFontSize";
 import { ActionFontWeight } from "./actions/ActionFontWeight";
+import { ActionImage } from "./actions/ActionImage";
 import { ActionLayout } from "./actions/ActionLayout";
 import { ActionLetterSpacing } from "./actions/ActionLetterSpacing";
 import { ActionLineHeight } from "./actions/ActionLineHeight";
@@ -61,6 +62,7 @@ export const DesignActionPanel = () => {
 				<ActionOpacity />
 				<ActionBorderRadius />
 				<ActionTextContent />
+				<ActionImage />
 				<ActionElementType />
 			</DesignerPane>
 			<DesignerPane title="Layout" category="layout" icon={<IconLayoutGrid />}>

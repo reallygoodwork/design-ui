@@ -1,5 +1,4 @@
 import {
-	aliasOf,
 	referencesOf,
 	type Token,
 	type TokenModeValue,

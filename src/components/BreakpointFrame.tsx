@@ -1,5 +1,6 @@
 import type React from "react";
-import { memo, useCallback, useRef } from "react";
+import { memo, useCallback, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useDesignerContext } from "../hooks/useDesignerContext";
 import { useDesignerSelector } from "../hooks/useDesignerSelector";
 import { useFrameRegistry } from "../hooks/useFrameRegistry";
@@ -11,6 +12,16 @@ import { cn } from "../lib/cn";
 import { applyCssVars, withoutTransitions } from "../lib/cssPropertyMapping";
 import type { Breakpoint, CSSVars, Layer, LayerWithStyles } from "../lib/Types";
 import { BreakpointHeader } from "./BreakpointHeader";
+import { useTokenOverlayCss } from "./tokens/TokenStyles";
+
+/**
+ * Design content renders in a shadow root, so neither the editor's styles nor
+ * a host app's reach it: what you see is how it renders anywhere else.
+ * `all: initial` doesn't reset custom properties, so token values still
+ * inherit from the host.
+ */
+const FRAME_BASE_CSS = `:host{all:initial;display:block;position:relative}
+[data-slot="designer-frame"]{position:absolute;inset:0}`;
 
 const sortedCache = new WeakMap<Breakpoint[], Breakpoint[]>();
 
@@ -114,17 +125,15 @@ const DesignerLayer = memo(function DesignerLayerView({
 
 	// Render nested children by id with the same breakpointId
 	const children =
-		layer.children && layer.children.length > 0 ? (
-			<>
-				{layer.children.map((child) => (
+		layer.children && layer.children.length > 0
+			? layer.children.map((child) => (
 					<DesignerLayer
 						key={child.id}
 						id={child.id}
 						breakpointId={breakpointId}
 					/>
-				))}
-			</>
-		) : undefined;
+				))
+			: undefined;
 
 	return (
 		<div
@@ -159,6 +168,13 @@ export const BreakpointFrame = ({
 	const registry = useFrameRegistry();
 	const breakpointId = breakpoint.id;
 
+	// The host gets an open shadow root; StrictMode mounts twice, so reuse it.
+	const [shadowRoot, setShadowRoot] = useState<ShadowRoot | null>(null);
+	const hostRef = useCallback((el: HTMLDivElement | null) => {
+		if (el) setShadowRoot(el.shadowRoot ?? el.attachShadow({ mode: "open" }));
+	}, []);
+	const overlayCss = useTokenOverlayCss();
+
 	// Register the content root so design-DOM queries go through the registry.
 	// React 18 ref callbacks have no cleanup, so remember the element to unregister.
 	const registeredRef = useRef<HTMLElement | null>(null);
@@ -180,8 +196,11 @@ export const BreakpointFrame = ({
 	const frameStyleVars = state.frameStyles;
 
 	const handleContentClick = (e: React.MouseEvent) => {
-		// Only select breakpoint if clicking on empty area (not on a layer)
-		if (e.target === e.currentTarget) {
+		// Only select the breakpoint when the click hit the frame itself, not a
+		// layer. Targets inside the shadow root read as the host, so check the
+		// real one.
+		const hit = e.nativeEvent.composedPath()[0];
+		if (hit instanceof Element && hit.matches('[data-slot="designer-frame"]')) {
 			dispatch({
 				type: "SELECT_BREAKPOINT",
 				payload: { breakpointId: breakpoint.id },
@@ -214,27 +233,38 @@ export const BreakpointFrame = ({
 					"breakpoint-content relative",
 					isActive && !isSelected && "ring-1 ring-primary/30"
 				)}
-				style={{
-					width: breakpoint.width,
-					height: breakpoint.height,
-					// Apply shared frame styles as real CSS properties so inheritable
-					// ones (font, color, line-height) cascade to layers natively
-					...applyCssVars(frameStyleVars),
-					backgroundColor: frameStyleVars?.["--background-color"] || "#ffffff",
-					color: frameStyleVars?.["--color"] || "#000000",
-				}}
-				ref={contentRef}
+				style={{ width: breakpoint.width, height: breakpoint.height }}
+				ref={hostRef}
 				onClick={handleContentClick}
-				data-slot="designer-frame"
 			>
-				{/* Render layers - they inherit frame styles via CSS inheritance */}
-				{layers.map((layer) => (
-					<DesignerLayer
-						key={layer.id}
-						id={layer.id}
-						breakpointId={breakpoint.id}
-					/>
-				))}
+				{shadowRoot &&
+					createPortal(
+						<>
+							<style>{FRAME_BASE_CSS + overlayCss}</style>
+							<div
+								ref={contentRef}
+								data-slot="designer-frame"
+								data-breakpoint-id={breakpoint.id}
+								style={{
+									// Shared frame styles (like <body>), as real properties so
+									// inheritable ones (font, color) cascade to layers
+									...applyCssVars(frameStyleVars),
+									backgroundColor:
+										frameStyleVars?.["--background-color"] || "#ffffff",
+									color: frameStyleVars?.["--color"] || "#000000",
+								}}
+							>
+								{layers.map((layer) => (
+									<DesignerLayer
+										key={layer.id}
+										id={layer.id}
+										breakpointId={breakpoint.id}
+									/>
+								))}
+							</div>
+						</>,
+						shadowRoot
+					)}
 			</div>
 		</div>
 	);

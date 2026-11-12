@@ -169,6 +169,8 @@ export const AgentLinkProvider = ({
 	// Push tasks to the agent as they're assigned to it.
 	const announced = useRef(new Set<string>());
 	useEffect(() => {
+		// Runs again when the agent connects, to send what it missed.
+		if (status !== "connected") return;
 		for (const a of notes.annotations) {
 			const waiting =
 				a.kind === "task" &&

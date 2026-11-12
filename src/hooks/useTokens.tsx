@@ -215,7 +215,7 @@ export const useTokens = (): TokensStore =>
 
 /** The mode a breakpoint frame renders in. */
 export const modeAt = (
-	store: TokensStore,
+	store: Pick<TokensStore, "mode">,
 	breakpointId?: string | null
 ): TokenMode =>
 	breakpointId

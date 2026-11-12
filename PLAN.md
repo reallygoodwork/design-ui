@@ -1368,3 +1368,232 @@ registration step, but no assertions may change.
   (`ActionFontFamily.tsx` fallback).
 - Headless core package, `applyOps`, MCP server.
 - React 19 / Vite 7 upgrade; bundle split; README refresh.
+
+## Round 4: a shared design format with editing rules
+
+### Context
+
+A product review (Nov 2026) found the project pitched as an editor kit but presented as a design
+tool, with neither working end to end. The user then set the direction: not a product to sell,
+but **a shared design format, plus an editor that enforces its rules, so people and agents can only
+make the changes you allow.**
+
+A developer or design-systems team decides what can change (layer types, properties, values,
+placement), then hands editing to marketers, clients or an AI agent. Everyone edits the same
+JSON, every change is checked against the same rules, and the saved document renders anywhere.
+
+What already supports this: per-type supported properties, validated agent actions with reasons,
+locked layers, tokens with modes, and per-change undo.
+
+Decisions already made by the user:
+- **No dependency on Coral UI** or its spec. Importers for other formats (Coral, Figma) are later
+  and optional.
+- **Styling:** ship a built stylesheet with themable variables. Consumers don't need Tailwind.
+- **Agents:** both modes. The MCP server edits a document file with no browser open, and relays
+  live when an editor is connected.
+- **Packages:** a React-free `core` (format, rules, actions, export), `react` (editor components,
+  hooks, renderer, stylesheet) and `mcp` (depends on `core` only). Names are placeholders.
+- **Demo:** stays as the live showcase, rewritten for a developer evaluating the project.
+
+Assumption to confirm: "controlled environment" means edits stay within limits someone set, not a
+sandboxed runtime. If that's wrong, K7 and K10 shift toward embedding.
+
+The Round 3 open items **L1** and **I2** carry into this round as K1 and K2.
+
+### Tasks and dependencies
+
+| Task | Blocked by | Why |
+|---|---|---|
+| K0 Credibility fixes | — | Independent small fixes |
+| K1 = L1 Zero lint warnings | — | Splits `applyAction`, which K3 moves |
+| K2 = I2 Shadow-root isolation | — | Neither editor nor host styles may reach design content |
+| K3 The format | K1 | Moves the reducer K1 restructures |
+| K4 Rules engine | K3 | Rules are part of the format and run in the reducer |
+| K5 Rules in the editor | K4 | Panels ask the engine what is allowed |
+| K6 Rules authoring and roles | K5 | Builds on the enforced UI |
+| K7 Delivery: renderer and export | K3 | Renders the format; independent of rules |
+| K8 Headless MCP server with rules | K4 | Agents need the engine and its explanations |
+| K9 Built stylesheet | K2 | Isolation first, so scoping editor CSS can't change designs |
+| K10 Packaging and publish dry run | K3, K7, K9 | Packages need the split, the renderer and the stylesheet |
+| K11 Docs and demo repositioning | K6, K8, K10 | Docs describe the real install, rules and agent setup |
+
+K0, K1 and K2 run in parallel. After K3, K4 and K7 run in parallel.
+
+### K0 — Credibility fixes
+
+**Fix:**
+- Mount `ActionImage` in `DesignActionPanel.tsx` for image layers, so an image's URL can be changed.
+- `CSSPanel.tsx`: stop wrapping inside `var(...)`; add a Copy button; when the CSS uses tokens,
+  include their values as a `:root` block.
+- Duplicating a layer names the copy "<name> copy".
+- `README.md`: remove the Storybook instructions and tech-stack line; use bun throughout.
+- Remove the deprecated `frameSize` option and its fallbacks (`Designer`, `DesignerContext`,
+  `ZoomControl`, `DesignerCanvas`). Pre-1.0, so no compatibility shim.
+
+**Acceptance:**
+- In the browser, an image layer's URL field changes the image on every artboard, and undo reverts it.
+- The CSS tab shows each declaration on one line, copies with one click, and defines every token it uses.
+- Cmd+D on "Title" adds "Title copy".
+- `grep -rn frameSize src` finds nothing; all tests pass.
+
+### K1 — Zero lint warnings (was L1)
+
+As specified under Round 3 L1.
+
+### K2 — Shadow-root style isolation (was I2)
+
+As specified under Round 3 I2.
+
+### K3 — The format
+
+**Fix:**
+- Workspace layout: `packages/core`, `packages/react`, `packages/mcp`, `apps/site` (docs + demo).
+- `core` defines the **document**: `{ version, layers, breakpoints, frameStyles, tokens,
+  tokenDimensions, rules, annotations, changes }`. Version 1 is today's `exportDocument()` shape
+  plus `rules` (empty by default).
+- zod schemas are the source of truth. Publish a generated JSON Schema
+  (`core/schema/document.v1.json`) so tools in any language can validate documents.
+- `migrate(doc)` upgrades older versions. `loadDocument(json)` validates, migrates and returns
+  readable errors.
+- Move into `core` everything React-free: the reducer (`applyAction`), history, the action schema
+  and validation (from `agentProtocol.ts`), the layer tree and index, tokens, the breakpoint
+  cascade, the change log and annotations.
+- Split `LayerType` into a core `LayerDefinition` (type, name, defaults, `supportsChildren`,
+  `supportedCssProperties`, `presets`, and an HTML serializer for K7) and a React renderer map
+  in `react`. `CSSProperties` and `ReactNode` leave the core's types.
+- `react` re-exports what consumers need from `core`, so a React app imports one package.
+
+**Acceptance:**
+- `core` has no `react` dependency, and its tests run in Node without jsdom.
+- The JSON Schema validates the demo document and rejects a document with a malformed layer.
+- `loadDocument` accepts a hand-written v1 file and rejects bad input with the path of the problem.
+- Every existing test passes, moved to the package that owns its code.
+- The demo behaves the same (browser smoke test: select, edit, breakpoints, undo, agent link).
+
+### K4 — Rules engine
+
+**Fix:**
+- `rules` in the document, all optional; with none, everything is allowed (today's behaviour).
+  Rule kinds, each targeting layer types, specific layers, or both:
+  - **editable properties:** which CSS properties may change;
+  - **allowed values:** tokens only, a numeric range, or a fixed list;
+  - **content:** whether text and image source may change;
+  - **structure:** locked (no add, delete, move or duplicate inside), or which layer types or
+    presets may be added as children, with minimum and maximum counts;
+  - **breakpoints:** whether per-breakpoint overrides are allowed.
+- `checkAction(doc, action, role)` returns `ok` or `{ ruleId, message }`, and `applyAction`
+  rejects disallowed actions for every caller: panels, shortcuts, the API and agents.
+- `checkDocument(doc)` returns every violation, for documents edited outside the editor.
+- `allowed(doc, layerId, role)` summarizes what a role may change on a layer, for UIs and agents.
+- Rules apply to the **editor** role. The **builder** role bypasses them and can change rules.
+
+**Acceptance:**
+- Unit tests cover each rule kind, both roles, and rule targeting by type and by layer.
+- A rejected action leaves the document and history unchanged, and its message names the rule.
+- `checkDocument` reports a token-only colour set to a hex value, and a locked frame with an
+  extra child.
+
+### K5 — Rules in the editor
+
+**Fix:**
+- A `useAllowed(layerId)` hook from `allowed()`.
+- Panels hide properties that can't be edited, and show a token picker only where values are
+  tokens-only, with ranges and fixed lists reflected in their controls.
+- Add layer (palette, toolbar and tree buttons, F/T/I shortcuts) offers only allowed children,
+  and hides itself where structure is locked.
+- Delete, duplicate, move and drag are unavailable for locked structure.
+- When something is blocked, say why in plain words: a short note in the panel, and a toast
+  naming the rule for a blocked shortcut.
+
+**Acceptance:**
+- With a demo rule set in the browser: an editor can change the title text but not its size;
+  colours offer tokens only; Add layer inside the locked hero shows nothing, and Delete does nothing
+  with a "Locked by …" message.
+- Switching to builder shows every control again.
+
+### K6 — Rules authoring and roles
+
+**Fix:**
+- A role prop on `Designer` (`builder` | `editor`), and a role switch in the demo header.
+- For builders, a **Rules** section in the panel for the selected layer: content editable,
+  structure locked, allowed children, editable properties, and tokens-only per property group.
+- The layer tree marks layers with rules, and an "Editor preview" shows exactly what an editor sees.
+- Rule changes are undoable actions with a change-log entry, like any other edit.
+
+**Acceptance:**
+- In the browser, a builder locks a frame's structure and sets its colours to tokens only; the
+  editor preview then enforces both, and undo removes the rule.
+- Rules set in the UI round-trip through `exportDocument` and `loadDocument` unchanged.
+
+### K7 — Delivery: renderer and export
+
+**Fix:**
+- `react`: `<DesignView document={doc} />` renders a saved document without the editor, using one
+  responsive stylesheet (mobile-first `@media (min-width)` per breakpoint) and token variables,
+  with token dimensions (theme, brand) as attribute selectors on its root.
+- `core`: `exportHtml(doc)` returns `{ html, css }` built from the same CSS generator.
+- The editor's Export menu offers JSON (today), HTML + CSS, or a single `.html` file.
+
+**Acceptance:**
+- At each breakpoint width, `DesignView` and the exported HTML match the matching artboard
+  (browser screenshot comparison, within anti-aliasing).
+- Unit tests cover the cascade, overrides, tokens and token dimensions, and every built-in layer type.
+
+### K8 — Headless MCP server with rules
+
+**Fix:**
+- `packages/mcp` runs as `npx <mcp-package> design.json --role editor`.
+- With no editor connected, tools read and write the file through `core`; when an editor connects,
+  it relays live as today and writes the file on change.
+- New tools: `get_rules` and `allowed_changes(layerId)` (from `allowed()`), so an agent knows its
+  limits before acting; `check_document`; `export_html`.
+- Rejections return the rule's message, so the agent can explain or adjust.
+
+**Acceptance:**
+- An MCP client against a `design.json` with no browser open can claim a task, apply allowed
+  changes with reasons, have a disallowed change rejected with the rule named, and resolve the task.
+- Opening the editor afterwards shows those changes in Activity, each undoable.
+- The existing `agent/mcp-server.test.ts` cases pass in both modes.
+
+### K9 — Built stylesheet
+
+**Fix:**
+- Compile the editor's Tailwind at build time into `packages/react/styles.css`.
+- Scope it under a root class, with no global preflight and themable variables with a project prefix.
+- Document theming by overriding those variables.
+
+**Acceptance:**
+- A plain Vite + React app with no Tailwind renders the editor correctly by importing `styles.css`
+  (K10's smoke app).
+- The host page's own styles are unchanged, checked in the smoke app.
+
+### K10 — Packaging and publish dry run
+
+**Fix:**
+- Builds: `core` to ESM + `.d.ts` + the JSON Schema; `react` with Vite library mode,
+  `react`/`react-dom` as peer dependencies (18 and 19), and `styles.css`; `mcp` as a Node bin.
+- `exports` maps, `files` lists, versions `0.1.0`.
+- `apps/smoke`: a minimal consumer app that installs the packed tarballs, embeds the editor with
+  a rule set, and renders the saved document with `DesignView`.
+
+**Acceptance:**
+- `npm pack` succeeds for each package, with no source maps or tests inside.
+- The smoke app builds and works from the tarballs, with no deep imports.
+- Nothing is published to npm without the user's go-ahead.
+
+### K11 — Docs and demo repositioning
+
+**Fix:**
+- Docs lead with the idea: one format, rules you set, people and agents editing within them, and
+  delivery anywhere. A short live demo shows an agent's disallowed change being rejected.
+- Sections: Install, Quickstart (an editor with rules in under 30 lines), The format (with the
+  JSON Schema), Rules, Agents (MCP setup in both modes), Delivery (`DesignView`, HTML export),
+  Extend, and an API reference.
+- Demo: the role switch is prominent; rewrite the welcome tour for a developer evaluating the
+  project; keep Connect an agent as the main call to action.
+- Rename away from "Coral Design" (name to be chosen) and rewrite `README.md` to match.
+
+**Acceptance:**
+- Every code sample in the docs compiles against the published API (a test imports each example).
+- A new reader can go from the docs to a running editor with rules and a connected agent using
+  only the docs.

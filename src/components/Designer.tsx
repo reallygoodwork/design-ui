@@ -42,11 +42,6 @@ type DesignerProps = {
 	 */
 	onLayersChange?: (layers: Layer[]) => void;
 	/**
-	 * @deprecated Use breakpoints instead.
-	 * The size of the frame.
-	 */
-	frameSize?: { width: number; height: number };
-	/**
 	 * The breakpoints (responsive frames) for the designer.
 	 */
 	breakpoints?: Breakpoint[];
@@ -124,7 +119,6 @@ export const Designer = ({
 	defaultLayers,
 	layers,
 	onLayersChange,
-	frameSize,
 	layerTypes,
 	breakpoints,
 	frameStyles,
@@ -149,7 +143,6 @@ export const Designer = ({
 			defaultLayers={defaultLayers}
 			layers={layers}
 			onLayersChange={onLayersChange}
-			frameSize={frameSize}
 			defaultLayerTypes={allLayerTypes}
 			breakpoints={breakpoints}
 			frameStyles={frameStyles}
