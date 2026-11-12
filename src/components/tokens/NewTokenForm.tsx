@@ -1,8 +1,8 @@
+import type { TokenTier, TokenType } from "@design-ui/core";
+import { pathProblem } from "@design-ui/core";
 import { useState } from "react";
 import { useTokenEditing } from "../../hooks/useTokenEditing";
 import { useTokens } from "../../hooks/useTokens";
-import { pathProblem } from "../../lib/tokenEdits";
-import type { TokenTier, TokenType } from "../../lib/tokens";
 import { Select } from "../common/Select";
 import { Field, selectClass } from "./TokenEditor";
 import { TIER_LABEL, TIER_ORDER } from "./TokenList";

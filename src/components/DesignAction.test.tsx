@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AllowedContext, EVERYTHING } from "../hooks/useAllowed";
 import { DesignAction } from "./DesignAction";
 
 afterEach(cleanup);
@@ -41,5 +42,26 @@ describe("DesignAction", () => {
 			</DesignAction>
 		);
 		expect(screen.queryByRole("button")).toBeNull();
+	});
+});
+
+describe("editing rules", () => {
+	it("hides a row whose property the rules don't let this role change", () => {
+		const { container } = render(
+			<AllowedContext.Provider
+				value={{ ...EVERYTHING, editableProperties: ["--color"] }}
+			>
+				<DesignAction label="Size" property="--font-size">
+					<input />
+				</DesignAction>
+				<DesignAction label="Color" property="--color">
+					<input />
+				</DesignAction>
+			</AllowedContext.Provider>
+		);
+		const rows = container.querySelectorAll("[data-slot=action]");
+		expect([...rows].map((r) => r.getAttribute("data-css-prop"))).toEqual([
+			"--color",
+		]);
 	});
 });

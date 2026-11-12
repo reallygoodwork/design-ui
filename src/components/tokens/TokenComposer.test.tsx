@@ -1,9 +1,9 @@
+import type { Token } from "@design-ui/core";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DesignerProvider } from "../../context/DesignerContext";
 import { TokensProvider } from "../../hooks/useTokens";
-import type { Token } from "../../lib/tokens";
 import { breakpoints, defaultLayerTypes } from "../../test/fixtures";
 import { TokenComposer } from "./TokenComposer";
 

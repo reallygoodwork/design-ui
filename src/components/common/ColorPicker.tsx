@@ -1,7 +1,6 @@
 import { Slider } from "@base-ui/react/slider";
 import { Toggle } from "@base-ui/react/toggle";
 import { ToggleGroup } from "@base-ui/react/toggle-group";
-import { useEffect, useRef, useState } from "react";
 import {
 	COLOR_FORMATS,
 	type ColorFormat,
@@ -12,7 +11,8 @@ import {
 	hsvaToString,
 	hsvToBytes,
 	parseToHsva,
-} from "../../lib/color";
+} from "@design-ui/core";
+import { useEffect, useRef, useState } from "react";
 
 const DEFAULT_COLOR: Hsva = { h: 0, s: 0, v: 0, a: 1 };
 

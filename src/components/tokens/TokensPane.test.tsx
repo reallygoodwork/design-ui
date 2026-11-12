@@ -1,3 +1,4 @@
+import type { Token } from "@design-ui/core";
 import {
 	cleanup,
 	fireEvent,
@@ -10,7 +11,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import { DesignerProvider } from "../../context/DesignerContext";
 import { useDesignerContext } from "../../hooks/useDesignerContext";
 import { TokensProvider } from "../../hooks/useTokens";
-import type { Token } from "../../lib/tokens";
 import { breakpoints, defaultLayerTypes, makeLayer } from "../../test/fixtures";
 import { TokensPane } from "./TokensPane";
 

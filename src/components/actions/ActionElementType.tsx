@@ -1,3 +1,4 @@
+import { useWhyBlocked } from "../../hooks/useAllowed";
 import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useDesignerContext } from "../../hooks/useDesignerContext";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
@@ -9,8 +10,17 @@ export const ActionElementType = () => {
 	const selectedLayer = selectedLayers[0];
 	const designerAction = useDesignerAction();
 	const { state } = useDesignerContext();
+	// Changing the element counts as changing the parent's structure.
+	const blocked = useWhyBlocked(
+		selectedLayer
+			? {
+					type: "UPDATE_LAYER_ELEMENT_TYPE",
+					payload: { layerId: selectedLayer.id, elementType: "" },
+				}
+			: null
+	);
 
-	if (!selectedLayer) return null;
+	if (!selectedLayer || blocked) return null;
 
 	// Find the layer type definition
 	const layerType = state.layerTypes.find(

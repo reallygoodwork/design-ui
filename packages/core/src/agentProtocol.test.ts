@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { Action } from "../hooks/useDesigner";
 import {
 	type AgentEditor,
 	type AgentRequest,
@@ -9,8 +8,9 @@ import {
 } from "./agentProtocol";
 import type { Annotation } from "./annotations";
 import type { ChangeEntry } from "./changeLog";
-import type { Breakpoint, Layer } from "./Types";
+import type { Action } from "./reducer";
 import type { Token } from "./tokens";
+import type { Breakpoint, Layer } from "./types";
 
 const layers: Layer[] = [
 	{
@@ -159,6 +159,39 @@ describe("agent requests", () => {
 				changes: [],
 			},
 		]);
+	});
+
+	it("applies nothing when the rules block an action, and says which rule", () => {
+		const { editor, log } = fakeEditor();
+		editor.checkRules = (actions) =>
+			actions.length === 2
+				? {
+						index: 1,
+						ruleId: "no-size",
+						message: "Feature's height can't be changed",
+					}
+				: null;
+		expect(() =>
+			ask(editor, {
+				method: "apply_changes",
+				params: {
+					reason: "Taller",
+					actions: [
+						{
+							type: "UPDATE_LAYER_VALUE",
+							payload: { id: "feature", value: "x" },
+						},
+						{
+							type: "UPDATE_LAYER_CSS",
+							payload: { id: "feature", css: { "--height": "400px" } },
+						},
+					],
+				},
+			})
+		).toThrow(
+			"Action 2 breaks the rule \"no-size\": Feature's height can't be changed"
+		);
+		expect(log.dispatched).toEqual([]);
 	});
 
 	it("claims, changes, and resolves a task, linking the changes to it", () => {

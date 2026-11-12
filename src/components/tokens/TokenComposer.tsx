@@ -1,15 +1,15 @@
 import { Popover } from "@base-ui/react/popover";
-import { IconCheck, IconPlus, IconX } from "@tabler/icons-react";
-import { useMemo, useRef, useState } from "react";
-import { modeAt, useTokens } from "../../hooks/useTokens";
-import { cn } from "../../lib/cn";
 import {
 	indexTokens,
 	isComposed,
 	referencesOf,
 	resolveTokenValue,
 	type TokenType,
-} from "../../lib/tokens";
+} from "@design-ui/core";
+import { IconCheck, IconPlus, IconX } from "@tabler/icons-react";
+import { useMemo, useRef, useState } from "react";
+import { modeAt, useTokens } from "../../hooks/useTokens";
+import { cn } from "../../lib/cn";
 import { Select } from "../common/Select";
 import { TokenGlyph, TokenList } from "./TokenList";
 import { TokenValueField } from "./TokenValueField";

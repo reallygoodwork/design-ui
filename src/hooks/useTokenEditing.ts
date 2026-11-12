@@ -1,13 +1,14 @@
-import { useCallback } from "react";
-import type { Layer } from "../lib/Types";
 import {
 	removeDimension,
 	removeModeValue,
 	renameDimension,
 	renameModeValue,
 	renameToken,
-} from "../lib/tokenEdits";
-import { type Token, tokenCssValue } from "../lib/tokens";
+	type Token,
+	tokenCssValue,
+} from "@design-ui/core";
+import { useCallback } from "react";
+import type { Layer } from "../lib/Types";
 import { useDesignerAction } from "./useDesignerAction";
 import { useLayers } from "./useLayers";
 import { useTokens } from "./useTokens";

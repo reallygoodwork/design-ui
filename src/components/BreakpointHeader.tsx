@@ -1,3 +1,4 @@
+import { isPrimaryBreakpoint, sortBreakpointsByWidth } from "@design-ui/core";
 import {
 	IconGripVertical,
 	IconPlayerPlay,
@@ -5,10 +6,6 @@ import {
 } from "@tabler/icons-react";
 import { useRef, useState } from "react";
 import { useDesignerContext } from "../hooks/useDesignerContext";
-import {
-	isPrimaryBreakpoint,
-	sortBreakpointsByWidth,
-} from "../lib/breakpointUtils";
 import { cn } from "../lib/cn";
 import type { Breakpoint } from "../lib/Types";
 

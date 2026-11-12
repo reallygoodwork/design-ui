@@ -1,3 +1,4 @@
+import { useAnyEditable } from "../../hooks/useAllowed";
 import { useBreakpointCssGroup } from "../../hooks/useBreakpointCss";
 import { useLayerDimensions } from "../../hooks/useLayerDimensions";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
@@ -70,6 +71,7 @@ export const ActionSize = () => {
 	const [layer] = useSelectedLayers();
 	const dimensions = useLayerDimensions(layer);
 	const group = useBreakpointCssGroup(SIZE);
+	if (!useAnyEditable(SIZE)) return null;
 	return (
 		<div className="grid grid-cols-2 gap-1">
 			<SizeField
@@ -106,6 +108,7 @@ const LIMIT_LABELS = ["Min width", "Min height", "Max width", "Max height"];
 /** Bounds for a layer that grows and shrinks. */
 export const ActionSizeLimits = () => {
 	const group = useBreakpointCssGroup(SIZE_LIMITS);
+	if (!useAnyEditable(SIZE_LIMITS)) return null;
 	return (
 		<div className="grid gap-1">
 			{LIMIT_LABELS.map((label, index) => (

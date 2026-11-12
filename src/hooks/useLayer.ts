@@ -1,5 +1,5 @@
+import { denormalizeNode } from "@design-ui/core";
 import { useCallback } from "react";
-import { denormalizeNode } from "../lib/layerTree";
 import type { Layer } from "../lib/Types";
 import { useDesignerSelector } from "./useDesignerSelector";
 

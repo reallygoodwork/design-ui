@@ -1,9 +1,9 @@
-import { useCallback, useMemo } from "react";
 import {
 	getEffectiveStyles,
 	getPropertyValue,
 	isPrimaryBreakpoint,
-} from "../lib/breakpointUtils";
+} from "@design-ui/core";
+import { useCallback, useMemo } from "react";
 import type { CSSVars } from "../lib/Types";
 import { useDesignerAction } from "./useDesignerAction";
 import { useDesignerContext } from "./useDesignerContext";

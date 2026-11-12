@@ -1,16 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { applyCssVars, getCssPropertyName } from "./cssPropertyMapping";
-import { frameLayerType } from "./layers/frame";
-import { imageLayerType } from "./layers/image";
-import { inputLayerType } from "./layers/input";
-import { textLayerType } from "./layers/text";
+import { frameLayer } from "./layers/frame";
+import { imageLayer } from "./layers/image";
+import { inputLayer } from "./layers/input";
+import { textLayer } from "./layers/text";
 
-const layerTypes = [
-	frameLayerType,
-	textLayerType,
-	imageLayerType,
-	inputLayerType,
-];
+const layerTypes = [frameLayer, textLayer, imageLayer, inputLayer];
 
 describe("layout", () => {
 	it.each(layerTypes.map((t) => [t.type, t] as const))(

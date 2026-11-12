@@ -1,3 +1,4 @@
+import type { Token, TokenDimensions } from "@design-ui/core";
 import {
 	act,
 	cleanup,
@@ -10,7 +11,6 @@ import { useEffect } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { DesignerProvider } from "../../context/DesignerContext";
 import { TokensProvider, useTokens } from "../../hooks/useTokens";
-import type { Token, TokenDimensions } from "../../lib/tokens";
 import { breakpoints, defaultLayerTypes } from "../../test/fixtures";
 import { TokenTable } from "./TokenTable";
 

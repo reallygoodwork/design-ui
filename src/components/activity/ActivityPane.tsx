@@ -1,3 +1,9 @@
+import type { Annotation, Token } from "@design-ui/core";
+import {
+	type ChangeEntry,
+	revertWrites,
+	sortBreakpointsByWidth,
+} from "@design-ui/core";
 import {
 	IconArrowBackUp,
 	IconCopy,
@@ -13,11 +19,7 @@ import { useDesignerApi } from "../../hooks/useDesignerApi";
 import { useDesignerSelector } from "../../hooks/useDesignerSelector";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { useTokens } from "../../hooks/useTokens";
-import type { Annotation } from "../../lib/annotations";
-import { sortBreakpointsByWidth } from "../../lib/breakpointUtils";
-import { type ChangeEntry, revertWrites } from "../../lib/changeLog";
 import { cn } from "../../lib/cn";
-import type { Token } from "../../lib/tokens";
 import { useHelp } from "../help/HelpProvider";
 import {
 	AnnotationThread,

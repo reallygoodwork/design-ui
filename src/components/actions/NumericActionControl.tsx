@@ -1,6 +1,7 @@
+import type { TokenType } from "@design-ui/core";
 import type { ReactNode } from "react";
+import { usePropertyAccess } from "../../hooks/useAllowed";
 import { useBreakpointCss } from "../../hooks/useBreakpointCss";
-import type { TokenType } from "../../lib/tokens";
 import { Tooltip } from "../common/Tooltip";
 import { UnitField } from "../common/UnitField";
 import { DesignAction } from "../DesignAction";
@@ -38,6 +39,13 @@ export const NumericActionControl = ({
 	scale,
 	tokenType = "dimension",
 }: NumericActionControlProps) => {
+	// A range from the editing rules narrows the control's own.
+	const access = usePropertyAccess(cssProperty);
+	min =
+		access.min !== undefined ? Math.max(min ?? access.min, access.min) : min;
+	max =
+		access.max !== undefined ? Math.min(max ?? access.max, access.max) : max;
+	units = access.unit && units ? units.filter((u) => u === access.unit) : units;
 	const {
 		value,
 		isExplicit,

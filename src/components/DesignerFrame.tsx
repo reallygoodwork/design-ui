@@ -1,5 +1,5 @@
+import { calculateBoundingBox } from "@design-ui/core";
 import { useDesignerContext } from "../hooks/useDesignerContext";
-import { calculateBoundingBox } from "../lib/breakpointUtils";
 import { BreakpointFrame } from "./BreakpointFrame";
 
 /**

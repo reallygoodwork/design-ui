@@ -1,3 +1,4 @@
+import { getEffectiveStyles } from "@design-ui/core";
 import { Fragment, type ReactNode, useEffect } from "react";
 import { DesignerProvider } from "../context/DesignerContext";
 import { useDesignerAction } from "../hooks/useDesignerAction";
@@ -5,7 +6,6 @@ import { useDesignerSelector } from "../hooks/useDesignerSelector";
 import { useLayers } from "../hooks/useLayers";
 import { useLayerTypes } from "../hooks/useLayerTypes";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
-import { getEffectiveStyles } from "../lib/breakpointUtils";
 import { cn } from "../lib/cn";
 import { frameLayerType } from "../lib/layers/frame";
 import { imageLayerType } from "../lib/layers/image";

@@ -1,14 +1,14 @@
-import { IconSearch } from "@tabler/icons-react";
-import { useState } from "react";
-import { modeAt, useTokens } from "../../hooks/useTokens";
-import { cn } from "../../lib/cn";
 import {
 	indexTokens,
 	resolveToken,
 	type Token,
 	type TokenTier,
 	type TokenType,
-} from "../../lib/tokens";
+} from "@design-ui/core";
+import { IconSearch } from "@tabler/icons-react";
+import { useState } from "react";
+import { modeAt, useTokens } from "../../hooks/useTokens";
+import { cn } from "../../lib/cn";
 import type { Suggestion } from "./suggest";
 
 /** A small picture of a token's value: a swatch, a length, or "Aa". */

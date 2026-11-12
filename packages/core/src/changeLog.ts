@@ -1,6 +1,6 @@
-import type { Action, State } from "../hooks/useDesigner";
-import type { CSSVars, LayerNode } from "./Types";
+import type { Action, State } from "./reducer";
 import type { Token } from "./tokens";
+import type { CSSVars, LayerNode } from "./types";
 
 /** Who made a change. */
 export type Actor = { kind: "user" | "agent"; name: string };

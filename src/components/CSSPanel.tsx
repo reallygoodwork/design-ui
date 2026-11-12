@@ -1,3 +1,4 @@
+import { layerCssText, tokensToCssVars } from "@design-ui/core";
 import { IconCheck, IconCopy } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { useActiveBreakpoint } from "../hooks/useActiveBreakpoint";
@@ -5,8 +6,6 @@ import { useEffectiveCss } from "../hooks/useBreakpointCss";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
 import { modeAt, useTokens } from "../hooks/useTokens";
 import { applyCssVars } from "../lib/cssPropertyMapping";
-import { layerCssText } from "../lib/cssText";
-import { tokensToCssVars } from "../lib/tokens";
 import { DesignerPane } from "./DesignerPane";
 
 /** The selected layer's CSS at the active breakpoint, ready to copy. */

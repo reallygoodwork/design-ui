@@ -1,4 +1,4 @@
-import { denormalize } from "../lib/layerTree";
+import { denormalize } from "@design-ui/core";
 import { useDesignerSelector } from "./useDesignerSelector";
 
 /**

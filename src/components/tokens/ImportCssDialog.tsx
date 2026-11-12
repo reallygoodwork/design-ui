@@ -1,19 +1,17 @@
 import { Dialog } from "@base-ui/react/dialog";
-import { useMemo, useState } from "react";
-import { useTokens } from "../../hooks/useTokens";
-import { cn } from "../../lib/cn";
-import {
-	type ImportCandidate,
-	importCandidates,
-	scanCssVariables,
-} from "../../lib/tokenEdits";
 import {
 	allModes,
 	BREAKPOINT_DIMENSION,
+	type ImportCandidate,
+	importCandidates,
 	indexTokens,
 	resolveToken,
+	scanCssVariables,
 	type Token,
-} from "../../lib/tokens";
+} from "@design-ui/core";
+import { useMemo, useState } from "react";
+import { useTokens } from "../../hooks/useTokens";
+import { cn } from "../../lib/cn";
 import { TokenGlyph } from "./TokenList";
 
 const STATUS: Record<

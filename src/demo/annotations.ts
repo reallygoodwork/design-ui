@@ -1,4 +1,4 @@
-import type { Annotation } from "../lib/annotations";
+import type { Annotation } from "@design-ui/core";
 
 const minutesAgo = (minutes: number) =>
 	new Date(Date.now() - minutes * 60_000).toISOString();

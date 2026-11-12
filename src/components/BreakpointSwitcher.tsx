@@ -1,12 +1,9 @@
 import { Toggle } from "@base-ui/react/toggle";
 import { ToggleGroup } from "@base-ui/react/toggle-group";
+import { getPropertyValue, sortBreakpointsByWidth } from "@design-ui/core";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useDesignerSelector } from "../hooks/useDesignerSelector";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
-import {
-	getPropertyValue,
-	sortBreakpointsByWidth,
-} from "../lib/breakpointUtils";
 import { cn } from "../lib/cn";
 
 /**

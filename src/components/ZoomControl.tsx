@@ -1,9 +1,9 @@
 import { Menu as BaseMenu } from "@base-ui/react/menu";
+import { calculateBoundingBox } from "@design-ui/core";
 import { IconChevronDown } from "@tabler/icons-react";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useDesignerSelector } from "../hooks/useDesignerSelector";
 import { useZoom } from "../hooks/useZoom";
-import { calculateBoundingBox } from "../lib/breakpointUtils";
 
 export const ZoomControl = () => {
 	const dispatch = useDesignerAction();

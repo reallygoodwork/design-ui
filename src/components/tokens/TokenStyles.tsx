@@ -1,14 +1,14 @@
-import { useMemo } from "react";
-import { useLayers } from "../../hooks/useLayers";
-import { modeAt, useTokens } from "../../hooks/useTokens";
-import type { Layer } from "../../lib/Types";
 import {
 	indexTokens,
 	resolveToken,
 	tokenCssName,
 	tokenFromCssValue,
 	tokensToCssVars,
-} from "../../lib/tokens";
+} from "@design-ui/core";
+import { useMemo } from "react";
+import { useLayers } from "../../hooks/useLayers";
+import { modeAt, useTokens } from "../../hooks/useTokens";
+import type { Layer } from "../../lib/Types";
 
 const flatten = (layers: Layer[]): Layer[] =>
 	layers.flatMap((layer) => [layer, ...flatten(layer.children ?? [])]);

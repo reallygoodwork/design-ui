@@ -3,15 +3,17 @@
  * a result or an error, plus events the editor pushes (a task was assigned).
  * Transport-agnostic: the MCP server relays these over a WebSocket.
  */
-import type { Action } from "../hooks/useDesigner";
+
 import type {
 	Annotation,
 	AnnotationKind,
 	AnnotationTarget,
 } from "./annotations";
 import type { ChangeEntry } from "./changeLog";
-import type { Breakpoint, CSSVars, Layer } from "./Types";
+import type { Action } from "./reducer";
+import type { Rejection } from "./rules";
 import type { Token, TokenDimensions } from "./tokens";
+import type { Breakpoint, CSSVars, Layer } from "./types";
 
 export const AGENT_PORT = 8790;
 
@@ -77,6 +79,11 @@ export type AgentEditor = {
 	annotations: () => Annotation[];
 	changes: () => ChangeEntry[];
 	dispatch: (action: Action, reason: string, taskId?: string) => void;
+	/**
+	 * The first action in a batch the editing rules would block, if any.
+	 * Editors without rules can leave it out.
+	 */
+	checkRules?: (actions: Action[]) => (Rejection & { index: number }) | null;
 	/** Changes tokens on the agent's behalf; the log credits the agent with `reason`. */
 	setTokens: (
 		update: (tokens: readonly Token[]) => readonly Token[],
@@ -362,6 +369,12 @@ export function handleAgentRequest(
 					layers = [...layers, added];
 				}
 			});
+			// Then the editing rules, so a blocked action applies nothing either.
+			const blocked = editor.checkRules?.(actions as Action[]);
+			if (blocked)
+				throw new Error(
+					`Action ${blocked.index + 1} breaks the rule "${blocked.ruleId}": ${blocked.message}`
+				);
 			for (const action of actions)
 				editor.dispatch(action as Action, reason, taskId);
 			return { applied: actions.length };

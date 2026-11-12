@@ -2,6 +2,7 @@ import { Toggle } from "@base-ui/react/toggle";
 import { ToggleGroup } from "@base-ui/react/toggle-group";
 import { Tooltip } from "@base-ui/react/tooltip";
 import type { ReactNode } from "react";
+import { usePropertyAccess } from "../../hooks/useAllowed";
 import { useBreakpointCss } from "../../hooks/useBreakpointCss";
 import { cn } from "../../lib/cn";
 import { DesignAction } from "../DesignAction";
@@ -27,6 +28,9 @@ export const ToggleGroupControl = ({
 	defaultValue = "",
 	orientation = "horizontal",
 }: ToggleGroupControlProps) => {
+	// A fixed list from the editing rules leaves only those options.
+	const { oneOf } = usePropertyAccess(cssProperty);
+	if (oneOf) options = options.filter((o) => oneOf.includes(o.value));
 	const { value, isExplicit, isOverride, setValue, clearValue } =
 		useBreakpointCss(cssProperty);
 	const currentValue = value || defaultValue;

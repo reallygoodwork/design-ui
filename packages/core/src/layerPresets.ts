@@ -1,13 +1,16 @@
-import type { Layer, LayerPreset, LayerType } from "./Types";
+import type { Layer, LayerDefinition, LayerPreset } from "./types";
 
-export type PresetEntry = {
+export type PresetEntry<T extends LayerDefinition = LayerDefinition> = {
 	/** Unique across all types: `${type}:${preset.id}`. */
 	key: string;
-	layerType: LayerType;
+	layerType: T;
 	preset: LayerPreset;
 };
 
-export type PresetGroup = { name: string; entries: PresetEntry[] };
+export type PresetGroup<T extends LayerDefinition = LayerDefinition> = {
+	name: string;
+	entries: PresetEntry<T>[];
+};
 
 /** Built-in groups come first, in this order. Any other group follows. */
 const GROUP_ORDER = ["Layout", "Text", "Media"];
@@ -17,8 +20,10 @@ const FALLBACK_GROUP = "More layers";
  * Every layer a person can add, grouped. A type with presets lists each one;
  * a type without them, such as a custom layer, is listed once by its name.
  */
-export const groupLayerPresets = (layerTypes: LayerType[]): PresetGroup[] => {
-	const groups = new Map<string, PresetEntry[]>();
+export const groupLayerPresets = <T extends LayerDefinition>(
+	layerTypes: T[]
+): PresetGroup<T>[] => {
+	const groups = new Map<string, PresetEntry<T>[]>();
 	for (const layerType of layerTypes) {
 		const presets: LayerPreset[] = layerType.presets ?? [
 			{

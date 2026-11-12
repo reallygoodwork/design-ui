@@ -1,10 +1,10 @@
-import { useMemo, useRef } from "react";
 import {
 	type CubicBezier,
 	type CurvePoint,
 	type SpringParams,
 	sampleSpring,
-} from "../../lib/easing";
+} from "@design-ui/core";
+import { useMemo, useRef } from "react";
 
 const WIDTH = 224;
 const HEIGHT = 168;

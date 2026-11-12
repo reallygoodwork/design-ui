@@ -1,12 +1,13 @@
 import { Popover } from "@base-ui/react/popover";
+import { tokenCssValue, tokenFromCssValue } from "@design-ui/core";
 import { IconLink, IconLinkOff, IconX } from "@tabler/icons-react";
 import { useState } from "react";
+import { useAnyEditable } from "../../hooks/useAllowed";
 import { useBreakpointCssGroup } from "../../hooks/useBreakpointCss";
 import { useDesignerSelector } from "../../hooks/useDesignerSelector";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { useTokens, useTokenValue } from "../../hooks/useTokens";
 import { cn } from "../../lib/cn";
-import { tokenCssValue, tokenFromCssValue } from "../../lib/tokens";
 import { ClearButton } from "../common/ClearButton";
 import { ScrubField } from "../common/ScrubField";
 import { Select } from "../common/Select";
@@ -662,7 +663,14 @@ const BoxTokens = ({ group }: { group: Group }) => {
 };
 
 /** Padding and margin on a picture of the layer, edited in place. */
+const BOX_PROPERTIES = (["padding", "margin"] as const).flatMap((box) =>
+	["block-start", "block-end", "inline-start", "inline-end"].map(
+		(side) => `--${box}-${side}`
+	)
+);
+
 export const BoxModel = () => {
 	const [layer] = useSelectedLayers();
+	if (!useAnyEditable(BOX_PROPERTIES)) return null;
 	return <BoxDiagram key={layer?.id} />;
 };

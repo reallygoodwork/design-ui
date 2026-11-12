@@ -5,6 +5,8 @@ import type { MoveableManagerInterface, Renderer } from "react-moveable";
 
 interface StructureAbleProps {
 	supportsChildren?: boolean;
+	/** False when the rules lock the layer's parent: no adding beside it. */
+	canAddAround?: boolean;
 	onOpenAddLayerDialog?: (data: {
 		layerId: string;
 		position: "before" | "inside" | "after";
@@ -13,13 +15,14 @@ interface StructureAbleProps {
 
 export const StructureAble = {
 	name: "structureViewable",
-	props: ["supportsChildren", "onOpenAddLayerDialog"],
+	props: ["supportsChildren", "canAddAround", "onOpenAddLayerDialog"],
 	events: [],
 	render(
 		moveable: MoveableManagerInterface<StructureAbleProps, unknown>,
 		_React: Renderer
 	) {
 		const supportsChildren = moveable.props.supportsChildren ?? false;
+		const canAddAround = moveable.props.canAddAround ?? true;
 		const rect = moveable.getRect();
 		const { pos2 } = moveable.state;
 		// Get the height of the selected element
@@ -74,25 +77,27 @@ export const StructureAble = {
 				}}
 			>
 				{/* Top button - positioned above the frame */}
-				<Button
-					data-moveable-control="true"
-					className="size-6 bg-muted-foreground text-background rounded-full leading-none text-control flex items-center justify-center hover:bg-gray-500 active:bg-gray-600 shrink-0 absolute top-0"
-					title="Add layer before"
-					style={{
-						transform: "translateY(calc(-100% - 2px))",
-						pointerEvents: "auto",
-					}}
-					onClick={(e) => {
-						e.stopPropagation();
-						openAddLayerDialog("before");
-					}}
-				>
-					<IconPlus
-						className="size-2.5 shrink-0"
-						aria-hidden="true"
-						strokeWidth={3}
-					/>
-				</Button>
+				{canAddAround && (
+					<Button
+						data-moveable-control="true"
+						className="size-6 bg-muted-foreground text-background rounded-full leading-none text-control flex items-center justify-center hover:bg-gray-500 active:bg-gray-600 shrink-0 absolute top-0"
+						title="Add layer before"
+						style={{
+							transform: "translateY(calc(-100% - 2px))",
+							pointerEvents: "auto",
+						}}
+						onClick={(e) => {
+							e.stopPropagation();
+							openAddLayerDialog("before");
+						}}
+					>
+						<IconPlus
+							className="size-2.5 shrink-0"
+							aria-hidden="true"
+							strokeWidth={3}
+						/>
+					</Button>
+				)}
 				{/* Middle button - only show if layer supports children */}
 				{supportsChildren && (
 					<Button
@@ -119,28 +124,29 @@ export const StructureAble = {
 					</Button>
 				)}
 				{/* Bottom button - positioned at the bottom of the frame */}
-				<Button
-					data-moveable-control="true"
-					className="size-6 bg-muted-foreground text-background rounded-full leading-none text-control flex items-center justify-center hover:bg-gray-500 active:bg-gray-600 shrink-0 absolute top-0"
-					title="Add layer after"
-					style={
-						{
-							transform: `translateY(calc(${height}px + 2px))`,
-							pointerEvents: "auto",
-							// marginTop: "4px",
-						} as React.CSSProperties
-					}
-					onClick={(e) => {
-						e.stopPropagation();
-						openAddLayerDialog("after");
-					}}
-				>
-					<IconPlus
-						className="size-2.5 shrink-0"
-						aria-hidden="true"
-						strokeWidth={3}
-					/>
-				</Button>
+				{canAddAround && (
+					<Button
+						data-moveable-control="true"
+						className="size-6 bg-muted-foreground text-background rounded-full leading-none text-control flex items-center justify-center hover:bg-gray-500 active:bg-gray-600 shrink-0 absolute top-0"
+						title="Add layer after"
+						style={
+							{
+								transform: `translateY(calc(${height}px + 2px))`,
+								pointerEvents: "auto",
+							} as React.CSSProperties
+						}
+						onClick={(e) => {
+							e.stopPropagation();
+							openAddLayerDialog("after");
+						}}
+					>
+						<IconPlus
+							className="size-2.5 shrink-0"
+							aria-hidden="true"
+							strokeWidth={3}
+						/>
+					</Button>
+				)}
 			</EditableViewer>
 		);
 	},

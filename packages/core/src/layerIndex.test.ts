@@ -5,7 +5,7 @@ import {
 	getLayer,
 	isDescendant,
 } from "./layerIndex";
-import type { Layer } from "./Types";
+import type { Layer } from "./types";
 
 // mulberry32: small seeded PRNG so the trees are deterministic
 const seeded = (seed: number) => {

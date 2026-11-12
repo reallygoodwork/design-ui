@@ -1,4 +1,14 @@
 import {
+	BREAKPOINT_DIMENSION,
+	indexTokens,
+	modeNameProblem,
+	resolveToken,
+	setModeValue,
+	type Token,
+	type TokenTier,
+	type TokenType,
+} from "@design-ui/core";
+import {
 	IconArrowsDiagonal,
 	IconArrowsDiagonalMinimize2,
 	IconPlus,
@@ -9,15 +19,6 @@ import { type ReactNode, useMemo, useRef, useState } from "react";
 import { useTokenEditing } from "../../hooks/useTokenEditing";
 import { useTokens } from "../../hooks/useTokens";
 import { cn } from "../../lib/cn";
-import { modeNameProblem, setModeValue } from "../../lib/tokenEdits";
-import {
-	BREAKPOINT_DIMENSION,
-	indexTokens,
-	resolveToken,
-	type Token,
-	type TokenTier,
-	type TokenType,
-} from "../../lib/tokens";
 import { Select } from "../common/Select";
 import { TokenGraph } from "./TokenGraph";
 import { TIER_LABEL, TIER_ORDER, TokenGlyph } from "./TokenList";

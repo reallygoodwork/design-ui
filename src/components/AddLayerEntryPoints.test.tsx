@@ -88,3 +88,48 @@ describe("Add layer entry points", () => {
 		});
 	});
 });
+
+describe("Add layer under editing rules", () => {
+	const setupWithRules = (role: "builder" | "editor") => {
+		renderInDesigner(
+			<>
+				<Capture />
+				<DesignToolbarContainer />
+				<PaneLayerTree />
+			</>,
+			{
+				layers: [
+					makeLayer("Card", [makeLayer("Copy", undefined, { type: "text" })]),
+				],
+				rules: [
+					{
+						id: "card-locked",
+						target: { layerIds: ["Card"] },
+						structure: { locked: true },
+					},
+				],
+				role,
+			}
+		);
+		act(() => {
+			ref.dispatch?.({
+				type: "SELECT_LAYER",
+				payload: { layerId: "Card", shiftKey: false },
+			});
+		});
+	};
+
+	it("offers no Add layer inside a locked layer to editors", () => {
+		setupWithRules("editor");
+		expect(
+			screen.queryByRole("button", { name: /Add layer inside/ })
+		).toBeNull();
+	});
+
+	it("still offers it to builders", () => {
+		setupWithRules("builder");
+		expect(
+			screen.getAllByRole("button", { name: "Add layer inside Card" })
+		).toHaveLength(2);
+	});
+});

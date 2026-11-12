@@ -1,5 +1,5 @@
+import { getEffectiveStyles } from "@design-ui/core";
 import { useMemo } from "react";
-import { getEffectiveStyles } from "../lib/breakpointUtils";
 import type { CSSVars, Layer } from "../lib/Types";
 import { useDesignerContext } from "./useDesignerContext";
 

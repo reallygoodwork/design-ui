@@ -1,0 +1,15 @@
+{
+	"name": "@design-ui/core",
+	"version": "0.0.0",
+	"private": true,
+	"description": "The design format: document types, actions, validation and tokens, with no UI.",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./schema/document.v1.json": "./schema/document.v1.json"
+	},
+	"dependencies": {
+		"culori": "^4.0.2",
+		"zod": "^4"
+	}
+}

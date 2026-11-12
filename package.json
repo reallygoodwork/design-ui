@@ -1,6 +1,9 @@
 {
 	"name": "coral-design",
 	"private": true,
+	"workspaces": [
+		"packages/*"
+	],
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
@@ -13,9 +16,11 @@
 		"format": "biome format --write .",
 		"format:check": "biome format .",
 		"test": "vitest run",
-		"test:watch": "vitest"
+		"test:watch": "vitest",
+		"schema": "bun packages/core/scripts/write-schema.ts"
 	},
 	"dependencies": {
+		"@design-ui/core": "workspace:*",
 		"@base-ui/react": "^1.9.0",
 		"@tabler/icons-react": "^3.50.0",
 		"@tailwindcss/vite": "^4.3.4",
@@ -45,6 +50,7 @@
 		"@types/react-dom": "^18.3.7",
 		"@types/ws": "^8.18.2",
 		"@vitejs/plugin-react": "^4.7.0",
+		"ajv": "^8.20.0",
 		"jsdom": "^30.1.3",
 		"typescript": "^5.9.3",
 		"vite": "^5.4.21",

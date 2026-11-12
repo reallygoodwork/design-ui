@@ -1,3 +1,4 @@
+import { sortBreakpointsByWidth } from "@design-ui/core";
 import type React from "react";
 import { memo, useCallback, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -7,7 +8,6 @@ import { useFrameRegistry } from "../hooks/useFrameRegistry";
 import { useLayer } from "../hooks/useLayer";
 import { useLayers } from "../hooks/useLayers";
 import { useLayerTypes } from "../hooks/useLayerTypes";
-import { sortBreakpointsByWidth } from "../lib/breakpointUtils";
 import { cn } from "../lib/cn";
 import { applyCssVars, withoutTransitions } from "../lib/cssPropertyMapping";
 import type { Breakpoint, CSSVars, Layer, LayerWithStyles } from "../lib/Types";

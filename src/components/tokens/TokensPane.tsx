@@ -1,4 +1,13 @@
 import {
+	indexTokens,
+	resolveToken,
+	type Token,
+	type TokenIssue,
+	type TokenTier,
+	type TokenType,
+	tokenFromCssValue,
+} from "@design-ui/core";
+import {
 	IconAlertOctagon,
 	IconAlertTriangle,
 	IconChevronRight,
@@ -13,15 +22,6 @@ import { useTokenEditing } from "../../hooks/useTokenEditing";
 import { modeAt, useTokens } from "../../hooks/useTokens";
 import { cn } from "../../lib/cn";
 import type { Layer } from "../../lib/Types";
-import {
-	indexTokens,
-	resolveToken,
-	type Token,
-	type TokenIssue,
-	type TokenTier,
-	type TokenType,
-	tokenFromCssValue,
-} from "../../lib/tokens";
 import { type Category, CategoryChip } from "../common/CategoryChip";
 import { ImportCssDialog } from "./ImportCssDialog";
 import { NewTokenForm } from "./NewTokenForm";

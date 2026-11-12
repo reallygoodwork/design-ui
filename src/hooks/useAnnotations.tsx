@@ -1,3 +1,9 @@
+import type {
+	Annotation,
+	AnnotationKind,
+	AnnotationTarget,
+} from "@design-ui/core";
+import { type Actor, newId, YOU } from "@design-ui/core";
 import {
 	createContext,
 	type ReactNode,
@@ -8,12 +14,6 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type {
-	Annotation,
-	AnnotationKind,
-	AnnotationTarget,
-} from "../lib/annotations";
-import { type Actor, newId, YOU } from "../lib/changeLog";
 import { useChangeLog } from "./useChangeLog";
 
 export type NewAnnotation = {

@@ -1,15 +1,18 @@
 import { Dialog } from "@base-ui/react/dialog";
-import { IconSearch } from "@tabler/icons-react";
-import { Command } from "cmdk";
-import { useMemo } from "react";
-import { useDesignerAction } from "../hooks/useDesignerAction";
-import { useDesignerContext } from "../hooks/useDesignerContext";
-import { useLayerTypes } from "../hooks/useLayerTypes";
 import {
+	acceptsChildren,
 	groupLayerPresets,
 	layerFromPreset,
 	type PresetEntry,
-} from "../lib/layerPresets";
+} from "@design-ui/core";
+import { IconSearch } from "@tabler/icons-react";
+import { Command } from "cmdk";
+import { useMemo } from "react";
+import { useAllowed } from "../hooks/useAllowed";
+import { useDesignerAction } from "../hooks/useDesignerAction";
+import { useDesignerContext } from "../hooks/useDesignerContext";
+import { useLayerTypes } from "../hooks/useLayerTypes";
+import type { LayerType } from "../lib/Types";
 
 const newLayerId = () =>
 	`layer-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
@@ -41,15 +44,15 @@ const filterLayers = (_value: string, search: string, keywords?: string[]) => {
 };
 
 /** The type's shortcut adds its plain version, so only that row shows it. */
-const shortcutFor = ({ layerType, preset }: PresetEntry) =>
+const shortcutFor = ({ layerType, preset }: PresetEntry<LayerType>) =>
 	preset.elementType || preset.values ? undefined : layerType.keybinding?.label;
 
 const Row = ({
 	entry,
 	onSelect,
 }: {
-	entry: PresetEntry;
-	onSelect: (entry: PresetEntry) => void;
+	entry: PresetEntry<LayerType>;
+	onSelect: (entry: PresetEntry<LayerType>) => void;
 }) => {
 	const { layerType, preset } = entry;
 	const shortcut = shortcutFor(entry);
@@ -95,8 +98,28 @@ export const AddLayerDialog = () => {
 	const { state } = useDesignerContext();
 	const designerAction = useDesignerAction();
 	const layerTypes = useLayerTypes();
-	const groups = useMemo(() => groupLayerPresets(layerTypes), [layerTypes]);
 	const dialogState = state.addLayerDialog;
+	// Only what the editing rules let the role add where the layer would go.
+	const parentId =
+		dialogState?.position === "inside"
+			? dialogState.layerId
+			: dialogState
+				? (state.nodes[dialogState.layerId]?.parentId ?? undefined)
+				: undefined;
+	const limits = useAllowed(parentId);
+	const groups = useMemo(
+		() =>
+			acceptsChildren(limits)
+				? groupLayerPresets(
+						layerTypes.filter(
+							(t) =>
+								!limits.allowedChildren ||
+								limits.allowedChildren.includes(t.type)
+						)
+					)
+				: [],
+		[layerTypes, limits]
+	);
 
 	if (!dialogState) return null;
 
@@ -104,7 +127,7 @@ export const AddLayerDialog = () => {
 
 	const close = () => designerAction({ type: "CLOSE_ADD_LAYER_DIALOG" });
 
-	const add = (entry: PresetEntry) => {
+	const add = (entry: PresetEntry<LayerType>) => {
 		const layer = layerFromPreset(entry, newLayerId());
 		designerAction({
 			type: "ADD_LAYER",
@@ -160,7 +183,9 @@ export const AddLayerDialog = () => {
 						</div>
 						<Command.List className="min-h-0 overflow-y-auto overscroll-contain p-1.5 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-caption [&_[cmdk-group-heading]]:text-muted-foreground">
 							<Command.Empty className="px-2 py-8 text-center text-control text-muted-foreground">
-								No layers match your search.
+								{groups.length === 0
+									? "The editing rules don't allow adding layers here."
+									: "No layers match your search."}
 							</Command.Empty>
 							{groups.map((group) => (
 								<Command.Group key={group.name} heading={group.name}>

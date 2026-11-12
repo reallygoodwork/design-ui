@@ -1,3 +1,12 @@
+import type { Actor } from "@design-ui/core";
+import {
+	AGENT,
+	ANNOTATION_KINDS,
+	type Annotation,
+	type AnnotationKind,
+	type AnnotationTarget,
+	layerOf,
+} from "@design-ui/core";
 import {
 	IconCheck,
 	IconLoader2,
@@ -11,15 +20,6 @@ import { type Draft, useAnnotations } from "../../hooks/useAnnotations";
 import { useChangeLog } from "../../hooks/useChangeLog";
 import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useDesignerSelector } from "../../hooks/useDesignerSelector";
-import { AGENT } from "../../lib/agentProtocol";
-import {
-	ANNOTATION_KINDS,
-	type Annotation,
-	type AnnotationKind,
-	type AnnotationTarget,
-	layerOf,
-} from "../../lib/annotations";
-import type { Actor } from "../../lib/changeLog";
 import { cn } from "../../lib/cn";
 import { Select } from "../common/Select";
 

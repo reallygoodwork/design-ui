@@ -1,15 +1,15 @@
 import { Popover } from "@base-ui/react/popover";
-import { IconMathFunction, IconX } from "@tabler/icons-react";
-import { useRef, useState } from "react";
-import { modeAt, useTokens } from "../../hooks/useTokens";
-import { cn } from "../../lib/cn";
 import {
 	aliasOf,
 	indexTokens,
 	isComposed,
 	resolveTokenValue,
 	type TokenType,
-} from "../../lib/tokens";
+} from "@design-ui/core";
+import { IconMathFunction, IconX } from "@tabler/icons-react";
+import { useRef, useState } from "react";
+import { modeAt, useTokens } from "../../hooks/useTokens";
+import { cn } from "../../lib/cn";
 import { ColorPicker } from "../common/ColorPicker";
 import { TokenComposer } from "./TokenComposer";
 import { TokenIcon } from "./TokenIcon";

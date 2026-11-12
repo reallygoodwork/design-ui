@@ -1,12 +1,11 @@
+import { buildLayerIndex, getEffectiveStyles, getLayer } from "@design-ui/core";
 import { useEffect, useRef } from "react";
-import { getEffectiveStyles } from "../lib/breakpointUtils";
 import {
 	isControlTarget,
 	isEditableTarget,
 	isInLayerTree,
 	isPopupOpen,
 } from "../lib/keyboardTargets";
-import { buildLayerIndex, getLayer } from "../lib/layerIndex";
 import type { Layer } from "../lib/Types";
 import type { Action, State } from "./useDesigner";
 import { useDesignerContext } from "./useDesignerContext";

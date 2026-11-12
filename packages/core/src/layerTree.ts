@@ -1,4 +1,4 @@
-import type { Layer, LayerNode } from "./Types";
+import type { Layer, LayerNode } from "./types";
 
 export type NodeMap = Record<string, LayerNode>;
 

@@ -1,7 +1,7 @@
 import { Input } from "@base-ui/react/input";
+import { isPrimaryBreakpoint } from "@design-ui/core";
 import { useSelectedBreakpoint } from "../hooks/useActiveBreakpoint";
 import { useDesignerContext } from "../hooks/useDesignerContext";
-import { isPrimaryBreakpoint } from "../lib/breakpointUtils";
 import { NumberFieldActionControl } from "./actions/NumberFieldActionControl";
 import { DesignAction } from "./DesignAction";
 import { DesignerPane } from "./DesignerPane";

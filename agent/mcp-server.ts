@@ -11,16 +11,16 @@
  * "Agent connected".
  */
 import { randomUUID } from "node:crypto";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { WebSocket, WebSocketServer } from "ws";
-import { z } from "zod";
 import {
 	AGENT_PORT,
 	type AgentResponse,
 	type EditorEvent,
 	type TaskView,
-} from "../src/lib/agentProtocol";
+} from "@design-ui/core";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { WebSocket, WebSocketServer } from "ws";
+import { z } from "zod";
 
 const port = Number(process.env.CORAL_AGENT_PORT ?? AGENT_PORT);
 const REQUEST_TIMEOUT = Number(process.env.CORAL_AGENT_TIMEOUT_MS ?? 15_000);

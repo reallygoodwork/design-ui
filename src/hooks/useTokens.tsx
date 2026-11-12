@@ -1,4 +1,19 @@
 import {
+	allModes,
+	BREAKPOINT_DIMENSION,
+	checkTokens,
+	indexTokens,
+	matchingToken,
+	resolveToken,
+	sortBreakpointsByWidth,
+	type Token,
+	type TokenDimensions,
+	type TokenIssue,
+	type TokenMode,
+	type TokenType,
+	tokenFromCssValue,
+} from "@design-ui/core";
+import {
 	createContext,
 	type ReactNode,
 	useCallback,
@@ -8,21 +23,6 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { sortBreakpointsByWidth } from "../lib/breakpointUtils";
-import {
-	allModes,
-	BREAKPOINT_DIMENSION,
-	checkTokens,
-	indexTokens,
-	matchingToken,
-	resolveToken,
-	type Token,
-	type TokenDimensions,
-	type TokenIssue,
-	type TokenMode,
-	type TokenType,
-	tokenFromCssValue,
-} from "../lib/tokens";
 import { useChangeLog } from "./useChangeLog";
 import { useDesignerSelector } from "./useDesignerSelector";
 

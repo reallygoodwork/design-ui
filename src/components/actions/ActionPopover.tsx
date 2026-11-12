@@ -1,5 +1,6 @@
 import { Popover } from "@base-ui/react/popover";
 import { type ReactNode, useRef, useState } from "react";
+import { usePropertyAccess } from "../../hooks/useAllowed";
 import { cn } from "../../lib/cn";
 import { DesignAction } from "../DesignAction";
 import { TokenIcon } from "../tokens/TokenIcon";
@@ -42,6 +43,7 @@ export const ActionPopover = ({
 	property,
 	token,
 }: ActionPopoverProps) => {
+	const { tokensOnly } = usePropertyAccess(property);
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const [open, setOpen] = useState(false);
 	const info = useBinding(token);
@@ -129,10 +131,13 @@ export const ActionPopover = ({
 									<TokenPicker
 										binding={token}
 										onDone={() => changeOpen(false)}
+										// Tokens only, by the editing rules: no custom values.
 										custom={
-											<div className="flex w-full flex-col gap-1">
-												{children}
-											</div>
+											tokensOnly ? undefined : (
+												<div className="flex w-full flex-col gap-1">
+													{children}
+												</div>
+											)
 										}
 									/>
 								) : (

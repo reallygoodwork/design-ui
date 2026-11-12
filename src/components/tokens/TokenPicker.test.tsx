@@ -1,3 +1,4 @@
+import type { Token } from "@design-ui/core";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
@@ -5,7 +6,6 @@ import { DesignerProvider } from "../../context/DesignerContext";
 import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useDesignerContext } from "../../hooks/useDesignerContext";
 import { TokensProvider } from "../../hooks/useTokens";
-import type { Token } from "../../lib/tokens";
 import { breakpoints, defaultLayerTypes, makeLayer } from "../../test/fixtures";
 import { ActionBackgroundColor } from "../actions/ActionBackgroundColor";
 import { ActionFontSize } from "../actions/ActionFontSize";

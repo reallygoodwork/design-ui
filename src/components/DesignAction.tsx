@@ -1,5 +1,6 @@
 import { Fieldset } from "@base-ui/react/fieldset";
 import { type ReactNode, useLayoutEffect, useRef } from "react";
+import { usePropertyAccess } from "../hooks/useAllowed";
 import { ClearButton } from "./common/ClearButton";
 import { RowLabelContext } from "./common/RowLabel";
 
@@ -25,6 +26,7 @@ export const DesignAction = ({
 }) => {
 	const labelRef = useRef<HTMLDivElement>(null);
 	const hasClear = Boolean(clear);
+	const { editable } = usePropertyAccess(property);
 
 	// Values keep clear of the label, however long either of them is
 	// biome-ignore lint/correctness/useExhaustiveDependencies: width depends on the label and its button
@@ -35,6 +37,9 @@ export const DesignAction = ({
 			`${element.offsetWidth}px`
 		);
 	}, [label, hasClear]);
+
+	// The editing rules don't let this role change it: don't offer it.
+	if (!editable) return null;
 
 	const isOverride = label.endsWith(OVERRIDE_MARK);
 	const name = label.replace(OVERRIDE_MARK, "").trim();

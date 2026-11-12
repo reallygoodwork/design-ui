@@ -1,3 +1,4 @@
+import { aliasOf } from "@design-ui/core";
 import { useEffect, useState } from "react";
 import { useDesignerContext } from "../hooks/useDesignerContext";
 import { useGoogleFonts } from "../hooks/useGoogleFonts";
@@ -5,7 +6,6 @@ import { useLayers } from "../hooks/useLayers";
 import { useTokens } from "../hooks/useTokens";
 import { primaryFontFamily } from "../lib/fontFamily";
 import type { Layer } from "../lib/Types";
-import { aliasOf } from "../lib/tokens";
 
 /**
  * Component that automatically loads Google Fonts for all layers in the canvas

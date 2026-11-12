@@ -1,9 +1,11 @@
+import { acceptsChildren } from "@design-ui/core";
 import {
 	IconArrowBackUp,
 	IconArrowForwardUp,
 	IconMessagePlus,
 	IconPlus,
 } from "@tabler/icons-react";
+import { useAllowed } from "../hooks/useAllowed";
 import { useAnnotations } from "../hooks/useAnnotations";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useHistory } from "../hooks/useHistory";
@@ -21,11 +23,15 @@ export const DesignToolbarContainer = () => {
 	const { commentMode, setCommentMode } = useAnnotations();
 	const selectedLayers = useSelectedLayers();
 	const layerTypes = useLayerTypes();
+	const limits = useAllowed(
+		selectedLayers.length === 1 ? selectedLayers[0].id : undefined
+	);
 	// Adding needs one place to add to: a single selected layer that holds others.
 	const container =
 		selectedLayers.length === 1 &&
 		layerTypes.find((type) => type.type === selectedLayers[0].type)
-			?.supportsChildren
+			?.supportsChildren &&
+		acceptsChildren(limits)
 			? selectedLayers[0]
 			: null;
 

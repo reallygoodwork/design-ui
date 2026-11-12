@@ -1,4 +1,4 @@
-import type { Breakpoint, CSSVars, Layer } from "./Types";
+import type { Breakpoint, CSSVars, Layer } from "./types";
 
 /**
  * Sort breakpoints by width ascending (mobile-first order)

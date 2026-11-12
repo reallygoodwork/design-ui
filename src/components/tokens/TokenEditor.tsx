@@ -1,3 +1,13 @@
+import {
+	BREAKPOINT_DIMENSION,
+	dependentsOf,
+	pathProblem,
+	setModeValue,
+	type Token,
+	type TokenIssue,
+	type TokenTier,
+	tokenCssName,
+} from "@design-ui/core";
 import { IconTrash, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { useDesignerAction } from "../../hooks/useDesignerAction";
@@ -6,14 +16,6 @@ import { layerUsesOf, useTokenEditing } from "../../hooks/useTokenEditing";
 import { useTokens } from "../../hooks/useTokens";
 import { cn } from "../../lib/cn";
 import type { Layer } from "../../lib/Types";
-import { dependentsOf, pathProblem, setModeValue } from "../../lib/tokenEdits";
-import {
-	BREAKPOINT_DIMENSION,
-	type Token,
-	type TokenIssue,
-	type TokenTier,
-	tokenCssName,
-} from "../../lib/tokens";
 import { Select } from "../common/Select";
 import { TIER_LABEL, TIER_ORDER } from "./TokenList";
 import { TokenValueField } from "./TokenValueField";

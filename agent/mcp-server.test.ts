@@ -6,20 +6,18 @@
  */
 
 import { spawnSync } from "node:child_process";
+import type { Annotation, ChangeEntry, Token } from "@design-ui/core";
+import {
+	type AgentEditor,
+	type AgentRequest,
+	handleAgentRequest,
+} from "@design-ui/core";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { WebSocket } from "ws";
 import type { Action } from "../src/hooks/useDesigner";
-import {
-	type AgentEditor,
-	type AgentRequest,
-	handleAgentRequest,
-} from "../src/lib/agentProtocol";
-import type { Annotation } from "../src/lib/annotations";
-import type { ChangeEntry } from "../src/lib/changeLog";
 import type { Layer } from "../src/lib/Types";
-import type { Token } from "../src/lib/tokens";
 
 // The server runs on bun; without it (some CI images) the suite skips.
 const hasBun = spawnSync("bun", ["--version"]).status === 0;

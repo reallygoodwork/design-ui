@@ -1,5 +1,6 @@
+import type { TokenType } from "@design-ui/core";
+import { usePropertyAccess } from "../../hooks/useAllowed";
 import { useBreakpointCss } from "../../hooks/useBreakpointCss";
-import type { TokenType } from "../../lib/tokens";
 import { Select } from "../common/Select";
 import { DesignAction } from "../DesignAction";
 import { TokenSlot } from "../tokens/TokenSlot";
@@ -27,6 +28,9 @@ export const SelectActionControl = ({
 	orientation = "horizontal",
 	tokenType,
 }: SelectActionControlProps) => {
+	// A fixed list from the editing rules leaves only those options.
+	const { oneOf } = usePropertyAccess(cssProperty);
+	if (oneOf) options = options.filter((o) => oneOf.includes(o.value));
 	const { value, isExplicit, isOverride, setValue, clearValue } =
 		useBreakpointCss(cssProperty);
 	const currentValue = value || defaultValue;

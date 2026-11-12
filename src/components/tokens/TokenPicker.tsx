@@ -1,9 +1,9 @@
+import { type TokenType, tokenCssValue } from "@design-ui/core";
 import { type ReactNode, useEffect, useState } from "react";
 import { useDesignerSelector } from "../../hooks/useDesignerSelector";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { useTokens, useTokenValue } from "../../hooks/useTokens";
 import { cn } from "../../lib/cn";
-import { type TokenType, tokenCssValue } from "../../lib/tokens";
 import { suggestionFor } from "./suggest";
 import { DetachTokenIcon, TokenIcon } from "./TokenIcon";
 import { TokenList } from "./TokenList";

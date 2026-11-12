@@ -1,9 +1,9 @@
+import type { TokenType } from "@design-ui/core";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { useBreakpointCssGroup } from "../../hooks/useBreakpointCss";
 import { useSelectedLayers } from "../../hooks/useSelectedLayers";
 import { cn } from "../../lib/cn";
-import type { TokenType } from "../../lib/tokens";
 import { parseValue, UnitField } from "../common/UnitField";
 import { DesignAction } from "../DesignAction";
 import { TokenSlot } from "../tokens/TokenSlot";

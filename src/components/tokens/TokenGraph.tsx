@@ -1,4 +1,13 @@
 import "@xyflow/react/dist/style.css";
+import {
+	aliasOf,
+	indexTokens,
+	isComposed,
+	referencesOf,
+	resolveToken,
+	type Token,
+	tokenFromCssValue,
+} from "@design-ui/core";
 import { IconFocus2, IconMathFunction } from "@tabler/icons-react";
 import {
 	Background,
@@ -19,15 +28,6 @@ import { useLayers } from "../../hooks/useLayers";
 import { modeAt, useTokens } from "../../hooks/useTokens";
 import { cn } from "../../lib/cn";
 import type { Layer } from "../../lib/Types";
-import {
-	aliasOf,
-	indexTokens,
-	isComposed,
-	referencesOf,
-	resolveToken,
-	type Token,
-	tokenFromCssValue,
-} from "../../lib/tokens";
 import { TokenGlyph } from "./TokenList";
 
 type TokenNodeData = {

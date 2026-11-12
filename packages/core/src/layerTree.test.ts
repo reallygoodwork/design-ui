@@ -1,12 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-	type Action,
-	initialState,
-	reducer,
-	type State,
-} from "../hooks/useDesigner";
-import { makeLayer } from "../test/fixtures";
-import {
 	denormalize,
 	denormalizeNode,
 	moveLayer,
@@ -14,7 +7,21 @@ import {
 	removeLayer,
 	type Tree,
 } from "./layerTree";
-import type { Layer } from "./Types";
+import { type Action, initialState, reducer, type State } from "./reducer";
+import type { Layer } from "./types";
+
+const makeLayer = (
+	id: string,
+	children?: Layer[],
+	overrides: Partial<Layer> = {}
+): Layer => ({
+	id,
+	name: id,
+	type: "frame",
+	value: "",
+	...(children && { children }),
+	...overrides,
+});
 
 // Small seeded PRNG (mulberry32)
 const rng = (seed: number) => {

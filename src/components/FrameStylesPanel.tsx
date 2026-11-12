@@ -1,5 +1,5 @@
+import type { TokenType } from "@design-ui/core";
 import { useFrameStyle } from "../hooks/useFrameStyles";
-import type { TokenType } from "../lib/tokens";
 import { ActionPopover } from "./actions/ActionPopover";
 import { ColorPicker } from "./common/ColorPicker";
 import { InputGroup } from "./common/InputGroup";

@@ -1,5 +1,14 @@
 import { Input } from "@base-ui/react/input";
 import {
+	acceptsChildren,
+	buildLayerIndex,
+	getDescendantIds as collectDescendantIds,
+	getLayer,
+	isDescendant,
+	isPrimaryBreakpoint,
+	sortBreakpointsByWidth,
+} from "@design-ui/core";
+import {
 	IconChevronRight,
 	IconDeviceDesktop,
 	IconGripVertical,
@@ -17,22 +26,13 @@ import {
 	useDragAndDrop,
 } from "react-aria-components";
 import { useOnClickOutside } from "usehooks-ts";
+import { useAllowed } from "../hooks/useAllowed";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useDesignerSelector } from "../hooks/useDesignerSelector";
 import { useLayers } from "../hooks/useLayers";
 import { useLayerTypes } from "../hooks/useLayerTypes";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
-import {
-	isPrimaryBreakpoint,
-	sortBreakpointsByWidth,
-} from "../lib/breakpointUtils";
 import { cn } from "../lib/cn";
-import {
-	buildLayerIndex,
-	getDescendantIds as collectDescendantIds,
-	getLayer,
-	isDescendant,
-} from "../lib/layerIndex";
 import type { Breakpoint, Layer } from "../lib/Types";
 import { type Category, CategoryChip } from "./common/CategoryChip";
 
@@ -120,12 +120,21 @@ const LayerTreeItemContent = ({ layer }: { layer: Layer }) => {
 	};
 
 	const layerType = layerTypes.find((lt) => lt.type === layer.type);
+	// The editing rules can lock this layer, or the one it sits in.
+	const limits = useAllowed(layer.id);
+	const parentId = useDesignerSelector(
+		(s) => s.nodes[layer.id]?.parentId ?? undefined
+	);
+	const parentLimits = useAllowed(parentId);
 
 	return (
 		<TreeItemContent>
 			{({ isExpanded, hasChildItems, isSelected }) => {
 				const canAdd =
-					isSelected && !!layerType?.supportsChildren && !layer.isLocked;
+					isSelected &&
+					!!layerType?.supportsChildren &&
+					!layer.isLocked &&
+					acceptsChildren(limits);
 				return (
 					<div
 						className="group/pane-layer-tree-item relative flex min-w-0 flex-1 items-center gap-1"
@@ -135,7 +144,7 @@ const LayerTreeItemContent = ({ layer }: { layer: Layer }) => {
 						<Button
 							slot="drag"
 							aria-label={`Drag ${layer.name}`}
-							isDisabled={layer.isLocked}
+							isDisabled={layer.isLocked || parentLimits.structureLocked}
 							className={`absolute top-1/2 ${canAdd ? "right-10" : "right-5"} z-[5] flex size-4 -translate-y-1/2 items-center justify-center rounded bg-background text-muted-foreground opacity-0 hover:bg-hover focus-visible:opacity-100 group-focus-within/pane-layer-tree-item:opacity-100 group-hover/pane-layer-tree-item:opacity-100 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-0 data-[disabled]:group-hover/pane-layer-tree-item:opacity-40`}
 						>
 							<IconGripVertical className="size-3" />

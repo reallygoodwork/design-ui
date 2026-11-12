@@ -1,0 +1,848 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"type": "object",
+	"properties": {
+		"version": {
+			"type": "number",
+			"const": 1
+		},
+		"exportedAt": {
+			"type": "string"
+		},
+		"layers": {
+			"type": "array",
+			"items": {
+				"$ref": "#/$defs/Layer"
+			}
+		},
+		"breakpoints": {
+			"minItems": 1,
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"minLength": 1
+					},
+					"name": {
+						"type": "string"
+					},
+					"width": {
+						"type": "number",
+						"exclusiveMinimum": 0
+					},
+					"height": {
+						"type": "number",
+						"exclusiveMinimum": 0
+					},
+					"position": {
+						"type": "object",
+						"properties": {
+							"x": {
+								"type": "number"
+							},
+							"y": {
+								"type": "number"
+							}
+						},
+						"required": [
+							"x",
+							"y"
+						]
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"width",
+					"height",
+					"position"
+				]
+			}
+		},
+		"frameStyles": {
+			"default": {},
+			"type": "object",
+			"propertyNames": {
+				"type": "string"
+			},
+			"additionalProperties": {
+				"type": "string"
+			},
+			"description": "CSS custom properties, like { \"--font-size\": \"16px\" }"
+		},
+		"tokens": {
+			"default": [],
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"path": {
+						"type": "string",
+						"pattern": "^[a-z0-9][\\w-]*(\\.[\\w-]+)*$"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"color",
+							"dimension",
+							"fontFamily",
+							"fontWeight",
+							"number",
+							"shadow"
+						]
+					},
+					"tier": {
+						"type": "string",
+						"enum": [
+							"primitive",
+							"semantic",
+							"component"
+						]
+					},
+					"value": {
+						"type": "string"
+					},
+					"modes": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"when": {
+									"type": "object",
+									"propertyNames": {
+										"type": "string"
+									},
+									"additionalProperties": {
+										"type": "string"
+									}
+								},
+								"value": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"when",
+								"value"
+							]
+						}
+					},
+					"description": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"path",
+					"type",
+					"tier",
+					"value"
+				]
+			}
+		},
+		"tokenDimensions": {
+			"default": {},
+			"description": "Modes tokens vary by, like { theme: [\"light\", \"dark\"] }",
+			"type": "object",
+			"propertyNames": {
+				"type": "string"
+			},
+			"additionalProperties": {
+				"minItems": 1,
+				"type": "array",
+				"items": {
+					"type": "string"
+				}
+			}
+		},
+		"rules": {
+			"default": [],
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"minLength": 1
+					},
+					"message": {
+						"type": "string"
+					},
+					"target": {
+						"default": {},
+						"description": "Which layers it covers. Empty covers every layer.",
+						"type": "object",
+						"properties": {
+							"layerTypes": {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							},
+							"layerIds": {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							},
+							"includeChildren": {
+								"type": "boolean"
+							}
+						}
+					},
+					"editableProperties": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"values": {
+						"type": "object",
+						"propertyNames": {
+							"type": "string"
+						},
+						"additionalProperties": {
+							"anyOf": [
+								{
+									"type": "object",
+									"properties": {
+										"tokensOnly": {
+											"type": "boolean",
+											"const": true
+										}
+									},
+									"required": [
+										"tokensOnly"
+									]
+								},
+								{
+									"type": "object",
+									"properties": {
+										"min": {
+											"type": "number"
+										},
+										"max": {
+											"type": "number"
+										},
+										"unit": {
+											"description": "Like px; values in other units are rejected",
+											"type": "string"
+										}
+									}
+								},
+								{
+									"type": "object",
+									"properties": {
+										"oneOf": {
+											"minItems": 1,
+											"type": "array",
+											"items": {
+												"type": "string"
+											}
+										}
+									},
+									"required": [
+										"oneOf"
+									]
+								}
+							]
+						}
+					},
+					"content": {
+						"type": "string",
+						"enum": [
+							"editable",
+							"locked"
+						]
+					},
+					"structure": {
+						"type": "object",
+						"properties": {
+							"locked": {
+								"type": "boolean"
+							},
+							"allowedChildren": {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							},
+							"minChildren": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"maxChildren": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							}
+						}
+					},
+					"breakpointOverrides": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"id"
+				],
+				"description": "One editing rule"
+			}
+		},
+		"annotations": {
+			"default": [],
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"kind": {
+						"type": "string",
+						"enum": [
+							"comment",
+							"note",
+							"decision",
+							"task"
+						]
+					},
+					"target": {
+						"oneOf": [
+							{
+								"type": "object",
+								"properties": {
+									"kind": {
+										"type": "string",
+										"const": "layer"
+									},
+									"layerId": {
+										"type": "string"
+									},
+									"property": {
+										"type": "string"
+									},
+									"breakpointId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"kind",
+									"layerId"
+								]
+							},
+							{
+								"type": "object",
+								"properties": {
+									"kind": {
+										"type": "string",
+										"const": "token"
+									},
+									"path": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"kind",
+									"path"
+								]
+							},
+							{
+								"type": "object",
+								"properties": {
+									"kind": {
+										"type": "string",
+										"const": "change"
+									},
+									"entryId": {
+										"type": "string"
+									},
+									"layerId": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"kind",
+									"entryId"
+								]
+							},
+							{
+								"type": "object",
+								"properties": {
+									"kind": {
+										"type": "string",
+										"const": "document"
+									}
+								},
+								"required": [
+									"kind"
+								]
+							}
+						]
+					},
+					"body": {
+						"type": "string"
+					},
+					"author": {
+						"type": "object",
+						"properties": {
+							"kind": {
+								"type": "string",
+								"enum": [
+									"user",
+									"agent"
+								]
+							},
+							"name": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"kind",
+							"name"
+						]
+					},
+					"at": {
+						"type": "string"
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"open",
+							"resolved"
+						]
+					},
+					"replies": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"author": {
+									"type": "object",
+									"properties": {
+										"kind": {
+											"type": "string",
+											"enum": [
+												"user",
+												"agent"
+											]
+										},
+										"name": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"kind",
+										"name"
+									]
+								},
+								"body": {
+									"type": "string"
+								},
+								"at": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"id",
+								"author",
+								"body",
+								"at"
+							]
+						}
+					},
+					"entryId": {
+						"type": "string"
+					},
+					"assignedTo": {
+						"type": "object",
+						"properties": {
+							"kind": {
+								"type": "string",
+								"enum": [
+									"user",
+									"agent"
+								]
+							},
+							"name": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"kind",
+							"name"
+						]
+					},
+					"claimedBy": {
+						"type": "object",
+						"properties": {
+							"kind": {
+								"type": "string",
+								"enum": [
+									"user",
+									"agent"
+								]
+							},
+							"name": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"kind",
+							"name"
+						]
+					}
+				},
+				"required": [
+					"id",
+					"kind",
+					"target",
+					"body",
+					"author",
+					"at",
+					"status",
+					"replies"
+				]
+			}
+		},
+		"changes": {
+			"default": [],
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"at": {
+						"type": "string"
+					},
+					"actor": {
+						"type": "object",
+						"properties": {
+							"kind": {
+								"type": "string",
+								"enum": [
+									"user",
+									"agent"
+								]
+							},
+							"name": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"kind",
+							"name"
+						]
+					},
+					"reason": {
+						"type": "string"
+					},
+					"taskId": {
+						"type": "string"
+					},
+					"kind": {
+						"type": "string",
+						"enum": [
+							"layer",
+							"frame",
+							"breakpoint",
+							"document",
+							"tokens"
+						]
+					},
+					"summary": {
+						"type": "string"
+					},
+					"layerIds": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"changes": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"layerId": {
+									"type": "string"
+								},
+								"property": {
+									"type": "string"
+								},
+								"breakpointId": {
+									"type": [
+										"string",
+										"null"
+									]
+								},
+								"from": {
+									"type": "string"
+								},
+								"to": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"property"
+							]
+						}
+					},
+					"tokens": {
+						"type": "object",
+						"properties": {
+							"before": {
+								"type": "array",
+								"items": {
+									"type": "object",
+									"properties": {
+										"path": {
+											"type": "string",
+											"pattern": "^[a-z0-9][\\w-]*(\\.[\\w-]+)*$"
+										},
+										"type": {
+											"type": "string",
+											"enum": [
+												"color",
+												"dimension",
+												"fontFamily",
+												"fontWeight",
+												"number",
+												"shadow"
+											]
+										},
+										"tier": {
+											"type": "string",
+											"enum": [
+												"primitive",
+												"semantic",
+												"component"
+											]
+										},
+										"value": {
+											"type": "string"
+										},
+										"modes": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"when": {
+														"type": "object",
+														"propertyNames": {
+															"type": "string"
+														},
+														"additionalProperties": {
+															"type": "string"
+														}
+													},
+													"value": {
+														"type": "string"
+													}
+												},
+												"required": [
+													"when",
+													"value"
+												]
+											}
+										},
+										"description": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"path",
+										"type",
+										"tier",
+										"value"
+									]
+								}
+							},
+							"after": {
+								"type": "array",
+								"items": {
+									"type": "object",
+									"properties": {
+										"path": {
+											"type": "string",
+											"pattern": "^[a-z0-9][\\w-]*(\\.[\\w-]+)*$"
+										},
+										"type": {
+											"type": "string",
+											"enum": [
+												"color",
+												"dimension",
+												"fontFamily",
+												"fontWeight",
+												"number",
+												"shadow"
+											]
+										},
+										"tier": {
+											"type": "string",
+											"enum": [
+												"primitive",
+												"semantic",
+												"component"
+											]
+										},
+										"value": {
+											"type": "string"
+										},
+										"modes": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"when": {
+														"type": "object",
+														"propertyNames": {
+															"type": "string"
+														},
+														"additionalProperties": {
+															"type": "string"
+														}
+													},
+													"value": {
+														"type": "string"
+													}
+												},
+												"required": [
+													"when",
+													"value"
+												]
+											}
+										},
+										"description": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"path",
+										"type",
+										"tier",
+										"value"
+									]
+								}
+							}
+						},
+						"required": [
+							"before",
+							"after"
+						]
+					},
+					"undone": {
+						"type": "boolean"
+					},
+					"undoable": {
+						"default": true,
+						"type": "boolean"
+					},
+					"coalesceKey": {
+						"type": [
+							"string",
+							"null"
+						]
+					}
+				},
+				"required": [
+					"id",
+					"at",
+					"actor",
+					"kind",
+					"summary",
+					"layerIds",
+					"changes"
+				]
+			}
+		}
+	},
+	"required": [
+		"version",
+		"layers",
+		"breakpoints"
+	],
+	"description": "A design: its layers, breakpoints, tokens and editing rules",
+	"$defs": {
+		"Layer": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"type": "string",
+					"minLength": 1
+				},
+				"name": {
+					"type": "string"
+				},
+				"type": {
+					"type": "string",
+					"minLength": 1,
+					"description": "A registered layer type, like text"
+				},
+				"value": {
+					"type": "string",
+					"description": "Text content, or an image's URL"
+				},
+				"cssVars": {
+					"description": "Base styles, at the smallest breakpoint",
+					"type": "object",
+					"propertyNames": {
+						"type": "string"
+					},
+					"additionalProperties": {
+						"type": "string"
+					}
+				},
+				"breakpointCssVars": {
+					"description": "Only the styles each larger breakpoint overrides",
+					"type": "object",
+					"propertyNames": {
+						"type": "string"
+					},
+					"additionalProperties": {
+						"type": "object",
+						"propertyNames": {
+							"type": "string"
+						},
+						"additionalProperties": {
+							"type": "string"
+						},
+						"description": "CSS custom properties, like { \"--font-size\": \"16px\" }"
+					}
+				},
+				"meta": {
+					"type": "object",
+					"propertyNames": {
+						"type": "string"
+					},
+					"additionalProperties": {}
+				},
+				"isLocked": {
+					"type": "boolean"
+				},
+				"elementType": {
+					"description": "The HTML element, like h1",
+					"type": "string"
+				},
+				"children": {
+					"type": "array",
+					"items": {
+						"$ref": "#/$defs/Layer"
+					}
+				}
+			},
+			"required": [
+				"id",
+				"name",
+				"type",
+				"value"
+			],
+			"description": "A layer: a box, text or image, with its styles"
+		}
+	}
+}

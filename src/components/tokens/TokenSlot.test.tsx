@@ -1,3 +1,4 @@
+import type { Token } from "@design-ui/core";
 import {
 	act,
 	cleanup,
@@ -12,7 +13,6 @@ import { DesignerProvider } from "../../context/DesignerContext";
 import { useDesignerAction } from "../../hooks/useDesignerAction";
 import { useDesignerContext } from "../../hooks/useDesignerContext";
 import { TokensProvider } from "../../hooks/useTokens";
-import type { Token } from "../../lib/tokens";
 import { breakpoints, defaultLayerTypes, makeLayer } from "../../test/fixtures";
 import { ActionFontWeight } from "../actions/ActionFontWeight";
 import { ActionOpacity } from "../actions/ActionOpacity";

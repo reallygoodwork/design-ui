@@ -1,4 +1,4 @@
-import type { Token, TokenDimensions } from "../lib/tokens";
+import type { Token, TokenDimensions } from "@design-ui/core";
 
 /** Two brands and two themes. Breakpoint is a dimension too, set by each frame. */
 export const demoTokenDimensions: TokenDimensions = {

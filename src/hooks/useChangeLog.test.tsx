@@ -1,9 +1,9 @@
+import type { Token } from "@design-ui/core";
+import { describeTokenChange, revertWrites } from "@design-ui/core";
 import { act, cleanup, render } from "@testing-library/react";
 import { useContext } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { DesignerContext, DesignerProvider } from "../context/DesignerContext";
-import { describeTokenChange, revertWrites } from "../lib/changeLog";
-import type { Token } from "../lib/tokens";
 import { breakpoints, defaultLayerTypes, makeLayer } from "../test/fixtures";
 import { AnnotationsProvider, useAnnotations } from "./useAnnotations";
 import { ChangeLogProvider, useChangeLog } from "./useChangeLog";

@@ -1,8 +1,5 @@
 import { Toggle } from "@base-ui/react/toggle";
 import { ToggleGroup } from "@base-ui/react/toggle-group";
-import { IconPlayerPlay } from "@tabler/icons-react";
-import { useMemo, useRef, useState } from "react";
-import { useBreakpointCssGroup } from "../../hooks/useBreakpointCss";
 import {
 	type CubicBezier,
 	DEFAULT_TRANSITIONS,
@@ -12,7 +9,10 @@ import {
 	type TransitionConfig,
 	type TransitionType,
 	transitionToCss,
-} from "../../lib/easing";
+} from "@design-ui/core";
+import { IconPlayerPlay } from "@tabler/icons-react";
+import { useMemo, useRef, useState } from "react";
+import { useBreakpointCssGroup } from "../../hooks/useBreakpointCss";
 import { InputGroup } from "../common/InputGroup";
 import { UnitField } from "../common/UnitField";
 import { DesignAction } from "../DesignAction";

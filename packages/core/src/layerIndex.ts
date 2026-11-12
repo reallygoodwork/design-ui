@@ -1,4 +1,4 @@
-import type { Layer } from "./Types";
+import type { Layer } from "./types";
 
 export type LayerIndex = {
 	/** Layer by id. With duplicate ids the first in depth-first order wins. */

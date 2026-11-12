@@ -13,6 +13,24 @@ export default defineConfig({
 		},
 	},
 	test: {
-		environment: "jsdom",
+		projects: [
+			{
+				// The format runs anywhere, so its tests run in Node, not a DOM.
+				extends: true,
+				test: {
+					name: "core",
+					include: ["packages/core/**/*.test.ts"],
+					environment: "node",
+				},
+			},
+			{
+				extends: true,
+				test: {
+					name: "editor",
+					include: ["src/**/*.test.{ts,tsx}", "agent/**/*.test.ts"],
+					environment: "jsdom",
+				},
+			},
+		],
 	},
 });

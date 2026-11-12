@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useAnyEditable } from "../../hooks/useAllowed";
 import {
 	useBreakpointCssGroup,
 	useEffectiveCss,
@@ -32,6 +33,7 @@ export const ActionPosition = () => {
 
 	const vars = useEffectiveCss();
 	const group = useBreakpointCssGroup(ALL_PROPERTIES);
+	const editable = useAnyEditable(ALL_PROPERTIES);
 	const currentPosition = vars.position || "static";
 
 	// Format display value
@@ -65,6 +67,8 @@ export const ActionPosition = () => {
 			});
 		}
 	};
+
+	if (!editable) return null;
 
 	return (
 		<ActionPopover

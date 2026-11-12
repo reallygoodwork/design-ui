@@ -1,4 +1,10 @@
 import {
+	acceptsChildren,
+	buildLayerIndex,
+	calculateBoundingBox,
+	getLayer,
+} from "@design-ui/core";
+import {
 	type ReactNode,
 	useCallback,
 	useEffect,
@@ -11,6 +17,7 @@ import { createPortal } from "react-dom";
 import InfiniteViewer, { type OnPinch } from "react-infinite-viewer";
 import Moveable, { type MoveableRefTargetType } from "react-moveable";
 import Selecto from "react-selecto";
+import { useAllowed } from "../hooks/useAllowed";
 import { useDesignerAction } from "../hooks/useDesignerAction";
 import { useDesignerContext } from "../hooks/useDesignerContext";
 import {
@@ -18,10 +25,8 @@ import {
 	useFrameRegistry,
 } from "../hooks/useFrameRegistry";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
-import { calculateBoundingBox } from "../lib/breakpointUtils";
 import { centeredScroll, shouldRecenter } from "../lib/canvasCentering";
 import { isControlTarget } from "../lib/keyboardTargets";
-import { buildLayerIndex, getLayer } from "../lib/layerIndex";
 
 import { DimensionAble } from "./ables/DimensionAble";
 import { StructureAble } from "./ables/StructureAble";
@@ -230,6 +235,13 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 	 * root. So it targets a stand-in for each selected layer, placed over the
 	 * layer in canvas units, outside the shadow root.
 	 */
+	// The editing rules can lock the selected layer or its parent.
+	const selectedLimits = useAllowed(selectedLayers[0]?.id);
+	const parentLimits = useAllowed(
+		(selectedLayers[0] && state.nodes[selectedLayers[0].id]?.parentId) ??
+			undefined
+	);
+
 	const [ghosts, setGhosts] = useState<Ghost[]>([]);
 	const [viewport, setViewport] = useState<HTMLElement | null>(null);
 	useLayoutEffect(() => {
@@ -639,11 +651,13 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 						viewerZoom: state.zoom,
 						isLocked: selectedLayers[0]?.isLocked ?? false,
 						supportsChildren:
-							(selectedLayers[0] &&
-								state.layerTypes.find(
-									(lt) => lt.type === selectedLayers[0].type
-								)?.supportsChildren) ??
-							false,
+							Boolean(
+								selectedLayers[0] &&
+									state.layerTypes.find(
+										(lt) => lt.type === selectedLayers[0].type
+									)?.supportsChildren
+							) && acceptsChildren(selectedLimits),
+						canAddAround: acceptsChildren(parentLimits),
 						onOpenAddLayerDialog: (data: {
 							layerId: string;
 							position: "before" | "inside" | "after";

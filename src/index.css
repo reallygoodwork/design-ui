@@ -220,6 +220,15 @@ body {
 	}
 }
 
+/* A panel section left with no controls, e.g. when the editing rules lock
+   all of them, hides rather than showing an empty header. */
+[data-slot="styles-panel"]
+	[data-slot="designer-pane"]:not(
+		:has([data-slot="action"], [data-css-prop], textarea, input, select)
+	) {
+	display: none;
+}
+
 .ds-popup,
 .ds-tooltip {
 	transform-origin: var(--transform-origin);

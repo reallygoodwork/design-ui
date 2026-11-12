@@ -1,5 +1,5 @@
+import { buildLayerIndex } from "@design-ui/core";
 import { useMemo } from "react";
-import { buildLayerIndex } from "../lib/layerIndex";
 import type { Layer } from "../lib/Types";
 import { useDesignerSelector } from "./useDesignerSelector";
 import { useLayers } from "./useLayers";

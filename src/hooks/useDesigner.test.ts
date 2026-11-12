@@ -1,3 +1,11 @@
+import {
+	type Action,
+	getCoalesceKey,
+	initialState,
+	reducer,
+	type State,
+	withLayers,
+} from "@design-ui/core";
 import { act, screen } from "@testing-library/react";
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
@@ -9,14 +17,6 @@ import {
 	makeLayer,
 	renderInDesigner,
 } from "../test/fixtures";
-import {
-	type Action,
-	getCoalesceKey,
-	initialState,
-	reducer,
-	type State,
-	withLayers,
-} from "./useDesigner";
 import { useDesignerContext } from "./useDesignerContext";
 import { useHistory } from "./useHistory";
 
@@ -219,6 +219,7 @@ describe("history memory", () => {
 				"frameStyles",
 				"nodes",
 				"rootIds",
+				"rules",
 			]);
 		}
 	});

@@ -1,4 +1,15 @@
 import {
+	AGENT,
+	type AgentEditor,
+	type AgentRequest,
+	type AgentResponse,
+	denormalize,
+	type EditorEvent,
+	firstRejection,
+	handleAgentRequest,
+	taskView,
+} from "@design-ui/core";
+import {
 	createContext,
 	type ReactNode,
 	useCallback,
@@ -9,16 +20,6 @@ import {
 	useState,
 } from "react";
 import { DesignerContext } from "../context/DesignerContext";
-import {
-	AGENT,
-	type AgentEditor,
-	type AgentRequest,
-	type AgentResponse,
-	type EditorEvent,
-	handleAgentRequest,
-	taskView,
-} from "../lib/agentProtocol";
-import { denormalize } from "../lib/layerTree";
 import { useAnnotations } from "./useAnnotations";
 import { useChangeLog } from "./useChangeLog";
 import { useTokens } from "./useTokens";
@@ -80,8 +81,12 @@ export const AgentLinkProvider = ({
 			dimensions: () => latest.current.tokens.dimensions,
 			annotations: () => latest.current.notes.annotations,
 			changes: () => latest.current.log.entries,
-			dispatch: (action, reason, taskId) =>
-				store?.dispatchWithMeta(action, { actor: AGENT, reason, taskId }),
+			dispatch: (action, reason, taskId) => {
+				store?.dispatchWithMeta(action, { actor: AGENT, reason, taskId });
+			},
+			// Agents are always held to the rules, as the editor role.
+			checkRules: (actions) =>
+				store ? firstRejection(store.getState(), actions, "editor") : null,
 			setTokens: (update, meta) => {
 				// The next token edit in the log is the agent's, with its reason.
 				latest.current.log.attributeNextTokenEdit({ actor: AGENT, ...meta });

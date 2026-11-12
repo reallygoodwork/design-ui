@@ -1,3 +1,4 @@
+import type { Role, Rule } from "@design-ui/core";
 import { createContext, type ReactNode } from "react";
 import { type DesignerStore, useDesigner } from "../hooks/useDesigner";
 import type { Breakpoint, CSSVars, Layer, LayerType } from "../lib/Types";
@@ -16,6 +17,8 @@ type DesignerProviderProps = {
 	defaultLayerTypes?: LayerType[];
 	breakpoints?: Breakpoint[];
 	frameStyles?: CSSVars;
+	rules?: Rule[];
+	role?: Role;
 };
 
 export const DesignerProvider = ({
@@ -26,6 +29,8 @@ export const DesignerProvider = ({
 	defaultLayerTypes,
 	breakpoints,
 	frameStyles,
+	rules,
+	role,
 }: DesignerProviderProps) => {
 	const designer = useDesigner({
 		defaultLayers,
@@ -34,6 +39,8 @@ export const DesignerProvider = ({
 		layerTypes: defaultLayerTypes,
 		breakpoints,
 		frameStyles,
+		rules,
+		role,
 	});
 
 	return (

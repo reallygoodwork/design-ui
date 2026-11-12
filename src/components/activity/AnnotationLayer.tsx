@@ -1,3 +1,4 @@
+import { type Annotation, layerOf } from "@design-ui/core";
 import { useEffect, useRef, useState } from "react";
 import { useAnnotations } from "../../hooks/useAnnotations";
 import { useDesignerSelector } from "../../hooks/useDesignerSelector";
@@ -5,7 +6,6 @@ import {
 	type FrameRegistry,
 	useFrameRegistry,
 } from "../../hooks/useFrameRegistry";
-import { type Annotation, layerOf } from "../../lib/annotations";
 import { cn } from "../../lib/cn";
 import { AnnotationThread, Avatar, Composer } from "./AnnotationThread";
 

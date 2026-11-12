@@ -1,3 +1,11 @@
+import type {
+	Annotation,
+	ChangeEntry,
+	Role,
+	Rule,
+	Token,
+	TokenDimensions,
+} from "@design-ui/core";
 import type { ReactNode } from "react";
 import { DesignerProvider } from "../context/DesignerContext";
 import { AgentLinkProvider } from "../hooks/useAgentLink";
@@ -6,13 +14,10 @@ import { ChangeLogProvider } from "../hooks/useChangeLog";
 import { FrameRegistryProvider } from "../hooks/useFrameRegistry";
 import { useKeybindings } from "../hooks/useKeybindings";
 import { TokensProvider } from "../hooks/useTokens";
-import type { Annotation } from "../lib/annotations";
-import type { ChangeEntry } from "../lib/changeLog";
 import { frameLayerType } from "../lib/layers/frame";
 import { imageLayerType } from "../lib/layers/image";
 import { textLayerType } from "../lib/layers/text";
 import type { Breakpoint, CSSVars, Layer, LayerType } from "../lib/Types";
-import type { Token, TokenDimensions } from "../lib/tokens";
 import { AddLayerDialog } from "./AddLayerDialog";
 import { FontLoader } from "./FontLoader";
 import { TokenStyles } from "./tokens/TokenStyles";
@@ -49,6 +54,13 @@ type DesignerProps = {
 	 * Shared document-level styles (like body styles).
 	 */
 	frameStyles?: CSSVars;
+	/**
+	 * Editing rules: what the editor role and every agent may change. With
+	 * none, everything is allowed.
+	 */
+	rules?: Rule[];
+	/** Who is editing here. Builders aren't limited by rules. Defaults to builder. */
+	role?: Role;
 	/**
 	 * Design tokens layers can use as `var(--token-name)`.
 	 */
@@ -122,6 +134,8 @@ export const Designer = ({
 	layerTypes,
 	breakpoints,
 	frameStyles,
+	rules,
+	role,
 	tokens,
 	tokenDimensions,
 	onTokensChange,
@@ -146,6 +160,8 @@ export const Designer = ({
 			defaultLayerTypes={allLayerTypes}
 			breakpoints={breakpoints}
 			frameStyles={frameStyles}
+			rules={rules}
+			role={role}
 		>
 			<ChangeLogProvider onChange={onChangeLogChange}>
 				<TokensProvider

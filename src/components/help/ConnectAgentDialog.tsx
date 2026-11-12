@@ -1,8 +1,8 @@
 import { Dialog } from "@base-ui/react/dialog";
+import { AGENT_PORT } from "@design-ui/core";
 import { IconCheck, IconCopy } from "@tabler/icons-react";
 import { useState } from "react";
 import { useAgentLink } from "../../hooks/useAgentLink";
-import { AGENT_PORT } from "../../lib/agentProtocol";
 import { cn } from "../../lib/cn";
 
 const ADD_COMMAND = "claude mcp add coral -- bun agent/mcp-server.ts";

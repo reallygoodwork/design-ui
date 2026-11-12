@@ -1,3 +1,14 @@
+import type { Token, TokenDimensions } from "@design-ui/core";
+import {
+	type ActionMeta,
+	type ChangeEntry,
+	committed,
+	describeAction,
+	describeTokenChange,
+	mergeEntry,
+	newId,
+	YOU,
+} from "@design-ui/core";
 import {
 	createContext,
 	type ReactNode,
@@ -9,17 +20,6 @@ import {
 	useState,
 } from "react";
 import { DesignerContext } from "../context/DesignerContext";
-import {
-	type ActionMeta,
-	type ChangeEntry,
-	committed,
-	describeAction,
-	describeTokenChange,
-	mergeEntry,
-	newId,
-	YOU,
-} from "../lib/changeLog";
-import type { Token, TokenDimensions } from "../lib/tokens";
 
 const MAX_ENTRIES = 500;
 

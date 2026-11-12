@@ -1,3 +1,4 @@
+import type { Role, Rule } from "@design-ui/core";
 import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { DesignerProvider } from "../context/DesignerContext";
@@ -63,13 +64,20 @@ export const breakpoints: Breakpoint[] = [
  */
 export const renderInDesigner = (
 	ui: ReactNode,
-	options: { layers?: Layer[]; breakpoints?: Breakpoint[] } = {}
+	options: {
+		layers?: Layer[];
+		breakpoints?: Breakpoint[];
+		rules?: Rule[];
+		role?: Role;
+	} = {}
 ) =>
 	render(
 		<DesignerProvider
 			defaultLayers={options.layers ?? []}
 			defaultLayerTypes={defaultLayerTypes}
 			breakpoints={options.breakpoints ?? breakpoints}
+			rules={options.rules}
+			role={options.role}
 		>
 			{ui}
 		</DesignerProvider>
