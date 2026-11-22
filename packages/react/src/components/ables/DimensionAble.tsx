@@ -1,0 +1,54 @@
+import { IconLock } from "@tabler/icons-react";
+import type { CSSProperties } from "react";
+import type { MoveableManagerInterface, Renderer } from "react-moveable";
+
+interface DimensionAbleProps {
+	dimensionViewable: boolean;
+	viewerZoom?: number;
+	isLocked?: boolean;
+}
+
+export const DimensionAble = {
+	name: "dimensionViewable",
+	props: ["dimensionViewable", "viewerZoom", "isLocked"],
+	events: [],
+	render(
+		moveable: MoveableManagerInterface<DimensionAbleProps, unknown>,
+		_React: Renderer
+	) {
+		const rect = moveable.getRect();
+		const isLocked = moveable.props.isLocked ?? false;
+		// Moveable's control box renders in screen space (outside the scaled viewport),
+		// so the label is already a constant screen size. viewerZoom is declared for
+		// ables but intentionally unused here. rect.offsetWidth/Height are unzoomed CSS px.
+
+		// Add key (required)
+		// Add class prefix moveable-(required)
+		const style: CSSProperties = {
+			"--left": `2px`,
+			"--top": `${rect.height + 4}px`,
+			transformOrigin: "center top",
+		} as CSSProperties;
+
+		return (
+			<div
+				key={"dimension-viewer"}
+				className={
+					"group moveable-dimension top-(--top) left-(--left) flex items-center gap-1 rounded-[4px] bg-accent px-1.5 py-1 text-white will-change-transform text-caption absolute"
+				}
+				style={style}
+			>
+				<span className="whitespace-nowrap font-mono leading-none">
+					{Math.round(rect.offsetWidth)} x {Math.round(rect.offsetHeight)}
+				</span>
+				{isLocked && (
+					<IconLock
+						className="size-2.5 shrink-0"
+						aria-hidden="true"
+						strokeWidth={3}
+					/>
+				)}
+			</div>
+		);
+	},
+} as const;

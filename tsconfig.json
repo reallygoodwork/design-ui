@@ -11,12 +11,13 @@
 		"forceConsistentCasingInFileNames": true,
 		"module": "ESNext",
 		"moduleResolution": "Bundler",
+		"customConditions": ["@design-ui/source"],
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"noEmit": true,
 		"jsx": "react-jsx"
 	},
-	"include": ["src"],
-	"exclude": ["src/stories"],
+	"include": ["src", "packages", "examples"],
+	"exclude": ["src/stories", "**/dist", "apps"],
 	"references": [{ "path": "./tsconfig.node.json" }]
 }

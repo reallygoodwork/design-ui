@@ -1,0 +1,25 @@
+{
+	"name": "@design-ui/mcp",
+	"version": "0.1.0",
+	"private": true,
+	"description": "An MCP server that lets agents work on a design: in an open editor, or on a design file with no browser.",
+	"type": "module",
+	"bin": {
+		"design-ui-mcp": "./dist/cli.js"
+	},
+	"files": [
+		"dist/cli.js"
+	],
+	"engines": {
+		"node": ">=20"
+	},
+	"scripts": {
+		"build": "bun build src/server.ts --target=node --packages=external --banner='#!/usr/bin/env node' --outfile=dist/cli.js"
+	},
+	"dependencies": {
+		"@design-ui/core": "0.1.0",
+		"@modelcontextprotocol/sdk": "^1.32.2",
+		"ws": "^8.22.2",
+		"zod": "^4"
+	}
+}

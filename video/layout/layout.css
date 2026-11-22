@@ -1,0 +1,91 @@
+html,
+body {
+	margin: 0;
+	background: #f4f3f0;
+}
+
+.video-host {
+	display: grid;
+	place-items: center;
+	min-height: 100vh;
+}
+
+.lv {
+	width: 480px;
+}
+
+.lv .ss-stage {
+	overflow: hidden;
+	background: #f4f3f0;
+}
+
+/* The editor's canvas is the ground, full bleed, drawn at 1.25x: the frame on
+   it, and the real Layout pane floating below, running off the bottom */
+.lv-zoom {
+	position: absolute;
+	inset: 0 auto auto 0;
+	width: 384px;
+	height: 480px;
+	transform: scale(1.25);
+	transform-origin: 0 0;
+	font-family: Geist, system-ui, sans-serif;
+	background-color: #f4f3f0;
+	background-image: radial-gradient(#d6d3cc 1px, transparent 1px);
+	background-size: 14px 14px;
+	background-position: 7px 7px;
+}
+
+/* The frame and the pane at one width, stacked, running off the bottom */
+.lv-stack {
+	position: absolute;
+	inset: 32px 32px 0;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+.lv-frame {
+	position: relative;
+	width: 100%;
+	/* The selection outline the editor draws around the selected layer */
+	outline: 1.5px solid #3b82f6;
+	outline-offset: 3px;
+	border-radius: 16px;
+}
+
+.lv-frame > div > * {
+	/* A lasting layer, so tile text glides with its box instead of snapping */
+	will-change: transform;
+}
+
+/* The pane fades out at its foot, over the box model, instead of cutting a
+   control in half at the stage edge. */
+.lv-panel {
+	flex: 1;
+	min-height: 0;
+	/* Room for the card's shadow inside the clip; with the card's own 6px
+	   margin this nets out to the frame's edges */
+	margin: -20px -20px 0;
+	padding: 14px 14px 0;
+	overflow: hidden;
+	--ss-fade: 72px;
+}
+
+/* The pane card keeps its height, so its foot never jumps */
+.lv-panel > section {
+	min-height: 440px;
+	box-shadow:
+		0 1px 2px rgb(0 0 0 / 0.06),
+		0 8px 24px rgb(0 0 0 / 0.08);
+}
+
+/* Rows glide by transform as the control adds and removes rows above them */
+.lv-panel [data-slot="designer-pane-content"] > div > * {
+	will-change: transform;
+}
+
+/* Recording: the stage alone at the top left, so the viewport is the frame */
+:root[data-recording] .video-host {
+	display: block;
+	min-height: 0;
+}

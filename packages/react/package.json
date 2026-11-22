@@ -1,0 +1,47 @@
+{
+	"name": "@design-ui/react",
+	"version": "0.1.0",
+	"private": true,
+	"description": "React components for an editor that works on the design format: canvas, layer tree, style controls, tokens, rules and activity.",
+	"type": "module",
+	"sideEffects": [
+		"*.css"
+	],
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"@design-ui/source": "./src/index.ts",
+			"default": "./dist/index.js"
+		},
+		"./styles.css": "./styles.css"
+	},
+	"files": [
+		"dist/**/*.js",
+		"dist/**/*.d.ts",
+		"styles.css"
+	],
+	"scripts": {
+		"build": "bun run build:js && bun run build:types && bun run build:css",
+		"build:js": "vite build",
+		"build:types": "tsc -p tsconfig.build.json",
+		"build:css": "bun scripts/build-css.ts"
+	},
+	"peerDependencies": {
+		"react": "^18.2.0 || ^19.0.0",
+		"react-dom": "^18.2.0 || ^19.0.0"
+	},
+	"dependencies": {
+		"@design-ui/core": "0.1.0",
+		"@base-ui/react": "^1.9.0",
+		"@tabler/icons-react": "^3.50.0",
+		"@xyflow/react": "^12.12.1",
+		"cmdk": "^1.1.1",
+		"lucide-react": "^0.562.0",
+		"react-aria-components": "^1.22.1",
+		"react-infinite-viewer": "^0.28.1",
+		"react-moveable": "^0.56.0",
+		"react-selecto": "^1.26.3",
+		"tailwind-merge": "^3.7.0",
+		"usehooks-ts": "^3.1.1"
+	}
+}

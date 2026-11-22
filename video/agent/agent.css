@@ -1,0 +1,666 @@
+html,
+body {
+	margin: 0;
+	background: #0b0c0f;
+}
+
+.video-host {
+	display: grid;
+	place-items: center;
+	min-height: 100vh;
+}
+
+.av-stage {
+	width: 600px;
+}
+
+.av-stage .ss-stage {
+	overflow: hidden;
+	background: #0b0c0f;
+	font-family: Geist, system-ui, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+
+.av {
+	position: absolute;
+	inset: 0;
+}
+
+.av .ss-camera-view,
+.av-caption {
+	transition: opacity 450ms ease;
+}
+
+.av-scene {
+	position: relative;
+	width: 600px;
+	height: 750px;
+}
+
+/* A recorder's wallpaper: graphite, lit softly from one corner */
+.av-wallpaper {
+	position: absolute;
+	inset: 0;
+	background:
+		radial-gradient(80% 55% at 15% 0%, rgb(76 141 255 / 0.22), transparent 70%),
+		radial-gradient(70% 50% at 100% 100%, rgb(247 103 7 / 0.1), transparent 70%),
+		linear-gradient(180deg, #15171c, #0d0e12);
+}
+
+/* The app, cropped as a portrait export crops a wide recording: it runs off
+   the right and the foot */
+.av-window {
+	position: absolute;
+	left: 28px;
+	top: 28px;
+	width: 720px;
+	height: 780px;
+	border-radius: 12px;
+	box-shadow:
+		0 0 0 1px rgb(255 255 255 / 0.08),
+		0 40px 80px -20px rgb(0 0 0 / 0.7);
+}
+
+/* ------------------------------------------------------------------------ */
+/* The editor, in its dark theme */
+
+.av-editor {
+	--av-panel: #18191d;
+	--av-canvas: #111215;
+	--av-line: #2a2b31;
+	--av-text: #ededf0;
+	--av-muted: #8b8d98;
+	--av-faint: #5f616b;
+	--av-accent: #4c8dff;
+	--av-danger: #ff6b6b;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	background: var(--av-panel);
+	color: var(--av-text);
+	font-size: 12px;
+	letter-spacing: -0.005em;
+}
+
+.av-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 40px;
+	padding: 0 12px;
+	border-bottom: 1px solid var(--av-line);
+	flex: none;
+}
+
+.av-crumb {
+	color: var(--av-text);
+	font-weight: 500;
+	margin-right: 6px;
+}
+
+.av-crumb span {
+	color: var(--av-faint);
+	margin: 0 4px;
+}
+
+.av-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	height: 24px;
+	padding: 0 8px;
+	border-radius: 6px;
+	background: #222328;
+	color: var(--av-muted);
+}
+
+.av-pill b {
+	color: var(--av-text);
+	font-weight: 500;
+}
+
+.av-connected {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-left: 8px;
+	color: #6fd08c;
+	font-weight: 500;
+}
+
+.av-main {
+	display: grid;
+	grid-template-columns: 212px minmax(0, 1fr);
+	flex: 1;
+	min-height: 0;
+}
+
+/* Activity */
+.av-activity {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	border-right: 1px solid var(--av-line);
+}
+
+.av-activity__head {
+	padding: 12px 12px 8px;
+	font-weight: 600;
+	font-size: 12px;
+}
+
+.av-task {
+	display: grid;
+	gap: 8px;
+	margin: 0 8px;
+	padding: 10px;
+	border-radius: 8px;
+	background: #1f2025;
+	box-shadow: inset 0 0 0 1px var(--av-line);
+}
+
+.av-task__who {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 500;
+}
+
+.av-avatar {
+	display: grid;
+	place-items: center;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: #3a3b44;
+	color: var(--av-text);
+	font-size: 10px;
+	font-weight: 600;
+}
+
+.av-task__kind {
+	display: grid;
+	justify-items: end;
+	margin-left: auto;
+	color: var(--av-muted);
+	font-size: 11px;
+	font-weight: 400;
+}
+
+/* The task, written in a field that becomes the posted text in place */
+.av-composer {
+	margin-left: 24px;
+	padding: 7px;
+	border-radius: 6px;
+	line-height: 1.4;
+	box-shadow: inset 0 0 0 1px transparent;
+	transition:
+		background-color 220ms ease,
+		box-shadow 220ms ease;
+}
+
+.av-composer[data-writing] {
+	background: #141519;
+	box-shadow:
+		inset 0 0 0 1px var(--av-accent),
+		0 0 0 3px rgb(76 141 255 / 0.18);
+}
+
+.av-composer {
+	position: relative;
+}
+
+.av-composer__text {
+	display: block;
+	min-height: 1.4em;
+}
+
+/* The placeholder leaves on the first character; the caret is at the start */
+.av-composer__hint {
+	position: absolute;
+	left: 7px;
+	top: 7px;
+	padding-left: 3px;
+	color: var(--av-faint);
+	opacity: 0;
+	transition: opacity 120ms ease;
+}
+
+.av-composer__hint[data-on] {
+	opacity: 1;
+}
+
+.av-caret {
+	display: inline-block;
+	width: 1.5px;
+	height: 1.1em;
+	margin-left: 1px;
+	vertical-align: -0.2em;
+	background: var(--av-accent);
+	opacity: 0;
+}
+
+.av-composer[data-writing] .av-caret {
+	opacity: 1;
+}
+
+.av-assign {
+	justify-self: end;
+}
+
+.av-feed {
+	display: grid;
+	align-content: start;
+	padding: 8px 8px 0;
+}
+
+.av-entry {
+	display: grid;
+	grid-template-columns: 16px minmax(0, 1fr);
+	gap: 8px;
+	padding: 8px 4px;
+	border-top: 1px solid #222329;
+}
+
+.av-entry__mark {
+	display: grid;
+	place-items: center;
+	width: 16px;
+	height: 16px;
+	margin-top: 1px;
+	border-radius: 50%;
+	background: rgb(255 107 107 / 0.14);
+	color: var(--av-danger);
+}
+
+.av-entry[data-ok] .av-entry__mark {
+	background: rgb(111 208 140 / 0.14);
+	color: #6fd08c;
+}
+
+.av-entry__text {
+	display: grid;
+	gap: 2px;
+	line-height: 1.3;
+}
+
+.av-entry__text b {
+	font-weight: 500;
+}
+
+.av-entry__text span {
+	color: var(--av-muted);
+	font-size: 11px;
+}
+
+/* The canvas and the page on it */
+.av-canvas {
+	position: relative;
+	background-color: var(--av-canvas);
+	background-image: radial-gradient(#23242a 1px, transparent 1px);
+	background-size: 16px 16px;
+	padding-top: 44px;
+}
+
+.av-artboard {
+	position: relative;
+	width: 236px;
+	/* Centered in the part of the canvas the crop shows */
+	margin-left: 48px;
+	padding: 20px 18px 22px;
+	background: #fff;
+	color: #111;
+	border-radius: 3px;
+	box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.6);
+}
+
+.av-frame-label {
+	position: absolute;
+	top: -20px;
+	left: 0;
+	color: var(--av-muted);
+	font-size: 10.5px;
+}
+
+.av-eyebrow {
+	display: inline-block;
+	color: #e8590c;
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.av-layer {
+	position: relative;
+	border-radius: 2px;
+	outline: 1.5px solid transparent;
+	outline-offset: 4px;
+	transition: outline-color 200ms ease;
+}
+
+/* The editor's selection ring on what the agent is working on */
+.av-layer[data-selected] {
+	outline-color: var(--av-accent);
+}
+
+.av-layer[data-blocked] {
+	outline-color: var(--av-danger);
+}
+
+.av-title-layer {
+	margin-top: 8px;
+}
+
+.av-title {
+	margin: 0;
+	font-size: 24px;
+	line-height: 1.12;
+	font-weight: 650;
+	letter-spacing: -0.025em;
+	transform-origin: 0 50%;
+	transition: transform 420ms cubic-bezier(0.22, 0.8, 0.24, 1);
+}
+
+/* The attempted size, previewed for a moment before the rule takes it back */
+.av-title[data-bigger] {
+	transform: scale(1.35);
+	transition-duration: 380ms;
+}
+
+.av-lines {
+	display: grid;
+	gap: 6px;
+	margin-top: 12px;
+}
+
+.av-lines i {
+	display: block;
+	height: 7px;
+	border-radius: 4px;
+	background: #ececf0;
+}
+
+.av-image {
+	height: 128px;
+	margin-top: 16px;
+	border-radius: 6px;
+	background:
+		radial-gradient(55% 70% at 25% 30%, #ffd8a8, transparent 70%),
+		radial-gradient(60% 70% at 80% 80%, #ffc9c9, transparent 70%), #fff4e6;
+	transition: opacity 300ms ease;
+}
+
+.av-image[data-removing] {
+	opacity: 0.25;
+}
+
+.av-button-area {
+	position: relative;
+	margin-top: 16px;
+}
+
+.av-button {
+	display: grid;
+	place-items: center;
+	height: 36px;
+	border-radius: 7px;
+	color: #fff;
+	font-weight: 600;
+	font-size: 12.5px;
+	background: #18181b;
+	transition: background-color 260ms ease;
+}
+
+.av-button[data-color="pink"] {
+	background: #ff2d95;
+}
+
+.av-button[data-color="accent"] {
+	background: #f76707;
+}
+
+/* The refusal: a popover on the thing it refused, naming the rule */
+.av-refusal {
+	position: absolute;
+	z-index: 5;
+	left: -4px;
+	top: calc(100% + 10px);
+	display: grid;
+	gap: 3px;
+	width: max-content;
+	max-width: 240px;
+	padding: 9px 11px 10px;
+	border-radius: 8px;
+	background: #1d1e23;
+	color: #ededf0;
+	box-shadow:
+		0 0 0 1px rgb(255 107 107 / 0.35),
+		0 16px 32px -12px rgb(0 0 0 / 0.7);
+	opacity: 0;
+	transform: translateY(-3px);
+	transition:
+		opacity 220ms ease-out,
+		transform 220ms ease-out;
+	will-change: transform, opacity;
+	pointer-events: none;
+}
+
+.av-refusal[data-show] {
+	opacity: 1;
+	transform: none;
+}
+
+.av-refusal[data-at="button"] {
+	top: auto;
+	bottom: calc(100% + 10px);
+	transform: translateY(3px);
+}
+
+.av-refusal[data-at="button"][data-show] {
+	transform: none;
+}
+
+.av-refusal[data-at="image"] {
+	left: 50%;
+	top: 50%;
+	translate: -50% -50%;
+	transform: scale(0.97);
+}
+
+.av-refusal[data-at="image"][data-show] {
+	transform: none;
+}
+
+.av-refusal__head {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	color: #ff8787;
+	font-size: 10.5px;
+	font-weight: 500;
+}
+
+.av-refusal__head code {
+	font-family: "Geist Mono", ui-monospace, monospace;
+	font-size: 10.5px;
+}
+
+.av-refusal__msg {
+	font-size: 12px;
+	font-weight: 500;
+}
+
+/* Brand colors, offered once the off-brand one is refused */
+.av-tokens {
+	position: absolute;
+	z-index: 4;
+	right: -16px;
+	bottom: calc(100% + 10px);
+	display: grid;
+	gap: 2px;
+	width: 140px;
+	padding: 4px;
+	border-radius: 8px;
+	background: #1d1e23;
+	color: #ededf0;
+	box-shadow:
+		0 0 0 1px rgb(255 255 255 / 0.08),
+		0 16px 32px -12px rgb(0 0 0 / 0.7);
+	opacity: 0;
+	transform: translateY(4px);
+	transition:
+		opacity 200ms ease-out,
+		transform 200ms ease-out;
+	will-change: transform, opacity;
+}
+
+.av-tokens[data-show] {
+	opacity: 1;
+	transform: none;
+}
+
+.av-token {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 26px;
+	padding: 0 7px;
+	border-radius: 5px;
+	font-family: "Geist Mono", ui-monospace, monospace;
+	font-size: 11px;
+}
+
+.av-token i {
+	width: 12px;
+	height: 12px;
+	border-radius: 3px;
+	box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.15);
+}
+
+.av-token[data-target] {
+	background: #2a2b31;
+}
+
+/* ------------------------------------------------------------------------ */
+/* The agent's pointer, named as a collaborator's is */
+
+.av-agent {
+	position: absolute;
+	z-index: 10;
+	left: 0;
+	top: 0;
+	opacity: 0;
+	transition:
+		transform 760ms cubic-bezier(0.22, 0.8, 0.24, 1),
+		opacity 250ms ease;
+	pointer-events: none;
+}
+
+.av-agent[data-on] {
+	opacity: 1;
+}
+
+.av-agent__hand {
+	position: relative;
+	translate: -3px -2px;
+}
+
+/* Two names for one press, so each press restarts it without remounting */
+.av-agent__hand[data-press="a"] {
+	animation: av-press-a 240ms ease;
+}
+
+.av-agent__hand[data-press="b"] {
+	animation: av-press-b 240ms ease;
+}
+
+@keyframes av-press-a {
+	45% {
+		scale: 0.86;
+	}
+}
+
+@keyframes av-press-b {
+	45% {
+		scale: 0.86;
+	}
+}
+
+.av-agent__arrow {
+	display: block;
+	width: 20px;
+	height: 20px;
+	filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.4));
+}
+
+.av-agent__tag {
+	position: absolute;
+	left: 15px;
+	top: 16px;
+	padding: 2px 7px 3px;
+	border-radius: 5px;
+	background: #4c8dff;
+	color: #fff;
+	font-size: 10.5px;
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------------ */
+/* The caption: one line of copy over a soft shade, run past the edges */
+
+/* A lower third, run past the edges */
+.av-caption {
+	position: absolute;
+	z-index: 20;
+	left: -24px;
+	right: -24px;
+	bottom: -24px;
+	pointer-events: none;
+}
+
+.av-caption__text {
+	display: grid;
+	place-items: center;
+	height: 196px;
+	padding: 40px 64px 24px;
+	background: linear-gradient(
+		rgb(11 12 15 / 0) 0%,
+		rgb(11 12 15 / 0.94) 45%,
+		rgb(11 12 15) 100%
+	);
+	color: #fff;
+	font-size: 24px;
+	line-height: 1.2;
+	font-weight: 600;
+	letter-spacing: -0.025em;
+	text-align: center;
+}
+
+/* Every line stays mounted in one cell; the shown one fades in as the last
+   fades out */
+.av-caption__text > span,
+.av-task__kind > span {
+	grid-area: 1 / 1;
+	opacity: 0;
+	transform: translateY(-3px);
+	transition:
+		opacity 180ms ease-in,
+		transform 180ms ease-in;
+}
+
+.av-caption__text > span[data-on],
+.av-task__kind > span[data-on] {
+	opacity: 1;
+	transform: none;
+	transition:
+		opacity 320ms ease-out 200ms,
+		transform 320ms ease-out 200ms;
+}
+
+/* The fade between loops */
+.av[data-dim] .ss-camera-view,
+.av[data-dim] .av-caption {
+	opacity: 0;
+}

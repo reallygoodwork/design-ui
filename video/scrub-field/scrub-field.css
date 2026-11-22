@@ -1,0 +1,84 @@
+html,
+body {
+	margin: 0;
+	background: #f4f3f0;
+}
+
+.video-host {
+	display: grid;
+	place-items: center;
+	min-height: 100vh;
+}
+
+:root[data-recording] .video-host {
+	display: block;
+	min-height: 0;
+}
+
+.sf {
+	width: 360px;
+}
+
+.sf .ss-stage {
+	overflow: hidden;
+	background: #f4f3f0;
+}
+
+.sf-scene {
+	position: absolute;
+	inset: 0;
+	font-family: Geist, system-ui, sans-serif;
+	background-color: #f4f3f0;
+	background-image: radial-gradient(#d6d3cc 1px, transparent 1px);
+	background-size: 14px 14px;
+	background-position: 7px 7px;
+}
+
+/* The page the headline sits on */
+.sf-page {
+	position: absolute;
+	top: 20px;
+	left: 20px;
+	right: 20px;
+	height: 196px;
+	display: flex;
+	align-items: center;
+	padding: 0 24px;
+	border: 1px solid #e7e5e0;
+	border-radius: 14px;
+	background: #fff;
+}
+
+.sf-title {
+	width: 100%;
+}
+
+/* The selected headline: the editor's selection outline */
+.sf-title > * {
+	outline: 1.5px solid #3b82f6;
+	outline-offset: 4px;
+	border-radius: 2px;
+}
+
+/* The Typography pane, below the page at the same width, off the bottom */
+.sf-panel {
+	position: absolute;
+	top: 230px;
+	left: 14px;
+	right: 14px;
+}
+
+.sf-panel > section {
+	box-shadow:
+		0 1px 2px rgb(0 0 0 / 0.06),
+		0 8px 24px rgb(0 0 0 / 0.08);
+}
+
+/* The stage marks what its cursor is over with data-hover; show the scrub
+   handle there, as a real pointer's hover does */
+.sf-scene
+	[data-slot="scrub-field"][data-hover]
+	[data-slot="scrub-track"]
+	> span:last-child {
+	opacity: 1;
+}

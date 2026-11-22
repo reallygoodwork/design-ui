@@ -1,0 +1,81 @@
+import { useWhyBlocked } from "../../hooks/useAllowed";
+import { useDesignerAction } from "../../hooks/useDesignerAction";
+import { useDesignerContext } from "../../hooks/useDesignerContext";
+import { useSelectedLayers } from "../../hooks/useSelectedLayers";
+import { Select } from "../common/Select";
+import { DesignAction } from "../DesignAction";
+
+export const ActionElementType = () => {
+	const selectedLayers = useSelectedLayers();
+	const selectedLayer = selectedLayers[0];
+	const designerAction = useDesignerAction();
+	const { state } = useDesignerContext();
+	// Changing the element counts as changing the parent's structure.
+	const blocked = useWhyBlocked(
+		selectedLayer
+			? {
+					type: "UPDATE_LAYER_ELEMENT_TYPE",
+					payload: { layerId: selectedLayer.id, elementType: "" },
+				}
+			: null
+	);
+
+	if (!selectedLayer || blocked) return null;
+
+	// Find the layer type definition
+	const layerType = state.layerTypes.find(
+		(lt) => lt.type === selectedLayer.type
+	);
+
+	// Only show if layer type has available element types
+	if (!layerType?.availableElementTypes?.length) {
+		return null;
+	}
+
+	// Get current value from layer or fallback to layerType default
+	const currentValue = selectedLayer.elementType || layerType.elementType || "";
+
+	// Convert element types to options
+	const options = layerType.availableElementTypes.map((elementType) => ({
+		label: elementType.charAt(0).toUpperCase() + elementType.slice(1),
+		value: elementType,
+	}));
+
+	const handleValueChange = (value: string) => {
+		designerAction({
+			type: "UPDATE_LAYER_ELEMENT_TYPE",
+			payload: {
+				layerId: selectedLayer.id,
+				elementType: value,
+			},
+		});
+	};
+
+	const handleClear = () => {
+		if (selectedLayer.elementType) {
+			designerAction({
+				type: "UPDATE_LAYER_ELEMENT_TYPE",
+				payload: {
+					layerId: selectedLayer.id,
+					elementType: layerType.elementType || "",
+				},
+			});
+		}
+	};
+
+	const hasValue = Boolean(selectedLayer.elementType);
+
+	return (
+		<DesignAction
+			clear={{ hasValue, onClear: handleClear }}
+			label="Tag"
+			orientation="horizontal"
+		>
+			<Select
+				items={options}
+				value={currentValue}
+				onValueChange={handleValueChange}
+			/>
+		</DesignAction>
+	);
+};

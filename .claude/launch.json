@@ -1,0 +1,29 @@
+{
+	"version": "0.0.1",
+	"configurations": [
+		{
+			"name": "docs",
+			"runtimeExecutable": "bun",
+			"runtimeArgs": ["run", "dev", "--port", "5173"],
+			"port": 5173
+		},
+		{
+			"name": "video",
+			"runtimeExecutable": "bun",
+			"runtimeArgs": ["run", "dev", "--port", "5180", "--strictPort"],
+			"port": 5180
+		},
+		{
+			"name": "plain-host",
+			"runtimeExecutable": "bun",
+			"runtimeArgs": ["run", "example:plain-host"],
+			"port": 5190
+		},
+		{
+			"name": "smoke",
+			"runtimeExecutable": "npm",
+			"runtimeArgs": ["--prefix", "apps/smoke", "run", "dev"],
+			"port": 5195
+		}
+	]
+}

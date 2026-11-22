@@ -1,0 +1,12 @@
+/* Entry for the built stylesheet (bun run build:css). Tailwind's theme and
+   utilities, but not its global reset: src/styles/reset.css stands in for
+   it, scoped to the editor. Only the editor's components are scanned. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "./reset.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "./editor.css";
+
+@source "../components";
+@source "../hooks";
+@source "../lib";

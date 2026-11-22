@@ -1,0 +1,274 @@
+/* The roles video: the agent video's frame and editor, with an inspector on
+   the right. The whole window's width is in shot; it runs off the foot. */
+
+.rv .av-window.rv-window {
+	left: 28px;
+	top: 28px;
+	width: 544px;
+	height: 780px;
+}
+
+.rv .rv-main {
+	grid-template-columns: minmax(0, 1fr) 232px;
+}
+
+.rv .rv-artboard {
+	margin-left: 38px;
+}
+
+/* The role switch */
+.rv-roles {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin-left: auto;
+}
+
+.rv-roles__label {
+	color: #8b8d98;
+}
+
+.rv .rv-seg {
+	width: 140px;
+}
+
+/* The title on the canvas, edited in place */
+.rv-title-layer {
+	margin-top: 8px;
+}
+
+.rv .rv-title {
+	transition: font-size 80ms linear;
+}
+
+.rv-title[data-all] {
+	background: rgb(76 141 255 / 0.25);
+	border-radius: 2px;
+}
+
+.rv-title__caret,
+.rv-text__caret {
+	display: inline-block;
+	width: 2px;
+	height: 0.95em;
+	margin-left: 1px;
+	vertical-align: -0.1em;
+	background: #4c8dff;
+}
+
+.rv-text__caret {
+	width: 1.5px;
+	height: 1.1em;
+	vertical-align: -0.2em;
+}
+
+/* The inspector */
+.rv-inspector {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	border-left: 1px solid #2a2b31;
+	padding-bottom: 12px;
+}
+
+.rv-inspector__head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 12px 10px;
+	font-weight: 600;
+}
+
+.rv-kind {
+	margin-left: auto;
+	color: #8b8d98;
+	font-weight: 400;
+	font-size: 11px;
+}
+
+/* The notice the editor shows when rules apply to the selection */
+.rv-banner {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0 12px;
+	padding: 0 10px;
+	height: 0;
+	overflow: hidden;
+	border-radius: 6px;
+	background: #222328;
+	color: #b4b6c0;
+	font-size: 11px;
+	opacity: 0;
+	transition:
+		height 300ms cubic-bezier(0.22, 0.8, 0.24, 1),
+		opacity 250ms ease,
+		margin 300ms cubic-bezier(0.22, 0.8, 0.24, 1);
+}
+
+.rv-banner[data-on] {
+	height: 30px;
+	margin-bottom: 4px;
+	opacity: 1;
+}
+
+.rv-section {
+	position: relative;
+	display: grid;
+	gap: 6px;
+	padding: 10px 12px 12px;
+	border-top: 1px solid #222329;
+}
+
+.rv-section__title {
+	color: #8b8d98;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1;
+	margin-bottom: -1px;
+}
+
+.rv-text {
+	padding: 7px 8px;
+	border-radius: 6px;
+	background: #141519;
+	box-shadow: inset 0 0 0 1px #2a2b31;
+	line-height: 1.35;
+}
+
+.rv-row {
+	display: grid;
+	grid-template-columns: 88px minmax(0, 1fr);
+	align-items: center;
+	gap: 8px;
+}
+
+.rv-row__label {
+	color: #b4b6c0;
+	transition: color 250ms ease;
+}
+
+.rv-field {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	height: 26px;
+	padding: 0 8px;
+	border-radius: 6px;
+	background: #222328;
+	font-family: "Geist Mono", ui-monospace, monospace;
+	font-size: 11px;
+	transition:
+		background-color 250ms ease,
+		box-shadow 250ms ease;
+}
+
+.rv-field__unit {
+	color: #5f616b;
+}
+
+.rv-field__lock {
+	position: absolute;
+	right: 8px;
+	color: #8b8d98;
+	opacity: 0;
+	transform: scale(0.8);
+	transition:
+		opacity 220ms ease,
+		transform 220ms ease;
+}
+
+.rv-swatch {
+	width: 12px;
+	height: 12px;
+	border-radius: 3px;
+	background: #18181b;
+	box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.2);
+}
+
+/* Locked for the editor: the row quiets and a lock takes the field's end */
+.rv-row[data-locked] .rv-row__label {
+	color: #5f616b;
+}
+
+.rv-row[data-locked] .rv-field {
+	background: #1b1c20;
+	color: #6c6e78;
+	box-shadow: inset 0 0 0 1px #24252b;
+}
+
+.rv-row[data-locked] .rv-field__lock {
+	opacity: 1;
+	transform: none;
+}
+
+.rv-field[data-blocked] {
+	box-shadow: inset 0 0 0 1px #ff6b6b;
+}
+
+/* Stagger the rows locking, top to bottom */
+.rv-section .rv-row:nth-of-type(2) .rv-field,
+.rv-section .rv-row:nth-of-type(2) .rv-field__lock {
+	transition-delay: 40ms;
+}
+
+.rv-section .rv-row:nth-of-type(3) .rv-field,
+.rv-section .rv-row:nth-of-type(3) .rv-field__lock {
+	transition-delay: 80ms;
+}
+
+.rv-section .rv-row:nth-of-type(4) .rv-field,
+.rv-section .rv-row:nth-of-type(4) .rv-field__lock {
+	transition-delay: 120ms;
+}
+
+/* The refusal, under the field that was tried */
+.rv-refusal {
+	position: absolute;
+	z-index: 5;
+	left: 12px;
+	right: 12px;
+	top: 74px;
+	display: grid;
+	gap: 3px;
+	padding: 9px 11px 10px;
+	border-radius: 8px;
+	background: #1d1e23;
+	color: #ededf0;
+	box-shadow:
+		0 0 0 1px rgb(255 107 107 / 0.35),
+		0 16px 32px -12px rgb(0 0 0 / 0.7);
+	opacity: 0;
+	transform: translateY(-3px);
+	transition:
+		opacity 220ms ease-out,
+		transform 220ms ease-out;
+	will-change: transform, opacity;
+	pointer-events: none;
+}
+
+.rv-refusal[data-show] {
+	opacity: 1;
+	transform: none;
+}
+
+.rv-refusal__head {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	color: #ff8787;
+	font-size: 10.5px;
+	font-weight: 500;
+}
+
+.rv-refusal__head code {
+	font-family: "Geist Mono", ui-monospace, monospace;
+	font-size: 10.5px;
+}
+
+.rv-refusal__msg {
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.3;
+}

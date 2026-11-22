@@ -1,0 +1,290 @@
+/* The editor's own styles: theme, surfaces and popups. Shared by the demo
+   (src/index.css) and the built stylesheet (bun run build:css). */
+* {
+	outline-color: var(--ds-ring);
+}
+
+/* Tailwind 4 colors a bare `border` with currentColor. Layered, so a
+   border-* color utility still wins. */
+@layer base {
+	*,
+	::before,
+	::after {
+		border-color: var(--ds-border);
+	}
+}
+
+/* The editor's root: everything inside inherits its type and color. */
+.ds {
+	color: var(--ds-foreground);
+	font-family: var(--ds-font-sans);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+	/* Type: Geist for labels and text, Geist Mono for values and code */
+	--font-sans: var(--ds-font-sans);
+	--font-mono: var(--ds-font-mono);
+
+	/* Type scale, by role. Each size carries its own line-height */
+	--text-caption: 0.6875rem; /* 11px: row labels and hints, in Geist */
+	--text-caption--line-height: 1.35;
+	--text-control: 0.75rem; /* 12px: layer names, tabs, menu items */
+	--text-control--line-height: 1.4;
+	--text-value: 0.6875rem; /* 11px, in Geist Mono: every number and set value */
+	--text-value--line-height: 1.4;
+	--text-title: 0.8125rem; /* 13px: pane titles */
+	--text-title--line-height: 1.3;
+	--text-title--font-weight: 600;
+	--text-heading: 0.875rem; /* 14px: panel headers */
+	--text-heading--line-height: 1.3;
+	--text-heading--font-weight: 600;
+
+	/* Surfaces, from back to front */
+	--color-canvas: var(--ds-canvas);
+	--color-background: var(--ds-background);
+	--color-card: var(--ds-card);
+	--color-input: var(--ds-input);
+	--color-hover: var(--ds-hover);
+	--color-hover-foreground: var(--ds-foreground);
+	--color-selected: var(--ds-selected);
+	/* Thumbs of segmented controls and tabs, above their track */
+	--color-raised: var(--ds-raised);
+	--color-popover: var(--ds-popover);
+	--color-popover-foreground: var(--ds-foreground);
+	--color-muted: var(--ds-canvas);
+
+	/* Text and lines */
+	--color-foreground: var(--ds-foreground);
+	--color-card-foreground: var(--ds-foreground);
+	--color-muted-foreground: var(--ds-muted-foreground);
+	--color-border: var(--ds-border);
+	--color-border-strong: var(--ds-border-strong);
+	--color-ring: var(--ds-ring);
+
+	/* Inverted button */
+	--color-primary: var(--ds-foreground);
+	--color-primary-foreground: var(--ds-background);
+
+	/* Accent: set-here values, selection and the padding ring */
+	--color-accent: var(--ds-accent);
+	--color-accent-strong: var(--ds-accent-strong);
+	--color-accent-soft: var(--ds-accent-soft);
+	--color-accent-text: var(--ds-accent-text);
+
+	--color-destructive: var(--ds-destructive);
+
+	/* Categories: one hue per pane and layer type, never used for state */
+	--color-cat-layer: var(--ds-cat-layer);
+	--color-cat-layout: var(--ds-cat-layout);
+	--color-cat-color: var(--ds-cat-color);
+	--color-cat-type: var(--ds-cat-type);
+	--color-cat-motion: var(--ds-cat-motion);
+	--color-cat-image: var(--ds-cat-image);
+
+	--radius-sm: calc(var(--ds-radius) - 4px);
+	--radius-md: calc(var(--ds-radius) - 2px);
+	--radius-lg: var(--ds-radius);
+	--radius-xl: calc(var(--ds-radius) + 4px);
+	--radius-2xl: calc(var(--ds-radius) + 8px);
+	--radius-3xl: calc(var(--ds-radius) + 12px);
+	--radius-4xl: calc(var(--ds-radius) + 16px);
+}
+
+/* One neutral ramp with a faint cool tint (OKLCH hue 265) */
+:root {
+	--ds-radius: 0.625rem;
+	--ds-font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+	--ds-font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+	--designer-zoom: 1;
+
+	--ds-canvas: oklch(93.5% 0.008 265);
+	--ds-background: oklch(98.5% 0.003 265);
+	--ds-card: oklch(100% 0 0);
+	--ds-input: oklch(95.5% 0.006 265);
+	--ds-hover: oklch(94% 0.008 265);
+	--ds-selected: oklch(90% 0.014 265);
+	--ds-raised: oklch(100% 0 0);
+	--ds-popover: oklch(100% 0 0);
+	--ds-border: oklch(90.5% 0.008 265);
+	--ds-border-strong: oklch(86% 0.01 265);
+	/* Floating surfaces: a 1px ring, lift, then ambient depth. */
+	--ds-shadow-overlay:
+		0 0 0 1px oklch(0 0 0 / 0.06), 0 2px 4px -1px oklch(0 0 0 / 0.06),
+		0 12px 32px -4px oklch(0 0 0 / 0.12);
+	--ds-foreground: oklch(20% 0.012 265);
+	--ds-muted-foreground: oklch(50% 0.014 265);
+	--ds-ring: oklch(55% 0.014 265);
+
+	--ds-accent: oklch(62.3% 0.214 259.815);
+	/* Fill behind white text, at least 4.5:1 */
+	--ds-accent-strong: oklch(54.6% 0.245 262.881);
+	--ds-accent-soft: oklch(70.7% 0.165 254.624);
+	--ds-accent-text: oklch(54.6% 0.245 262.881);
+	--ds-destructive: oklch(57.7% 0.245 27.325);
+
+	/* Icon color on its own 14% tint; each is at least 4.6:1 there */
+	--ds-cat-layer: oklch(50% 0.03 265);
+	--ds-cat-layout: oklch(50% 0.16 300);
+	--ds-cat-color: oklch(50% 0.17 355);
+	--ds-cat-type: oklch(50% 0.105 75);
+	--ds-cat-motion: oklch(50% 0.088 185);
+	--ds-cat-image: oklch(50% 0.15 145);
+
+	--ds-code: oklch(20.5% 0.009 265);
+	--ds-code-foreground: oklch(74% 0.012 265);
+	--ds-code-highlight: oklch(31% 0.012 265);
+	--ds-code-number: oklch(76% 0.012 265);
+	--ds-selection: oklch(20% 0.012 265);
+	--ds-selection-foreground: oklch(100% 0 0);
+}
+
+.dark {
+	--ds-canvas: oklch(16.5% 0.008 265);
+	--ds-background: oklch(20.5% 0.009 265);
+	--ds-card: oklch(23.5% 0.01 265);
+	--ds-input: oklch(28.5% 0.011 265);
+	--ds-hover: oklch(31% 0.012 265);
+	--ds-selected: oklch(35% 0.016 265);
+	--ds-raised: oklch(36% 0.013 265);
+	--ds-popover: oklch(26% 0.011 265);
+	--ds-border: oklch(30% 0.011 265);
+	--ds-border-strong: oklch(36% 0.012 265);
+	/* Depth barely shows on dark, so the ring carries the edge. */
+	--ds-shadow-overlay:
+		0 0 0 1px oklch(1 0 0 / 0.08), 0 12px 32px -4px oklch(0 0 0 / 0.5);
+	--ds-foreground: oklch(96.5% 0.004 265);
+	--ds-muted-foreground: oklch(76% 0.012 265);
+	--ds-ring: oklch(72% 0.012 265);
+
+	--ds-accent-text: oklch(80.9% 0.105 251.813);
+	--ds-destructive: oklch(71% 0.17 22);
+
+	--ds-cat-layer: oklch(80% 0.024 265);
+	--ds-cat-layout: oklch(80% 0.119 300);
+	--ds-cat-color: oklch(80% 0.13 355);
+	--ds-cat-type: oklch(80% 0.12 75);
+	--ds-cat-motion: oklch(80% 0.096 185);
+	--ds-cat-image: oklch(80% 0.12 145);
+
+	--ds-code: oklch(16.5% 0.008 265);
+	--ds-code-highlight: oklch(28.5% 0.011 265);
+	--ds-selection: oklch(91% 0.008 265);
+	--ds-selection-foreground: oklch(20% 0.012 265);
+}
+
+.designer-canvas {
+	touch-action: none;
+	position: relative;
+	overscroll-behavior: none;
+}
+
+/* Popups: quick and origin-aware. Exits are faster than entrances. */
+:root {
+	--ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+	--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* One surface for every dialog, popover and menu; one chip for every tooltip.
+   Layered, so a component can still adjust width or padding with utilities. */
+@layer components {
+	.ds-surface {
+		border: 1px solid transparent; /* forced-colors mode draws this edge */
+		border-radius: 10px;
+		background-color: var(--ds-popover);
+		color: var(--ds-foreground);
+		box-shadow: var(--ds-shadow-overlay);
+		overscroll-behavior: contain;
+	}
+
+	.ds-tooltip-chip {
+		border: 1px solid transparent;
+		border-radius: 6px;
+		background-color: var(--ds-foreground);
+		color: var(--ds-background);
+		padding: 4px 8px;
+		font-size: 0.6875rem;
+		line-height: 1.35;
+		max-width: 240px;
+	}
+}
+
+/* A panel section left with no controls, e.g. when the editing rules lock
+   all of them, hides rather than showing an empty header. */
+[data-slot="styles-panel"]
+	[data-slot="designer-pane"]:not(
+		:has([data-slot="action"], [data-css-prop], textarea, input, select)
+	) {
+	display: none;
+}
+
+.ds-popup,
+.ds-tooltip {
+	transform-origin: var(--transform-origin);
+	transition:
+		opacity 160ms var(--ease-out),
+		transform 160ms var(--ease-out);
+}
+
+.ds-tooltip {
+	transition-duration: 125ms;
+}
+
+.ds-popup[data-starting-style],
+.ds-popup[data-ending-style],
+.ds-tooltip[data-starting-style],
+.ds-tooltip[data-ending-style] {
+	opacity: 0;
+	transform: scale(0.97);
+}
+
+.ds-popup[data-ending-style],
+.ds-tooltip[data-ending-style] {
+	transition-duration: 100ms;
+}
+
+/* Base UI marks popups opened from the keyboard, and adjacent tooltips. */
+.ds-popup[data-instant],
+.ds-tooltip[data-instant] {
+	transition-duration: 0ms;
+}
+
+.ds-backdrop {
+	transition: opacity 200ms var(--ease-out);
+}
+
+.ds-backdrop[data-starting-style],
+.ds-backdrop[data-ending-style] {
+	opacity: 0;
+}
+
+.ds-dialog {
+	transition:
+		opacity 200ms var(--ease-out),
+		transform 200ms var(--ease-out);
+}
+
+.ds-dialog[data-starting-style],
+.ds-dialog[data-ending-style] {
+	opacity: 0;
+	transform: scale(0.97);
+}
+
+.ds-dialog[data-ending-style],
+.ds-backdrop[data-ending-style] {
+	transition-duration: 120ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ds-popup[data-starting-style],
+	.ds-popup[data-ending-style],
+	.ds-tooltip[data-starting-style],
+	.ds-tooltip[data-ending-style],
+	.ds-dialog[data-starting-style],
+	.ds-dialog[data-ending-style] {
+		transform: none;
+	}
+}

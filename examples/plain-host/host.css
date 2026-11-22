@@ -1,0 +1,54 @@
+/* A host app's own global styles, like Vite's React template, plus a
+   class that shares a name with a Tailwind utility but means something
+   else here. The editor's stylesheet must not change any of it. */
+:root {
+	font-family: Georgia, serif;
+	line-height: 1.5;
+	color: #213547;
+	background-color: #fffbe6;
+	--background: hotpink;
+	--spacing: 3rem;
+}
+
+body {
+	margin: 0;
+	padding: 24px;
+}
+
+h1 {
+	font-size: 3.2em;
+	line-height: 1.1;
+	margin: 0 0 12px;
+}
+
+button {
+	border-radius: 8px;
+	border: 1px solid transparent;
+	padding: 0.6em 1.2em;
+	font-size: 1em;
+	font-weight: 500;
+	background-color: #1a1a1a;
+	color: white;
+	cursor: pointer;
+}
+
+a {
+	color: #646cff;
+	text-decoration: underline;
+}
+
+ul {
+	list-style: square;
+	padding-left: 24px;
+}
+
+.p-2 {
+	padding: 2rem;
+	background: var(--background);
+}
+
+.editor {
+	height: 720px;
+	border: 4px solid #213547;
+	margin-top: 16px;
+}

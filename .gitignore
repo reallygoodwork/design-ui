@@ -32,3 +32,13 @@ CLAUDE.md
 .env
 .env.local
 .playwright-mcp
+# Rendered videos
+video/out
+
+# The built editor stylesheet (bun run build:css)
+packages/react/styles.css
+
+# Packed tarballs and the smoke app's install (bun run smoke)
+.packs
+apps/smoke/node_modules
+apps/smoke/package-lock.json
