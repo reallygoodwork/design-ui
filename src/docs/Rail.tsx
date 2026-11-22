@@ -1,10 +1,10 @@
+import { cn } from "@design-ui/react";
 import {
 	IconBrandGithub,
 	IconFrame,
 	IconTypography,
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { cn } from "../lib/cn";
 
 export type NavItem = { id: string; label: string; children?: NavItem[] };
 
@@ -74,7 +74,7 @@ export const Rail = ({ items }: { items: NavItem[] }) => {
 	return (
 		<aside className="fixed inset-y-0 left-0 hidden w-60 flex-col overflow-y-auto p-3 [scrollbar-width:none] lg:flex">
 			<a href="#overview" className="px-2 py-2 font-semibold text-[15px]">
-				Coral Design
+				Design UI
 			</a>
 			<nav aria-label="On this page" className="mt-3 grid gap-px">
 				{items.map((item) => (

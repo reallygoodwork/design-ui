@@ -25,7 +25,7 @@ import { TokenStyles } from "./tokens/TokenStyles";
 /**
  * Props for the `Designer` component.
  */
-type DesignerProps = {
+export type DesignerProps = {
 	/**
 	 * The content of the designer.
 	 */

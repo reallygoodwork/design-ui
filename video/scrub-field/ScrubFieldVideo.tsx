@@ -1,11 +1,13 @@
+import type { Layer } from "@design-ui/react";
+import {
+	ActionFontSize,
+	ActionFontWeight,
+	ActionLetterSpacing,
+	ActionLineHeight,
+	DesignerPane,
+} from "@design-ui/react";
 import { IconTypography } from "@tabler/icons-react";
-import { ActionFontSize } from "../../src/components/actions/ActionFontSize";
-import { ActionFontWeight } from "../../src/components/actions/ActionFontWeight";
-import { ActionLetterSpacing } from "../../src/components/actions/ActionLetterSpacing";
-import { ActionLineHeight } from "../../src/components/actions/ActionLineHeight";
-import { DesignerPane } from "../../src/components/DesignerPane";
 import { LayerStage, Sandbox } from "../../src/docs/Sandbox";
-import type { Layer } from "../../src/lib/Types";
 import { type Act, Stage } from "../kit";
 import {
 	countLoop,

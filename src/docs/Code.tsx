@@ -1,6 +1,6 @@
+import { cn } from "@design-ui/react";
 import { IconCheck, IconCopy } from "@tabler/icons-react";
 import { type ReactNode, useState } from "react";
-import { cn } from "../lib/cn";
 
 const TOKENS =
 	/(\/\/.*|\{\/\*.*\*\/\})|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|\b(import|from|export|const|let|return|function|type|satisfies|default|if|else|new|as|true|false|null|useEffect|useRef)\b|(<\/?[A-Z][\w.]*)|\b(\d+(?:\.\d+)?)\b/g;

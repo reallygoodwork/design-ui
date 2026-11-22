@@ -1,5 +1,4 @@
-import { DesignAction } from "../../components/DesignAction";
-import { useBreakpointCss } from "../../hooks/useBreakpointCss";
+import { DesignAction, useBreakpointCss } from "@design-ui/react";
 
 const brand = ["#155dfc", "#0f9d76", "#f5a524", "#18181b"];
 

@@ -36,4 +36,9 @@ CLAUDE.md
 video/out
 
 # The built editor stylesheet (bun run build:css)
-build
+packages/react/styles.css
+
+# Packed tarballs and the smoke app's install (bun run smoke)
+.packs
+apps/smoke/node_modules
+apps/smoke/package-lock.json

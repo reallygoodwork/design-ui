@@ -5,23 +5,25 @@
  */
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "../../build/styles.css";
+import "@design-ui/react/styles.css";
 import "./host.css";
-import { CSSPanel } from "../../src/components/CSSPanel";
-import { Tabs } from "../../src/components/common/Tabs";
-import { DesignActionPanel } from "../../src/components/DesignActionPanel";
-import { Designer } from "../../src/components/Designer";
-import { DesignerCanvas } from "../../src/components/DesignerCanvas";
-import { DesignerContent } from "../../src/components/DesignerContent";
-import { DesignerFrame } from "../../src/components/DesignerFrame";
-import { DesignerHeader } from "../../src/components/DesignerHeader";
-import { DesignerPane } from "../../src/components/DesignerPane";
-import { DesignPanel } from "../../src/components/DesignerPanel";
-import { DesignToolbarContainer } from "../../src/components/DesignToolbarContainer";
-import { EditorPreviewToggle } from "../../src/components/EditorPreviewToggle";
-import { ExportMenu } from "../../src/components/ExportMenu";
-import { PaneLayerTree } from "../../src/components/PaneLayerTree";
-import { RulesPanel } from "../../src/components/RulesPanel";
+import {
+	CSSPanel,
+	DesignActionPanel,
+	Designer,
+	DesignerCanvas,
+	DesignerContent,
+	DesignerFrame,
+	DesignerHeader,
+	DesignerPane,
+	DesignPanel,
+	DesignToolbarContainer,
+	EditorPreviewToggle,
+	ExportMenu,
+	PaneLayerTree,
+	RulesPanel,
+	Tabs,
+} from "@design-ui/react";
 import { demoBreakpoints, demoLayers, demoRules } from "../../src/demo/design";
 import { demoTokenDimensions, demoTokens } from "../../src/demo/tokens";
 

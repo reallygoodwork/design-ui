@@ -2,10 +2,12 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "coral-design",
+      "name": "design-ui",
       "dependencies": {
         "@base-ui/react": "^1.9.0",
         "@design-ui/core": "workspace:*",
+        "@design-ui/mcp": "workspace:*",
+        "@design-ui/react": "workspace:*",
         "@tabler/icons-react": "^3.50.0",
         "@tailwindcss/vite": "^4.3.4",
         "@xyflow/react": "^12.12.1",
@@ -45,10 +47,45 @@
     },
     "packages/core": {
       "name": "@design-ui/core",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "culori": "^4.0.2",
         "zod": "^4",
+      },
+    },
+    "packages/mcp": {
+      "name": "@design-ui/mcp",
+      "version": "0.1.0",
+      "bin": {
+        "design-ui-mcp": "./dist/cli.js",
+      },
+      "dependencies": {
+        "@design-ui/core": "0.1.0",
+        "@modelcontextprotocol/sdk": "^1.32.2",
+        "ws": "^8.22.2",
+        "zod": "^4",
+      },
+    },
+    "packages/react": {
+      "name": "@design-ui/react",
+      "version": "0.1.0",
+      "dependencies": {
+        "@base-ui/react": "^1.9.0",
+        "@design-ui/core": "0.1.0",
+        "@tabler/icons-react": "^3.50.0",
+        "@xyflow/react": "^12.12.1",
+        "cmdk": "^1.1.1",
+        "lucide-react": "^0.562.0",
+        "react-aria-components": "^1.22.1",
+        "react-infinite-viewer": "^0.28.1",
+        "react-moveable": "^0.56.0",
+        "react-selecto": "^1.26.3",
+        "tailwind-merge": "^3.7.0",
+        "usehooks-ts": "^3.1.1",
+      },
+      "peerDependencies": {
+        "react": "^18.2.0 || ^19.0.0",
+        "react-dom": "^18.2.0 || ^19.0.0",
       },
     },
   },
@@ -142,6 +179,10 @@
     "@daybrush/utils": ["@daybrush/utils@1.13.0", "", {}, "sha512-ALK12C6SQNNHw1enXK+UO8bdyQ+jaWNQ1Af7Z3FNxeAwjYhQT7do+TRE4RASAJ3ObaS2+TJ7TXR3oz2Gzbw0PQ=="],
 
     "@design-ui/core": ["@design-ui/core@workspace:packages/core"],
+
+    "@design-ui/mcp": ["@design-ui/mcp@workspace:packages/mcp"],
+
+    "@design-ui/react": ["@design-ui/react@workspace:packages/react"],
 
     "@egjs/agent": ["@egjs/agent@2.4.4", "", {}, "sha512-cvAPSlUILhBBOakn2krdPnOGv5hAZq92f1YHxYcfu0p7uarix2C6Ia3AVizpS1SGRZGiEkIS5E+IVTLg1I2Iog=="],
 

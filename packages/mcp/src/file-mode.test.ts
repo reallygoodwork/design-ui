@@ -96,8 +96,8 @@ beforeAll(async () => {
 	await client.connect(
 		new StdioClientTransport({
 			command: "bun",
-			args: [`${__dirname}/mcp-server.ts`, file],
-			env: { ...process.env, CORAL_AGENT_PORT: String(PORT) } as Record<
+			args: ["--conditions=@design-ui/source", `${__dirname}/server.ts`, file],
+			env: { ...process.env, DESIGN_UI_AGENT_PORT: String(PORT) } as Record<
 				string,
 				string
 			>,

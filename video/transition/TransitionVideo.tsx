@@ -1,18 +1,18 @@
-import { IconSquare, IconWaveSine } from "@tabler/icons-react";
-import { useEffect, useRef } from "react";
-import { ActionBorderRadius } from "../../src/components/actions/ActionBorderRadius";
-import { ActionOpacity } from "../../src/components/actions/ActionOpacity";
-import { ActionTransition } from "../../src/components/actions/ActionTransition";
-import { DesignerPane } from "../../src/components/DesignerPane";
-import { Sandbox } from "../../src/docs/Sandbox";
-import { useSelectedLayers } from "../../src/hooks/useSelectedLayers";
+import type { Layer } from "@design-ui/react";
 import {
+	ActionBorderRadius,
+	ActionOpacity,
+	ActionTransition,
 	type CubicBezier,
 	DEFAULT_TRANSITIONS,
+	DesignerPane,
 	type TransitionConfig,
 	transitionToCss,
-} from "../../src/lib/easing";
-import type { Layer } from "../../src/lib/Types";
+	useSelectedLayers,
+} from "@design-ui/react";
+import { IconSquare, IconWaveSine } from "@tabler/icons-react";
+import { useEffect, useRef } from "react";
+import { Sandbox } from "../../src/docs/Sandbox";
 import { type Act, Stage } from "../kit";
 import {
 	countLoop,

@@ -1,16 +1,18 @@
-import { getEffectiveStyles } from "@design-ui/core";
+import { getEffectiveStyles, type Rule } from "@design-ui/core";
+import type { Breakpoint, Layer, LayerType } from "@design-ui/react";
+import {
+	cn,
+	DesignerProvider,
+	frameLayerType,
+	imageLayerType,
+	textLayerType,
+	useDesignerAction,
+	useDesignerSelector,
+	useLayers,
+	useLayerTypes,
+	useSelectedLayers,
+} from "@design-ui/react";
 import { Fragment, type ReactNode, useEffect } from "react";
-import { DesignerProvider } from "../context/DesignerContext";
-import { useDesignerAction } from "../hooks/useDesignerAction";
-import { useDesignerSelector } from "../hooks/useDesignerSelector";
-import { useLayers } from "../hooks/useLayers";
-import { useLayerTypes } from "../hooks/useLayerTypes";
-import { useSelectedLayers } from "../hooks/useSelectedLayers";
-import { cn } from "../lib/cn";
-import { frameLayerType } from "../lib/layers/frame";
-import { imageLayerType } from "../lib/layers/image";
-import { textLayerType } from "../lib/layers/text";
-import type { Breakpoint, Layer, LayerType } from "../lib/Types";
 import { Code } from "./Code";
 
 const builtInLayerTypes: LayerType[] = [
@@ -49,18 +51,21 @@ export const Sandbox = ({
 	selectedId,
 	layerTypes = [],
 	breakpoints = singleBreakpoint,
+	rules,
 	children,
 }: {
 	layers: Layer[];
 	selectedId: string;
 	layerTypes?: LayerType[];
 	breakpoints?: Breakpoint[];
+	rules?: Rule[];
 	children: ReactNode;
 }) => (
 	<DesignerProvider
 		defaultLayers={layers}
 		defaultLayerTypes={[...builtInLayerTypes, ...layerTypes]}
 		breakpoints={breakpoints}
+		rules={rules}
 	>
 		<SelectOnMount id={selectedId} />
 		{children}

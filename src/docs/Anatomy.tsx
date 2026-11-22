@@ -1,5 +1,5 @@
+import { cn } from "@design-ui/react";
 import { useState } from "react";
-import { cn } from "../lib/cn";
 import { Code, displaySource } from "./Code";
 import minimalEditor from "./examples/MinimalEditor.tsx?raw";
 

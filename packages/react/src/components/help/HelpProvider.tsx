@@ -12,7 +12,7 @@ const HelpContext = createContext<Help>({
 	openConnectAgent: () => {},
 });
 
-const SEEN_KEY = "coral:welcome-seen";
+const SEEN_KEY = "design-ui:welcome-seen";
 
 /**
  * First visit only, and never inside the docs page's embedded editor, where a

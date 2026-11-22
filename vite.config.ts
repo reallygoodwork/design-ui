@@ -6,6 +6,8 @@ import { defineConfig } from "vite";
 // https://vitejs.dev/config/
 export default defineConfig({
 	plugins: [react(), tailwindcss()],
+	// The packages' source, not their builds, while working in this repo.
+	resolve: { conditions: ["@design-ui/source"] },
 	build: {
 		rollupOptions: {
 			// Docs at the root, the full editor at /demo/
@@ -29,8 +31,9 @@ export default defineConfig({
 					name: "editor",
 					include: [
 						"src/**/*.test.{ts,tsx}",
-						"agent/**/*.test.ts",
-						"scripts/**/*.test.ts",
+						"packages/react/**/*.test.{ts,tsx}",
+						"packages/mcp/**/*.test.ts",
+						"packages/react/scripts/**/*.test.ts",
 					],
 					environment: "jsdom",
 				},

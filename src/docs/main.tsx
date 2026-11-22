@@ -1,6 +1,6 @@
+import { ThemeProvider } from "@design-ui/react";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { ThemeProvider } from "../components/theme-provider";
 import "../index.css";
 import "./docs.css";
 import { DocsPage } from "./DocsPage";

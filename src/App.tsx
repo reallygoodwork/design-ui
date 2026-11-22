@@ -4,38 +4,41 @@ import {
 	type Role,
 	tokenCssValue,
 } from "@design-ui/core";
+import {
+	ActivityPane,
+	AnnotationLayer,
+	BreakpointPropertiesPanel,
+	ConnectAgentButton,
+	CSSPanel,
+	DesignActionPanel,
+	Designer,
+	DesignerCanvas,
+	DesignerContent,
+	DesignerFrame,
+	DesignerHeader,
+	DesignerPane,
+	DesignPanel,
+	DesignToolbarContainer,
+	EditorPreviewToggle,
+	ExportMenu,
+	HelpMenu,
+	HelpProvider,
+	PaneLayerTree,
+	RuleNotice,
+	RulesPanel,
+	Tabs,
+	TokensPane,
+	TokenTable,
+	useCanSetRules,
+	useDesignerAction,
+	useDesignerApi,
+	useSelectedBreakpoint,
+	useTokens,
+} from "@design-ui/react";
 import { useEffect, useState } from "react";
-import { ActivityPane } from "./components/activity/ActivityPane";
-import { AnnotationLayer } from "./components/activity/AnnotationLayer";
-import { BreakpointPropertiesPanel } from "./components/BreakpointPropertiesPanel";
-import { CSSPanel } from "./components/CSSPanel";
-import { Tabs } from "./components/common/Tabs";
-import { DesignActionPanel } from "./components/DesignActionPanel";
-import { Designer } from "./components/Designer";
-import { DesignerCanvas } from "./components/DesignerCanvas";
-import { DesignerContent } from "./components/DesignerContent";
-import { DesignerFrame } from "./components/DesignerFrame";
-import { DesignerHeader } from "./components/DesignerHeader";
-import { DesignerPane } from "./components/DesignerPane";
-import { DesignPanel } from "./components/DesignerPanel";
-import { DesignToolbarContainer } from "./components/DesignToolbarContainer";
-import { EditorPreviewToggle } from "./components/EditorPreviewToggle";
-import { ExportMenu } from "./components/ExportMenu";
-import { ConnectAgentButton, HelpMenu } from "./components/help/HelpMenu";
-import { HelpProvider } from "./components/help/HelpProvider";
-import { PaneLayerTree } from "./components/PaneLayerTree";
-import { RuleNotice } from "./components/RuleNotice";
-import { RulesPanel } from "./components/RulesPanel";
-import { TokensPane } from "./components/tokens/TokensPane";
-import { TokenTable } from "./components/tokens/TokenTable";
 import { demoAnnotations } from "./demo/annotations";
 import { demoBreakpoints, demoLayers, demoRules } from "./demo/design";
 import { demoTokenDimensions, demoTokens } from "./demo/tokens";
-import { useSelectedBreakpoint } from "./hooks/useActiveBreakpoint";
-import { useCanSetRules } from "./hooks/useAllowed";
-import { useDesignerAction } from "./hooks/useDesignerAction";
-import { useDesignerApi } from "./hooks/useDesignerApi";
-import { useTokens } from "./hooks/useTokens";
 
 /** Open with every frame in view, whatever size the canvas is. */
 const FitFramesOnLoad = () => {
@@ -169,7 +172,15 @@ const DemoAgentEdit = () => {
 	return null;
 };
 
-/** Builders set the rules; editors work within them. */
+const ROLE_HINTS: Record<Role, string> = {
+	builder: "Changes anything and sets the rules",
+	editor: "Works within the rules, like an agent",
+};
+
+/**
+ * Builders set the rules; editors work within them. The demo's main switch,
+ * so it sits in the middle of the header with what each role means.
+ */
 const RoleSwitch = ({
 	role,
 	onChange,
@@ -177,9 +188,9 @@ const RoleSwitch = ({
 	role: Role;
 	onChange: (role: Role) => void;
 }) => (
-	<fieldset className="flex items-center gap-2 text-control">
+	<fieldset className="flex items-center gap-2.5 text-control">
 		<legend className="sr-only">Edit as</legend>
-		<span aria-hidden="true" className="text-muted-foreground">
+		<span aria-hidden="true" className="font-medium">
 			Edit as
 		</span>
 		<span className="flex rounded-md bg-muted p-[3px]">
@@ -188,12 +199,16 @@ const RoleSwitch = ({
 					key={r}
 					type="button"
 					aria-pressed={role === r}
+					aria-describedby="role-hint"
 					onClick={() => onChange(r)}
-					className={`h-6 rounded-sm px-2 capitalize text-muted-foreground hover:text-foreground ${role === r ? "bg-raised text-foreground shadow-xs" : ""}`}
+					className={`h-7 rounded-sm px-3 font-medium capitalize text-muted-foreground hover:text-foreground ${role === r ? "bg-raised text-foreground shadow-xs" : ""}`}
 				>
 					{r}
 				</button>
 			))}
+		</span>
+		<span id="role-hint" className="hidden text-muted-foreground xl:inline">
+			{ROLE_HINTS[role]}
 		</span>
 	</fieldset>
 );
@@ -226,11 +241,13 @@ function App() {
 							target="_top"
 							className="text-control font-medium text-muted-foreground hover:text-foreground"
 						>
-							Coral Design docs
+							Design UI docs
 						</a>
-						<div className="ml-auto flex items-center gap-2">
+						<div className="flex flex-1 items-center justify-center gap-2">
 							<RoleSwitch role={role} onChange={setRole} />
 							<EditorPreviewToggle />
+						</div>
+						<div className="flex items-center gap-2">
 							<ExportMenu />
 							<ConnectAgentButton />
 							<HelpMenu />

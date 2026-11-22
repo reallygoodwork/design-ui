@@ -21,7 +21,11 @@ export const ConnectAgentButton = () => {
 		<button
 			type="button"
 			onClick={openConnectAgent}
-			className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border px-2.5 text-control hover:bg-hover"
+			className={
+				connected
+					? "inline-flex h-7 items-center gap-1.5 rounded-md border border-border px-2.5 text-control hover:bg-hover"
+					: "inline-flex h-7 items-center gap-1.5 rounded-md bg-foreground px-2.5 font-medium text-background text-control hover:opacity-90"
+			}
 		>
 			{connected ? (
 				<span
@@ -68,7 +72,7 @@ export const HelpMenu = () => {
 							closeOnClick
 						>
 							<IconBook aria-hidden="true" />
-							Read the Coral Design docs
+							Read the Design UI docs
 						</Menu.LinkItem>
 						<Menu.LinkItem
 							className={itemClass}

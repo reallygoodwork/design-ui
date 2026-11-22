@@ -8,7 +8,7 @@ import {
 import { useDesignerSelector } from "../../hooks/useDesignerSelector";
 import { useTokens } from "../../hooks/useTokens";
 
-const STORAGE_KEY = "coral.tokenDrawerHeight";
+const STORAGE_KEY = "design-ui.tokenDrawerHeight";
 const MIN = 160;
 const DEFAULT = 360;
 /** Dragged this close to the top, the panel takes over the column. */

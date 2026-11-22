@@ -1,11 +1,11 @@
 /**
  * Builds the editor's stylesheet for apps that don't use Tailwind:
- * build/styles.css. Everything in it applies only inside an element with the
+ * styles.css, next to package.json. Everything in it applies only inside an element with the
  * `ds` class (the editor's root, and the layer its popups open in), so the
  * host page's own styles are left alone, and the host's styles can't
  * outrank the editor's.
  *
- *   bun run build:css
+ *   bun run build:css   (in packages/react, or from the repo root)
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -17,7 +17,7 @@ import postcss, { type Root, type Rule } from "postcss";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const ENTRY = join(ROOT, "src/styles/package.css");
-const OUT = join(ROOT, "build/styles.css");
+const OUT = join(ROOT, "styles.css");
 
 /** The editor's root. */
 export const SCOPE = ".ds";

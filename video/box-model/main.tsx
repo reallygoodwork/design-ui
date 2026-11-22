@@ -1,6 +1,6 @@
+import { ThemeProvider } from "@design-ui/react";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { ThemeProvider } from "../../src/components/theme-provider";
 import "../../src/index.css";
 import { installVirtualClock } from "../kit";
 import { BoxModelVideo } from "./BoxModelVideo";

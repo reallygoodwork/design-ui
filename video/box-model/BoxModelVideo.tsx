@@ -1,19 +1,20 @@
-import { IconLayoutGrid } from "@tabler/icons-react";
-import { Fragment, type ReactNode } from "react";
-import { ActionLayout } from "../../src/components/actions/ActionLayout";
-import { DesignerPane } from "../../src/components/DesignerPane";
-import { Sandbox } from "../../src/docs/Sandbox";
-import { useDesignerSelector } from "../../src/hooks/useDesignerSelector";
-import { useLayers } from "../../src/hooks/useLayers";
-import { useLayerTypes } from "../../src/hooks/useLayerTypes";
-import { TokensProvider, useTokens } from "../../src/hooks/useTokens";
-import { getEffectiveStyles } from "../../src/lib/breakpointUtils";
-import type { Layer } from "../../src/lib/Types";
+import type { Layer } from "@design-ui/react";
 import {
+	ActionLayout,
+	DesignerPane,
+	getEffectiveStyles,
 	type Token,
+	TokensProvider,
 	tokenCssValue,
 	tokensToCssVars,
-} from "../../src/lib/tokens";
+	useDesignerSelector,
+	useLayers,
+	useLayerTypes,
+	useTokens,
+} from "@design-ui/react";
+import { IconLayoutGrid } from "@tabler/icons-react";
+import { Fragment, type ReactNode } from "react";
+import { Sandbox } from "../../src/docs/Sandbox";
 import { type Act, Stage } from "../kit";
 import {
 	countLoop,

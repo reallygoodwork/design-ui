@@ -169,7 +169,7 @@ export const AgentLinkProvider = ({
 			ws.send(
 				JSON.stringify({
 					event: "hello",
-					editor: "coral-design",
+					editor: "design-ui",
 				} satisfies EditorEvent)
 			);
 			markActive();

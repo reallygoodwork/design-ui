@@ -1,5 +1,5 @@
 {
-	"name": "coral-design",
+	"name": "design-ui",
 	"private": true,
 	"workspaces": [
 		"packages/*"
@@ -10,7 +10,7 @@
 		"dev": "vite",
 		"build": "tsc && vite build",
 		"preview": "vite preview",
-		"agent": "bun agent/mcp-server.ts",
+		"agent": "bun --conditions=@design-ui/source packages/mcp/src/server.ts",
 		"lint": "biome check . --error-on-warnings",
 		"lint:fix": "biome check --write .",
 		"format": "biome format --write .",
@@ -18,8 +18,11 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"schema": "bun packages/core/scripts/write-schema.ts",
-		"build:css": "bun scripts/build-css.ts",
-		"example:plain-host": "vite --config examples/plain-host/vite.config.ts"
+		"build:css": "bun run --cwd packages/react build:css",
+		"example:plain-host": "vite --config examples/plain-host/vite.config.ts",
+		"build:packages": "bun run --cwd packages/core build && bun run --cwd packages/react build && bun run --cwd packages/mcp build",
+		"pack:packages": "rm -rf .packs && mkdir .packs && for p in core react mcp; do (cd packages/$p && npm pack --pack-destination ../../.packs); done",
+		"smoke": "bun run build:packages && bun run pack:packages && cd apps/smoke && rm -rf node_modules package-lock.json && npm install --no-audit --no-fund && npm run build"
 	},
 	"dependencies": {
 		"@design-ui/core": "workspace:*",
@@ -39,7 +42,9 @@
 		"react-selecto": "^1.26.3",
 		"tailwind-merge": "^3.7.0",
 		"tailwindcss": "^4.3.4",
-		"usehooks-ts": "^3.1.1"
+		"usehooks-ts": "^3.1.1",
+		"@design-ui/react": "workspace:*",
+		"@design-ui/mcp": "workspace:*"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.6.5",

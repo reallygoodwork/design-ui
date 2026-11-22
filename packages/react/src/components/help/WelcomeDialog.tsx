@@ -10,52 +10,54 @@ const Key = ({ children }: { children: string }) => (
 
 const STEPS = [
 	{
-		title: "Welcome to Coral Design",
+		title: "Welcome to Design UI",
 		body: (
 			<>
-				Design one page at every screen size. Each frame on the canvas shows the
-				same layers at a different width, so you see mobile, tablet and desktop
-				side by side.
+				This editor works on one design document. The canvas, panels, rules and
+				agent link are components from the Design UI packages, so you can put
+				the same editor in your own app and keep the parts you need.
 			</>
 		),
 	},
 	{
-		title: "Select a layer, then style it",
+		title: "Builders set the rules",
 		body: (
 			<>
-				Click a layer on the canvas or in Layers. Change it in Styles on the
-				right, or read the CSS it produces in the CSS tab. Tokens holds the
-				colors and spacing every layer can share.
+				As a builder you can change anything. Select a layer and open Rules on
+				the right to lock its structure, limit which styles can change, or allow
+				only tokens. Each rule change can be undone.
 			</>
 		),
 	},
 	{
-		title: "Add layers from the keyboard",
+		title: "Editors work within them",
 		body: (
 			<>
-				Press <Key>F</Key> for a frame, <Key>T</Key> for text or <Key>I</Key>{" "}
-				for an image. The new layer goes after the one you selected. Arrow keys
-				move a positioned layer; hold <Key>Shift</Key> to move it 10px.
+				Switch to Editor at the top, or use Editor preview, to see what the
+				rules allow. Locked controls say which rule holds them, and a blocked
+				change is refused wherever it comes from: a panel, a shortcut or an
+				agent.
 			</>
 		),
 	},
 	{
-		title: "Comment, or leave a task",
+		title: "Every edit is logged",
 		body: (
 			<>
-				Press <Key>C</Key> and click a layer to comment on it. Turn a comment
-				into a task, and it waits in Activity until someone, or an agent,
-				resolves it.
+				Each change is a small JSON action, logged in Activity with who made it.
+				Undo or revert any of them. Press <Key>C</Key> and click a layer to
+				leave a comment or a task. Export gives you the document, or HTML and
+				CSS.
 			</>
 		),
 	},
 	{
-		title: "Work with an agent",
+		title: "Connect an agent",
 		body: (
 			<>
-				Connect Claude Code or any MCP client, and it can read the design, work
-				through your tasks and explain each change in Activity. You can undo
-				anything it does.
+				Connect Claude Code or any MCP client. It can read the design and its
+				rules, work through the tasks you assign it, and explain each change in
+				Activity. It's held to the same rules as an editor.
 			</>
 		),
 	},

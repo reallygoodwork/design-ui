@@ -1,4 +1,4 @@
-import { SliderActionControl } from "../../components/actions/SliderActionControl";
+import { SliderActionControl } from "@design-ui/react";
 
 export const WeightSlider = () => (
 	<SliderActionControl

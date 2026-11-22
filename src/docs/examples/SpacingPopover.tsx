@@ -1,6 +1,8 @@
-import { ActionPopover } from "../../components/actions/ActionPopover";
-import { NumericActionControl } from "../../components/actions/NumericActionControl";
-import { useSelectedLayers } from "../../hooks/useSelectedLayers";
+import {
+	ActionPopover,
+	NumericActionControl,
+	useSelectedLayers,
+} from "@design-ui/react";
 
 export const SpacingPopover = () => {
 	const [layer] = useSelectedLayers();

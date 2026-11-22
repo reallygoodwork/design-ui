@@ -1,16 +1,42 @@
+import { type DesignDocument, loadDocument } from "@design-ui/core";
+import { Designer, DesignerHeader, useDesignerApi } from "@design-ui/react";
 import type { ReactNode } from "react";
-import { Designer } from "../../components/Designer";
-import type { Layer } from "../../lib/Types";
 
-const saved = localStorage.getItem("design");
-const defaultLayers: Layer[] = saved ? JSON.parse(saved) : [];
+// Check a saved file before using it: old versions are migrated, and a
+// broken one comes back with the problems instead of a half-loaded design.
+const read = (): DesignDocument | null => {
+	const saved = localStorage.getItem("design");
+	const result = saved ? loadDocument(JSON.parse(saved)) : null;
+	return result?.ok ? result.document : null;
+};
 
-// Keep this outside the component so it isn't a new function on every render.
-const save = (layers: Layer[]) =>
-	localStorage.setItem("design", JSON.stringify(layers));
+const SaveButton = () => {
+	const { exportDocument } = useDesignerApi();
+	const save = () =>
+		localStorage.setItem("design", JSON.stringify(exportDocument()));
+	return (
+		<button type="button" onClick={save}>
+			Save
+		</button>
+	);
+};
 
-export const SavedEditor = ({ children }: { children: ReactNode }) => (
-	<Designer defaultLayers={defaultLayers} onLayersChange={save}>
-		{children}
-	</Designer>
-);
+export const SavedEditor = ({ children }: { children: ReactNode }) => {
+	const doc = read();
+	return (
+		<Designer
+			defaultLayers={doc?.layers}
+			breakpoints={doc?.breakpoints}
+			frameStyles={doc?.frameStyles}
+			tokens={doc?.tokens ? [...doc.tokens] : undefined}
+			tokenDimensions={doc?.tokenDimensions}
+			rules={doc?.rules}
+			annotations={doc?.annotations}
+		>
+			<DesignerHeader>
+				<SaveButton />
+			</DesignerHeader>
+			{children}
+		</Designer>
+	);
+};

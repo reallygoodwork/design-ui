@@ -1,6 +1,6 @@
+import type { Action } from "@design-ui/react";
+import { useDesignerAction } from "@design-ui/react";
 import { type ReactNode, useEffect, useRef } from "react";
-import type { Action } from "../src/hooks/useDesigner";
-import { useDesignerAction } from "../src/hooks/useDesignerAction";
 import type { Act } from "./kit";
 
 // What every video page shares: a line from the script (which runs outside

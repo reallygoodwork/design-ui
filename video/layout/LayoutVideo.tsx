@@ -1,10 +1,8 @@
+import type { Layer } from "@design-ui/react";
+import { ActionLayout, DesignerPane, useLayers } from "@design-ui/react";
 import { IconLayoutGrid } from "@tabler/icons-react";
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { ActionLayout } from "../../src/components/actions/ActionLayout";
-import { DesignerPane } from "../../src/components/DesignerPane";
 import { LayerStage, Sandbox } from "../../src/docs/Sandbox";
-import { useLayers } from "../../src/hooks/useLayers";
-import type { Layer } from "../../src/lib/Types";
 import { type Act, Stage } from "../kit";
 import { countLoop, find, press, StoreBridge, store, tag } from "../shared";
 import "./layout.css";

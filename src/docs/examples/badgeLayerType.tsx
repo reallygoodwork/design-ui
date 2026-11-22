@@ -1,6 +1,6 @@
+import type { LayerType, LayerWithStyles } from "@design-ui/react";
+import { applyCssVars } from "@design-ui/react";
 import { IconTag } from "@tabler/icons-react";
-import { applyCssVars } from "../../lib/cssPropertyMapping";
-import type { LayerType, LayerWithStyles } from "../../lib/Types";
 
 export const badgeLayerType = {
 	type: "badge",

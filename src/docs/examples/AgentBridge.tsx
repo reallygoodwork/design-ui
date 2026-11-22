@@ -1,7 +1,6 @@
+import type { Action } from "@design-ui/react";
+import { useDesignerAction, useLayers } from "@design-ui/react";
 import { useEffect, useRef } from "react";
-import type { Action } from "../../hooks/useDesigner";
-import { useDesignerAction } from "../../hooks/useDesignerAction";
-import { useLayers } from "../../hooks/useLayers";
 
 // Render this anywhere inside <Designer>.
 export function AgentBridge({ url }: { url: string }) {

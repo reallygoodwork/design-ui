@@ -33,7 +33,7 @@ export const EditorEmbed = () => {
 			>
 				<iframe
 					src="/demo/"
-					title="Coral Design editor"
+					title="Design UI editor"
 					loading="lazy"
 					className="origin-top-left border-0"
 					style={{

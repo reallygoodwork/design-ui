@@ -5,9 +5,9 @@ import { useState } from "react";
 import { useAgentLink } from "../../hooks/useAgentLink";
 import { cn } from "../../lib/cn";
 
-const ADD_COMMAND = "claude mcp add coral -- bun agent/mcp-server.ts";
-const SERVER_COMMAND = "bun agent/mcp-server.ts";
-const FIRST_PROMPT = "Work through the open Coral design tasks.";
+const ADD_COMMAND = "claude mcp add design -- npx design-ui-mcp";
+const SERVER_COMMAND = "npx design-ui-mcp";
+const FIRST_PROMPT = "Work through the open design tasks.";
 
 const CopyField = ({ value, label }: { value: string; label: string }) => {
 	const [copied, setCopied] = useState(false);
@@ -103,15 +103,15 @@ export const ConnectAgentDialog = ({
 				</Dialog.Title>
 				<Dialog.Description className="mb-5 text-control text-muted-foreground leading-relaxed">
 					An agent can read the design, pick up tasks you assign it and change
-					the design. Every change shows in Activity with its reason, and you
-					can undo any of them.
+					the design, within the same rules as an editor. Every change shows in
+					Activity with its reason, and you can undo any of them.
 				</Dialog.Description>
 
 				<ol className="grid gap-4 text-control">
 					<li>
 						<p>
-							<span className="font-medium">1. Add the Coral MCP server.</span>{" "}
-							For Claude Code, run this from the project folder:
+							<span className="font-medium">1. Add the MCP server.</span> For
+							Claude Code, run:
 						</p>
 						<CopyField
 							value={ADD_COMMAND}

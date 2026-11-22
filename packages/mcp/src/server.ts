@@ -1,17 +1,15 @@
-#!/usr/bin/env bun
 /**
- * Lets an agent (Claude Code, Claude Desktop, any MCP client) work on a Coral
+ * Lets an agent (Claude Code, Claude Desktop, any MCP client) work on a
  * design: read it, pick up tasks the designer assigns, change it with a reason
  * for each change, reply, and resolve.
  *
  * Speaks MCP over stdio to the agent, and relays to the open editor over a
  * WebSocket on localhost. Start it from your MCP client, e.g.
- *   claude mcp add coral -- bun /path/to/design-ui/agent/mcp-server.ts
- * then open the editor (bun run dev → /demo/). The Activity tab shows
- * "Agent connected".
+ *   claude mcp add design -- npx design-ui-mcp
+ * then open the editor. The Activity tab shows "Agent connected".
  *
  * Give it a design file to work without a browser:
- *   bun agent/mcp-server.ts design.json
+ *   npx design-ui-mcp design.json
  * With no editor open, it answers from the file and saves each change.
  * When an editor connects, it shows the file there, relays as above, and
  * saves what the editor sends back. Agents always edit as the editor role,
@@ -38,10 +36,12 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { WebSocket, WebSocketServer } from "ws";
 import { z } from "zod";
 
-const port = Number(process.env.CORAL_AGENT_PORT ?? AGENT_PORT);
-const REQUEST_TIMEOUT = Number(process.env.CORAL_AGENT_TIMEOUT_MS ?? 15_000);
+const port = Number(process.env.DESIGN_UI_AGENT_PORT ?? AGENT_PORT);
+const REQUEST_TIMEOUT = Number(
+	process.env.DESIGN_UI_AGENT_TIMEOUT_MS ?? 15_000
+);
 // stdout belongs to MCP; anything for people goes to stderr.
-const say = (...parts: unknown[]) => console.error("[coral-agent]", ...parts);
+const say = (...parts: unknown[]) => console.error("[design-ui-mcp]", ...parts);
 
 /* ── The design file, when there is one ───────────────────────────────── */
 
@@ -200,7 +200,7 @@ setInterval(() => {
 	}
 }, 10_000).unref();
 
-const NO_EDITOR = `No editor is connected. Open the Coral editor (bun run dev, then /demo/) and check the Activity tab says "Agent connected". Its agentUrl must be ws://localhost:${port}.`;
+const NO_EDITOR = `No editor is connected. Open an editor with agentUrl set and check the Activity tab says "Agent connected". Its agentUrl must be ws://localhost:${port}.`;
 
 /** Sends one request to the editor and waits for its answer. */
 const ask = (method: string, params?: unknown): Promise<unknown> =>
@@ -252,10 +252,10 @@ const run = (method: string, params?: unknown) =>
 	ask(method, params).then(text, failed);
 
 const server = new McpServer(
-	{ name: "coral-design", version: "0.1.0" },
+	{ name: "design-ui", version: "0.1.0" },
 	{
 		instructions: [
-			"Coral is a design editor. A designer leaves tasks on layers and tokens and can assign them to you.",
+			"Design UI is a design editor. A designer leaves tasks on layers and tokens and can assign them to you.",
 			"Work a task like this: list_tasks (or wait_for_task), claim_task, get_design, then apply_changes with a reason the designer will read, then resolve_task with a one-line summary.",
 			"Prefer design tokens over raw values: a property set to var(--color-text-muted) follows themes and breakpoints.",
 			"If the task is unclear, reply with a question instead of guessing, and leave it open.",

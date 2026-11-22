@@ -1,14 +1,16 @@
+import type { Layer } from "@design-ui/react";
+import {
+	ActionColor,
+	ActionFontSize,
+	ActionLetterSpacing,
+	ActionLineHeight,
+	ActionOpacity,
+	ActionTextAlign,
+	ActionTextContent,
+	useDesignerAction,
+	useHistory,
+} from "@design-ui/react";
 import { useEffect, useRef, useState } from "react";
-import { ActionColor } from "../components/actions/ActionColor";
-import { ActionFontSize } from "../components/actions/ActionFontSize";
-import { ActionLetterSpacing } from "../components/actions/ActionLetterSpacing";
-import { ActionLineHeight } from "../components/actions/ActionLineHeight";
-import { ActionOpacity } from "../components/actions/ActionOpacity";
-import { ActionTextAlign } from "../components/actions/ActionTextAlign";
-import { ActionTextContent } from "../components/actions/ActionTextContent";
-import { useDesignerAction } from "../hooks/useDesignerAction";
-import { useHistory } from "../hooks/useHistory";
-import type { Layer } from "../lib/Types";
 import { LayerStage, Sandbox } from "./Sandbox";
 
 const isSmallScreen = () => window.matchMedia("(max-width: 640px)").matches;
@@ -17,11 +19,11 @@ const headline = (small: boolean): Layer => ({
 	id: "headline",
 	type: "text",
 	name: "Headline",
-	value: "Build your own canvas editor",
+	value: "Designs people and agents can edit, within rules you set",
 	elementType: "h1",
 	cssVars: {
-		"--font-size": small ? "44px" : "72px",
-		"--line-height": small ? "46px" : "72px",
+		"--font-size": small ? "38px" : "56px",
+		"--line-height": small ? "42px" : "60px",
 		"--letter-spacing": small ? "-1px" : "-2px",
 		"--font-weight": "600",
 	},
