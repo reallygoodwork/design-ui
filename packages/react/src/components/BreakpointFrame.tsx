@@ -19,9 +19,15 @@ import { useTokenOverlayCss } from "./tokens/TokenStyles";
  * a host app's reach it: what you see is how it renders anywhere else.
  * `all: initial` doesn't reset custom properties, so token values still
  * inherit from the host.
+ *
+ * On the canvas, content is for selecting, not reading or clicking: show the
+ * arrow over every layer (no I-beam on text, no hand on links) and don't
+ * highlight text while dragging a selection box. Editor-only; exports and
+ * renders don't include this.
  */
 const FRAME_BASE_CSS = `:host{all:initial;display:block;position:relative}
-[data-slot="designer-frame"]{position:absolute;inset:0}`;
+[data-slot="designer-frame"]{position:absolute;inset:0}
+[data-slot="designer-frame"],[data-slot="designer-frame"] *{cursor:default!important;-webkit-user-select:none;user-select:none}`;
 
 const sortedCache = new WeakMap<Breakpoint[], Breakpoint[]>();
 
