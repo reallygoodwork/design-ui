@@ -50,6 +50,15 @@ const getLayersAtPoint = (
 	};
 };
 
+type Hover = {
+	id: string;
+	breakpointId: string;
+	left: number;
+	top: number;
+	width: number;
+	height: number;
+};
+
 type Ghost = {
 	id: string;
 	breakpointId?: string;
@@ -91,7 +100,75 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		currentIndex: number;
 	} | null>(null);
 
+	/**
+	 * Hover shows what a click would select: the shallowest unlocked layer under
+	 * the pointer, never its children (clicking again drills in). Measured in
+	 * screen space against the canvas, so the outline stays 1px at any zoom; it
+	 * clears on pan and zoom and is measured again on the next move.
+	 */
+	const canvasRef = useRef<HTMLDivElement>(null);
+	const [hover, setHover] = useState<Hover | null>(null);
+	const hoverFrame = useRef(0);
+	const clearHover = useCallback(() => {
+		cancelAnimationFrame(hoverFrame.current);
+		setHover((prev) => (prev ? null : prev));
+	}, []);
+	const handleHoverMove = (e: React.PointerEvent) => {
+		const { clientX, clientY, buttons, pointerType } = e;
+		const target = e.target as Element;
+		cancelAnimationFrame(hoverFrame.current);
+		// Not while dragging a selection box, on touch, or over controls
+		if (
+			buttons !== 0 ||
+			pointerType === "touch" ||
+			target.closest?.("[data-breakpoint-header]") ||
+			isMoveableControlElement(target)
+		) {
+			clearHover();
+			return;
+		}
+		hoverFrame.current = requestAnimationFrame(() => {
+			const { layerIds, breakpointId } = getLayersAtPoint(
+				registry,
+				clientX,
+				clientY,
+				state
+			);
+			const id = layerIds[0];
+			const el =
+				id && breakpointId ? registry.queryLayer(breakpointId, id) : null;
+			const canvas = canvasRef.current;
+			if (!el || !canvas || !breakpointId) {
+				setHover((prev) => (prev ? null : prev));
+				return;
+			}
+			const r = el.getBoundingClientRect();
+			const base = canvas.getBoundingClientRect();
+			const next = {
+				id,
+				breakpointId,
+				left: r.left - base.left,
+				top: r.top - base.top,
+				width: r.width,
+				height: r.height,
+			};
+			setHover((prev) =>
+				prev &&
+				prev.id === next.id &&
+				prev.breakpointId === next.breakpointId &&
+				prev.left === next.left &&
+				prev.top === next.top &&
+				prev.width === next.width &&
+				prev.height === next.height
+					? prev
+					: next
+			);
+		});
+	};
+	useEffect(() => () => cancelAnimationFrame(hoverFrame.current), []);
+
 	const handlePinch = (e: OnPinch) => {
+		clearHover();
 		// Update zoom state when user pinches/zooms
 		// Clamp zoom between 0.1 and 10 for reasonable bounds
 		designerAction({
@@ -101,6 +178,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 	};
 
 	const handleScroll = () => {
+		clearHover();
 		selectoRef.current?.checkScroll();
 		// InfiniteViewer owns scrolling; dispatching SET_PAN here re-rendered every
 		// context consumer on each scroll event and nothing reads `state.pan`.
@@ -526,9 +604,13 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 
 	return (
 		<div
+			ref={canvasRef}
 			data-slot="designer-canvas"
 			className="group/designer-canvas relative h-full flex-1 bg-muted"
 			style={{ cursor: CURSOR_ARROW }}
+			onPointerMove={handleHoverMove}
+			onPointerLeave={clearHover}
+			onPointerDown={clearHover}
 		>
 			<Selecto
 				ref={selectoRef}
@@ -674,6 +756,23 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 					}}
 				/>
 			</InfiniteViewer>
+			{hover &&
+				!(
+					state.selectedLayers.includes(hover.id) &&
+					hover.breakpointId === state.activeBreakpointId
+				) && (
+					<div
+						aria-hidden="true"
+						data-slot="hover-outline"
+						className="pointer-events-none absolute border border-accent bg-accent/6"
+						style={{
+							left: hover.left,
+							top: hover.top,
+							width: hover.width,
+							height: hover.height,
+						}}
+					/>
+				)}
 		</div>
 	);
 };
