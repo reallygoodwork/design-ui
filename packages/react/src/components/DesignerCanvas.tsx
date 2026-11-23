@@ -26,13 +26,14 @@ import {
 } from "../hooks/useFrameRegistry";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
 import { centeredScroll, shouldRecenter } from "../lib/canvasCentering";
+import { CURSOR_ARROW } from "../lib/cursors";
 import { isControlTarget } from "../lib/keyboardTargets";
-
 import { DimensionAble } from "./ables/DimensionAble";
 import { StructureAble } from "./ables/StructureAble";
 
 // Lock filtering for layers under a point. The registry returns unfiltered ids,
-// shallowest (parent) first, which enables Figma-style drill-down selection.
+// shallowest (parent) first. A click selects the deepest (the last), and
+// clicking again in place steps out toward the parent.
 const getLayersAtPoint = (
 	registry: FrameRegistry,
 	x: number,
@@ -48,6 +49,15 @@ const getLayersAtPoint = (
 		}),
 		breakpointId,
 	};
+};
+
+type Hover = {
+	id: string;
+	breakpointId: string;
+	left: number;
+	top: number;
+	width: number;
+	height: number;
 };
 
 type Ghost = {
@@ -91,7 +101,76 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		currentIndex: number;
 	} | null>(null);
 
+	/**
+	 * Hover shows what a click would select: the deepest unlocked layer under
+	 * the pointer, the same one the cursor's badge names (clicking again steps
+	 * out to its parent). Measured in screen space against the canvas, so the
+	 * outline stays 1px at any zoom; it clears on pan and zoom and is measured
+	 * again on the next move.
+	 */
+	const canvasRef = useRef<HTMLDivElement>(null);
+	const [hover, setHover] = useState<Hover | null>(null);
+	const hoverFrame = useRef(0);
+	const clearHover = useCallback(() => {
+		cancelAnimationFrame(hoverFrame.current);
+		setHover((prev) => (prev ? null : prev));
+	}, []);
+	const handleHoverMove = (e: React.PointerEvent) => {
+		const { clientX, clientY, buttons, pointerType } = e;
+		const target = e.target as Element;
+		cancelAnimationFrame(hoverFrame.current);
+		// Not while dragging a selection box, on touch, or over controls
+		if (
+			buttons !== 0 ||
+			pointerType === "touch" ||
+			target.closest?.("[data-breakpoint-header]") ||
+			isMoveableControlElement(target)
+		) {
+			clearHover();
+			return;
+		}
+		hoverFrame.current = requestAnimationFrame(() => {
+			const { layerIds, breakpointId } = getLayersAtPoint(
+				registry,
+				clientX,
+				clientY,
+				state
+			);
+			const id = layerIds[layerIds.length - 1];
+			const el =
+				id && breakpointId ? registry.queryLayer(breakpointId, id) : null;
+			const canvas = canvasRef.current;
+			if (!el || !canvas || !breakpointId) {
+				setHover((prev) => (prev ? null : prev));
+				return;
+			}
+			const r = el.getBoundingClientRect();
+			const base = canvas.getBoundingClientRect();
+			const next = {
+				id,
+				breakpointId,
+				left: r.left - base.left,
+				top: r.top - base.top,
+				width: r.width,
+				height: r.height,
+			};
+			setHover((prev) =>
+				prev &&
+				prev.id === next.id &&
+				prev.breakpointId === next.breakpointId &&
+				prev.left === next.left &&
+				prev.top === next.top &&
+				prev.width === next.width &&
+				prev.height === next.height
+					? prev
+					: next
+			);
+		});
+	};
+	useEffect(() => () => cancelAnimationFrame(hoverFrame.current), []);
+
 	const handlePinch = (e: OnPinch) => {
+		clearHover();
 		// Update zoom state when user pinches/zooms
 		// Clamp zoom between 0.1 and 10 for reasonable bounds
 		designerAction({
@@ -101,6 +180,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 	};
 
 	const handleScroll = () => {
+		clearHover();
 		selectoRef.current?.checkScroll();
 		// InfiniteViewer owns scrolling; dispatching SET_PAN here re-rendered every
 		// context consumer on each scroll event and nothing reads `state.pan`.
@@ -158,7 +238,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 			return;
 		}
 
-		// Check if this is a drill-down click (same position within 500ms)
+		// Check if this is a step-out click (same position within 500ms)
 		const isSamePosition =
 			clickState &&
 			Math.abs(clickState.x - clickX) < 5 &&
@@ -168,9 +248,10 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		let layerToSelect: string;
 
 		if (isSamePosition && clickState.layerIdsAtPoint.length > 1) {
-			// Drill down: cycle to next layer in the stack (parent -> child -> deeper child -> back to parent)
-			const nextIndex =
-				(clickState.currentIndex + 1) % clickState.layerIdsAtPoint.length;
+			// Step out: cycle to the next layer up the stack (child -> parent ->
+			// grandparent -> back to the child)
+			const count = clickState.layerIdsAtPoint.length;
+			const nextIndex = (clickState.currentIndex - 1 + count) % count;
 			layerToSelect = clickState.layerIdsAtPoint[nextIndex];
 
 			// Update click state with new index
@@ -182,8 +263,10 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 				currentIndex: nextIndex,
 			});
 		} else {
-			// New click position or timeout: select the shallowest/parent (first) layer
-			layerToSelect = layersAtPoint[0];
+			// New click position or timeout: select the deepest layer (last), the
+			// one the hover outline and cursor show
+			const deepest = layersAtPoint.length - 1;
+			layerToSelect = layersAtPoint[deepest];
 
 			// Initialize click state
 			setClickState({
@@ -191,7 +274,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 				y: clickY,
 				timestamp: currentTime,
 				layerIdsAtPoint: layersAtPoint,
-				currentIndex: 0,
+				currentIndex: deepest,
 			});
 		}
 
@@ -526,8 +609,13 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 
 	return (
 		<div
+			ref={canvasRef}
 			data-slot="designer-canvas"
 			className="group/designer-canvas relative h-full flex-1 bg-muted"
+			style={{ cursor: CURSOR_ARROW }}
+			onPointerMove={handleHoverMove}
+			onPointerLeave={clearHover}
+			onPointerDown={clearHover}
 		>
 			<Selecto
 				ref={selectoRef}
@@ -673,6 +761,23 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 					}}
 				/>
 			</InfiniteViewer>
+			{hover &&
+				!(
+					state.selectedLayers.includes(hover.id) &&
+					hover.breakpointId === state.activeBreakpointId
+				) && (
+					<div
+						aria-hidden="true"
+						data-slot="hover-outline"
+						className="pointer-events-none absolute border border-accent bg-accent/6"
+						style={{
+							left: hover.left,
+							top: hover.top,
+							width: hover.width,
+							height: hover.height,
+						}}
+					/>
+				)}
 		</div>
 	);
 };
