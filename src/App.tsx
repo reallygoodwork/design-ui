@@ -172,6 +172,8 @@ const DemoAgentEdit = () => {
 	return null;
 };
 
+const ROLES = ["builder", "editor"] as const;
+
 const ROLE_HINTS: Record<Role, string> = {
 	builder: "Changes anything and sets the rules",
 	editor: "Works within the rules, like an agent",
@@ -194,7 +196,7 @@ const RoleSwitch = ({
 			Edit as
 		</span>
 		<span className="flex rounded-md bg-muted p-[3px]">
-			{(["builder", "editor"] as const).map((r) => (
+			{ROLES.map((r) => (
 				<button
 					key={r}
 					type="button"
@@ -207,8 +209,18 @@ const RoleSwitch = ({
 				</button>
 			))}
 		</span>
-		<span id="role-hint" className="hidden text-muted-foreground xl:inline">
-			{ROLE_HINTS[role]}
+		{/* Every hint shares one cell, so switching roles doesn't move the header */}
+		<span className="hidden text-muted-foreground xl:grid">
+			{ROLES.map((r) => (
+				<span
+					key={r}
+					id={r === role ? "role-hint" : undefined}
+					aria-hidden={r === role ? undefined : true}
+					className={`[grid-area:1/1] ${r === role ? "" : "invisible"}`}
+				>
+					{ROLE_HINTS[r]}
+				</span>
+			))}
 		</span>
 	</fieldset>
 );
@@ -235,22 +247,26 @@ function App() {
 			>
 				<HelpProvider>
 					<DesignerHeader>
-						{/* _top: the docs page embeds this editor in an iframe */}
-						<a
-							href="/"
-							target="_top"
-							className="text-control font-medium text-muted-foreground hover:text-foreground"
-						>
-							Design UI docs
-						</a>
-						<div className="flex flex-1 items-center justify-center gap-2">
+						{/* Three columns keep the role switch centred and still while
+						    the preview toggle comes and goes with the role. */}
+						<div className="grid flex-1 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+							{/* _top: the docs page embeds this editor in an iframe */}
+							<a
+								href="/"
+								target="_top"
+								className="justify-self-start text-control font-medium text-muted-foreground hover:text-foreground"
+							>
+								Design UI docs
+							</a>
 							<RoleSwitch role={role} onChange={setRole} />
-							<EditorPreviewToggle />
-						</div>
-						<div className="flex items-center gap-2">
-							<ExportMenu />
-							<ConnectAgentButton />
-							<HelpMenu />
+							<div className="flex min-w-0 items-center justify-between gap-2">
+								<EditorPreviewToggle />
+								<div className="ml-auto flex items-center gap-2">
+									<ExportMenu />
+									<ConnectAgentButton />
+									<HelpMenu />
+								</div>
+							</div>
 						</div>
 					</DesignerHeader>
 					<DesignerContent>

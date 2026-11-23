@@ -25,7 +25,15 @@ export const EditorPreviewToggle = () => {
 			)}
 		>
 			<IconEye className="size-3.5" aria-hidden="true" />
-			{previewing ? "Exit editor preview" : "Editor preview"}
+			{/* Both labels share one cell, so the button keeps its width when toggled */}
+			<span className="grid text-left">
+				<span className="[grid-area:1/1]">
+					{previewing ? "Exit editor preview" : "Editor preview"}
+				</span>
+				<span aria-hidden="true" className="invisible [grid-area:1/1]">
+					Exit editor preview
+				</span>
+			</span>
 		</button>
 	);
 };
