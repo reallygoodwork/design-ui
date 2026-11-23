@@ -32,7 +32,8 @@ import { DimensionAble } from "./ables/DimensionAble";
 import { StructureAble } from "./ables/StructureAble";
 
 // Lock filtering for layers under a point. The registry returns unfiltered ids,
-// shallowest (parent) first, which enables Figma-style drill-down selection.
+// shallowest (parent) first. A click selects the deepest (the last), and
+// clicking again in place steps out toward the parent.
 const getLayersAtPoint = (
 	registry: FrameRegistry,
 	x: number,
@@ -101,10 +102,11 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 	} | null>(null);
 
 	/**
-	 * Hover shows what a click would select: the shallowest unlocked layer under
-	 * the pointer, never its children (clicking again drills in). Measured in
-	 * screen space against the canvas, so the outline stays 1px at any zoom; it
-	 * clears on pan and zoom and is measured again on the next move.
+	 * Hover shows what a click would select: the deepest unlocked layer under
+	 * the pointer, the same one the cursor's badge names (clicking again steps
+	 * out to its parent). Measured in screen space against the canvas, so the
+	 * outline stays 1px at any zoom; it clears on pan and zoom and is measured
+	 * again on the next move.
 	 */
 	const canvasRef = useRef<HTMLDivElement>(null);
 	const [hover, setHover] = useState<Hover | null>(null);
@@ -134,7 +136,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 				clientY,
 				state
 			);
-			const id = layerIds[0];
+			const id = layerIds[layerIds.length - 1];
 			const el =
 				id && breakpointId ? registry.queryLayer(breakpointId, id) : null;
 			const canvas = canvasRef.current;
@@ -236,7 +238,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 			return;
 		}
 
-		// Check if this is a drill-down click (same position within 500ms)
+		// Check if this is a step-out click (same position within 500ms)
 		const isSamePosition =
 			clickState &&
 			Math.abs(clickState.x - clickX) < 5 &&
@@ -246,9 +248,10 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		let layerToSelect: string;
 
 		if (isSamePosition && clickState.layerIdsAtPoint.length > 1) {
-			// Drill down: cycle to next layer in the stack (parent -> child -> deeper child -> back to parent)
-			const nextIndex =
-				(clickState.currentIndex + 1) % clickState.layerIdsAtPoint.length;
+			// Step out: cycle to the next layer up the stack (child -> parent ->
+			// grandparent -> back to the child)
+			const count = clickState.layerIdsAtPoint.length;
+			const nextIndex = (clickState.currentIndex - 1 + count) % count;
 			layerToSelect = clickState.layerIdsAtPoint[nextIndex];
 
 			// Update click state with new index
@@ -260,8 +263,10 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 				currentIndex: nextIndex,
 			});
 		} else {
-			// New click position or timeout: select the shallowest/parent (first) layer
-			layerToSelect = layersAtPoint[0];
+			// New click position or timeout: select the deepest layer (last), the
+			// one the hover outline and cursor show
+			const deepest = layersAtPoint.length - 1;
+			layerToSelect = layersAtPoint[deepest];
 
 			// Initialize click state
 			setClickState({
@@ -269,7 +274,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 				y: clickY,
 				timestamp: currentTime,
 				layerIdsAtPoint: layersAtPoint,
-				currentIndex: 0,
+				currentIndex: deepest,
 			});
 		}
 
