@@ -23,8 +23,8 @@ export const ConnectAgentButton = () => {
 			onClick={openConnectAgent}
 			className={
 				connected
-					? "inline-flex h-7 items-center gap-1.5 rounded-md border border-border px-2.5 text-control hover:bg-hover"
-					: "inline-flex h-7 items-center gap-1.5 rounded-md bg-foreground px-2.5 font-medium text-background text-control hover:opacity-90"
+					? "inline-flex h-7 items-center gap-1.5 rounded-md border border-border px-2.5 text-control hover:bg-hover transition-[scale,background-color,color,opacity] duration-150 ease-out motion-safe:enabled:active:scale-[0.96]"
+					: "inline-flex h-7 items-center gap-1.5 rounded-md bg-foreground pr-2.5 pl-2 font-medium text-background text-control hover:opacity-90 transition-[scale,background-color,color,opacity] duration-150 ease-out motion-safe:enabled:active:scale-[0.96]"
 			}
 		>
 			{connected ? (
@@ -47,7 +47,7 @@ export const HelpMenu = () => {
 		<Menu.Root>
 			<Menu.Trigger
 				aria-label="Help"
-				className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-hover hover:text-foreground data-popup-open:bg-hover"
+				className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-hover hover:text-foreground data-popup-open:bg-hover transition-[scale,background-color,color,opacity] duration-150 ease-out motion-safe:enabled:active:scale-[0.96]"
 			>
 				<IconHelpCircle className="size-4" aria-hidden="true" />
 			</Menu.Trigger>

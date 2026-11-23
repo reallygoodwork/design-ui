@@ -36,7 +36,7 @@ export const BreakpointSwitcher = ({
 						});
 					}
 				}}
-				className="grid auto-cols-fr grid-flow-col gap-0.5 rounded-md bg-input p-1"
+				className="grid auto-cols-fr grid-flow-col gap-0.5 rounded-md bg-input p-[3px]"
 			>
 				{sortBreakpointsByWidth(breakpoints).map((breakpoint) => {
 					const info =

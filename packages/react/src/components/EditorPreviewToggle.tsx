@@ -19,21 +19,14 @@ export const EditorPreviewToggle = () => {
 			title="See what an editor can change"
 			onClick={() => dispatch({ type: "SET_PREVIEW", payload: !previewing })}
 			className={cn(
-				"inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-control text-muted-foreground hover:bg-hover hover:text-foreground",
+				"inline-flex h-7 items-center gap-1.5 rounded-md pr-2 pl-1.5 text-control text-muted-foreground hover:bg-hover hover:text-foreground transition-[scale,background-color,color,opacity] duration-150 ease-out motion-safe:enabled:active:scale-[0.96]",
 				previewing &&
 					"bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
 			)}
 		>
 			<IconEye className="size-3.5" aria-hidden="true" />
-			{/* Both labels share one cell, so the button keeps its width when toggled */}
-			<span className="grid text-left">
-				<span className="[grid-area:1/1]">
-					{previewing ? "Exit editor preview" : "Editor preview"}
-				</span>
-				<span aria-hidden="true" className="invisible [grid-area:1/1]">
-					Exit editor preview
-				</span>
-			</span>
+			{/* One label in both states: aria-pressed and the fill carry on/off */}
+			Editor preview
 		</button>
 	);
 };

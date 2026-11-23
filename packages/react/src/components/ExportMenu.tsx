@@ -35,7 +35,7 @@ export const ExportMenu = () => {
 	const { exportDocument } = useDesignerApi();
 	return (
 		<Menu.Root>
-			<Menu.Trigger className="inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-control text-muted-foreground hover:bg-hover hover:text-foreground data-popup-open:bg-hover">
+			<Menu.Trigger className="inline-flex h-7 items-center gap-1.5 rounded-md pr-2.5 pl-2 text-control text-muted-foreground hover:bg-hover hover:text-foreground data-popup-open:bg-hover transition-[scale,background-color,color,opacity] duration-150 ease-out motion-safe:enabled:active:scale-[0.96]">
 				<IconDownload aria-hidden="true" className="size-3.5" />
 				Export
 			</Menu.Trigger>

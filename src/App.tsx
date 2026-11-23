@@ -203,7 +203,7 @@ const RoleSwitch = ({
 					aria-pressed={role === r}
 					aria-describedby="role-hint"
 					onClick={() => onChange(r)}
-					className={`h-7 rounded-sm px-3 font-medium capitalize text-muted-foreground hover:text-foreground ${role === r ? "bg-raised text-foreground shadow-xs" : ""}`}
+					className={`h-7 rounded-sm px-3 font-medium capitalize text-muted-foreground hover:text-foreground transition-[scale,background-color,color,opacity] duration-150 ease-out motion-safe:enabled:active:scale-[0.96] ${role === r ? "bg-raised text-foreground shadow-xs" : ""}`}
 				>
 					{r}
 				</button>
