@@ -23,6 +23,7 @@ export const textLayer = {
 		"--font-family",
 		"--font-weight",
 		"--font-style",
+		"--font-stretch",
 		"--line-height",
 		"--letter-spacing",
 		"--text-align",

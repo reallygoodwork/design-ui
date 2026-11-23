@@ -206,3 +206,21 @@ describe("exportHtml and exportPage", () => {
 		expect(page).toContain('<meta name="viewport"');
 	});
 });
+
+describe("font width", () => {
+	it("exports --font-stretch as font-stretch on text", () => {
+		const css = designCss({
+			layers: [
+				{
+					id: "h",
+					name: "Headline",
+					type: "text",
+					value: "Condensed",
+					cssVars: { "--font-stretch": "75%" },
+				},
+			],
+			breakpoints: [breakpoints[1]],
+		});
+		expect(css).toContain("font-stretch:75%");
+	});
+});

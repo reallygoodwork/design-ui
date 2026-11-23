@@ -619,6 +619,7 @@ const PANE_VARS = {
 		"--letter-spacing",
 		"--text-align",
 		"--font-style",
+		"--font-stretch",
 		"--text-decoration-line",
 		"--text-decoration-color",
 		"--text-decoration-thickness",

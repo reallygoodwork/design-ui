@@ -14,6 +14,7 @@ export * from "./components/actions/ActionFlexWrap";
 export * from "./components/actions/ActionFontFamily";
 export * from "./components/actions/ActionFontSize";
 export * from "./components/actions/ActionFontWeight";
+export * from "./components/actions/ActionFontWidth";
 export * from "./components/actions/ActionGap";
 export * from "./components/actions/ActionGridLayout";
 export * from "./components/actions/ActionImage";
