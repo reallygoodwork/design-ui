@@ -10,6 +10,7 @@ const CSS_VAR_TO_PROPERTY_MAP: Record<string, string> = {
 	"--font-family": "fontFamily",
 	"--font-weight": "fontWeight",
 	"--font-style": "fontStyle",
+	"--font-stretch": "fontStretch",
 	"--line-height": "lineHeight",
 	"--letter-spacing": "letterSpacing",
 	"--text-align": "textAlign",

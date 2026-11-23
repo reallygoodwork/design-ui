@@ -370,6 +370,7 @@ const catalog: { pane: string; rows: Row[] }[] = [
 		rows: [
 			["ActionFontFamily", "--font-family", "Popover"],
 			["ActionFontWeight", "--font-weight", "Select"],
+			["ActionFontWidth", "--font-stretch", "Select"],
 			["ActionFontSize", "--font-size", "Number"],
 			["ActionLineHeight", "--line-height", "Number"],
 			["ActionLetterSpacing", "--letter-spacing", "Number"],

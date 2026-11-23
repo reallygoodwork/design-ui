@@ -17,6 +17,7 @@ import { ActionElementType } from "./actions/ActionElementType";
 import { ActionFontFamily } from "./actions/ActionFontFamily";
 import { ActionFontSize } from "./actions/ActionFontSize";
 import { ActionFontWeight } from "./actions/ActionFontWeight";
+import { ActionFontWidth } from "./actions/ActionFontWidth";
 import { ActionImage } from "./actions/ActionImage";
 import { ActionLayout } from "./actions/ActionLayout";
 import { ActionLetterSpacing } from "./actions/ActionLetterSpacing";
@@ -100,6 +101,7 @@ export const DesignActionPanel = () => {
 				>
 					<ActionFontFamily />
 					<ActionFontWeight />
+					<ActionFontWidth />
 					<ActionFontSize />
 					<ActionLineHeight />
 					<ActionLetterSpacing />
