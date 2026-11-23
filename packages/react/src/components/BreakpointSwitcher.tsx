@@ -24,7 +24,7 @@ export const BreakpointSwitcher = ({
 	if (breakpoints.length < 2) return null;
 
 	return (
-		<div className="sticky top-0 z-20 border-border border-b bg-background px-4 py-2">
+		<div className="sticky top-0 z-30 border-border border-b bg-background px-4 py-2">
 			<ToggleGroup
 				aria-label="Breakpoint to edit"
 				value={activeId ? [activeId] : []}
@@ -36,7 +36,7 @@ export const BreakpointSwitcher = ({
 						});
 					}
 				}}
-				className="grid auto-cols-fr grid-flow-col gap-0.5 rounded-md bg-input p-1"
+				className="grid auto-cols-fr grid-flow-col gap-0.5 rounded-md bg-input p-[3px]"
 			>
 				{sortBreakpointsByWidth(breakpoints).map((breakpoint) => {
 					const info =
