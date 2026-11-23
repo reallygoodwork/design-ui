@@ -2,6 +2,7 @@ import { act, fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { DesignerProvider } from "../context/DesignerContext";
 import { useDesignerContext } from "../hooks/useDesignerContext";
+import { CURSOR_SELECT_BY_TYPE } from "../lib/cursors";
 import { inputLayerType } from "../lib/layers/input";
 import { textLayerType } from "../lib/layers/text";
 import {
@@ -366,5 +367,47 @@ describe("style isolation", () => {
 			"style"
 		)?.textContent;
 		expect(css).toContain(":host{all:initial");
+	});
+});
+
+describe("canvas cursors", () => {
+	const styleText = (container: HTMLElement) =>
+		frameRoot(container, "mobile").getRootNode() instanceof ShadowRoot
+			? ((
+					frameRoot(container, "mobile").getRootNode() as ShadowRoot
+				).querySelector("style")?.textContent ?? "")
+			: "";
+
+	it("tags each layer with its type and lock, for the cursor to read", () => {
+		const locked = makeLayer("l", undefined, { type: "frame", isLocked: true });
+		const { container } = renderInDesigner(<Frames />, {
+			layers: [textLayer, locked],
+		});
+		expect(find(container, "mobile", "t").dataset.layerType).toBe("text");
+		expect(find(container, "mobile", "t").hasAttribute("data-locked")).toBe(
+			false
+		);
+		expect(find(container, "mobile", "l").hasAttribute("data-locked")).toBe(
+			true
+		);
+	});
+
+	it("gives every built-in type its own select cursor, and locked layers inherit", () => {
+		const { container } = renderInDesigner(<Frames />, {
+			layers: [textLayer],
+		});
+		const css = styleText(container);
+		for (const [type, cursor] of Object.entries(CURSOR_SELECT_BY_TYPE)) {
+			expect(css).toContain(
+				`.designer-layer[data-layer-type="${type}"]{cursor:${cursor}!important}`
+			);
+		}
+		expect(new Set(Object.values(CURSOR_SELECT_BY_TYPE)).size).toBe(4);
+		// The locked rule comes last, so it wins over the type rules
+		expect(
+			css
+				.trimEnd()
+				.endsWith(".designer-layer[data-locked]{cursor:inherit!important}")
+		).toBe(true);
 	});
 });
