@@ -26,8 +26,8 @@ import {
 } from "../hooks/useFrameRegistry";
 import { useSelectedLayers } from "../hooks/useSelectedLayers";
 import { centeredScroll, shouldRecenter } from "../lib/canvasCentering";
+import { CURSOR_ARROW } from "../lib/cursors";
 import { isControlTarget } from "../lib/keyboardTargets";
-
 import { DimensionAble } from "./ables/DimensionAble";
 import { StructureAble } from "./ables/StructureAble";
 
@@ -528,6 +528,7 @@ export const DesignerCanvas = ({ children }: { children: ReactNode }) => {
 		<div
 			data-slot="designer-canvas"
 			className="group/designer-canvas relative h-full flex-1 bg-muted"
+			style={{ cursor: CURSOR_ARROW }}
 		>
 			<Selecto
 				ref={selectoRef}

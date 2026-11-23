@@ -10,6 +10,7 @@ import { useLayers } from "../hooks/useLayers";
 import { useLayerTypes } from "../hooks/useLayerTypes";
 import { cn } from "../lib/cn";
 import { applyCssVars, withoutTransitions } from "../lib/cssPropertyMapping";
+import { CURSOR_ARROW, CURSOR_SELECT } from "../lib/cursors";
 import type { Breakpoint, CSSVars, Layer, LayerWithStyles } from "../lib/Types";
 import { BreakpointHeader } from "./BreakpointHeader";
 import { useTokenOverlayCss } from "./tokens/TokenStyles";
@@ -21,16 +22,17 @@ import { useTokenOverlayCss } from "./tokens/TokenStyles";
  * inherit from the host.
  *
  * On the canvas, content is for selecting, not reading or clicking. A layer
- * shows the pointing hand, because a click selects it; nothing inside a layer
- * sets its own cursor (no I-beam on text). A locked layer passes the click to
- * its nearest unlocked parent, so it inherits that parent's cursor, or the
- * frame's arrow when there's none. Text doesn't highlight while dragging a
- * selection box. Editor-only; exports and renders don't include this.
+ * shows the select cursor (arrow and bracket), because a click selects it;
+ * nothing inside a layer sets its own cursor (no I-beam on text). A locked
+ * layer passes the click to its nearest unlocked parent, so it inherits that
+ * parent's cursor, or the frame's arrow when there's none. Text doesn't
+ * highlight while dragging a selection box. Editor-only; exports and renders
+ * don't include this.
  */
 const FRAME_BASE_CSS = `:host{all:initial;display:block;position:relative}
-[data-slot="designer-frame"]{position:absolute;inset:0;cursor:default}
+[data-slot="designer-frame"]{position:absolute;inset:0;cursor:${CURSOR_ARROW}}
 [data-slot="designer-frame"] *{cursor:inherit!important;-webkit-user-select:none;user-select:none}
-.designer-layer{cursor:pointer!important}
+.designer-layer{cursor:${CURSOR_SELECT}!important}
 .designer-layer[data-locked]{cursor:inherit!important}`;
 
 const sortedCache = new WeakMap<Breakpoint[], Breakpoint[]>();
