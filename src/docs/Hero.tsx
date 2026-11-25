@@ -19,7 +19,7 @@ const headline = (small: boolean): Layer => ({
 	id: "headline",
 	type: "text",
 	name: "Headline",
-	value: "Designs people and agents can edit, within rules you set",
+	value: "Hand off a design and decide what can change",
 	elementType: "h1",
 	cssVars: {
 		"--font-size": small ? "38px" : "56px",
