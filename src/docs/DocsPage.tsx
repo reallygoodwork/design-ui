@@ -509,40 +509,48 @@ export const DocsPage = () => (
 					<Hero />
 					<div className="mt-20 grid gap-6">
 						<P>
-							Design UI is a design format and an editor for it. A builder
-							decides what may change: which layers are fixed, which styles can
-							move, which values are allowed. Then people and AI agents edit
-							within those rules, and the design ships as React or plain HTML.
+							Design UI is a design editor you put inside your own React app.
+							You set the rules for each design: the layout stays put, colors
+							come from your brand tokens, the headline stays between 32 and
+							48px. Then your team, your clients or an AI agent edit it, and any
+							change that breaks a rule is refused before it lands.
+						</P>
+						<P>
+							Handing off a design usually means picking between a full design
+							tool, where you check every change after the fact, and a form that
+							only edits text. Design UI gives people a real canvas and real
+							controls, with limits you write once.
 						</P>
 						<ul className="grid max-w-[66ch] gap-2 text-[17px] text-foreground/80 leading-[1.6]">
 							<li>
-								<strong className="text-foreground">One format.</strong> A
-								design is a JSON document with a schema: layers, breakpoints,
-								tokens, rules, comments and a log of every change.
-							</li>
-							<li>
-								<strong className="text-foreground">Rules you set.</strong> Lock
-								a layout, allow only tokens for color, cap a font size. The
-								rules are part of the document, so they travel with it.
+								<strong className="text-foreground">
+									The rules live in the design.
+								</strong>{" "}
+								A design is one JSON file, and its rules are part of it. The
+								editor, your own code and every agent that opens the file
+								enforce the same limits.
 							</li>
 							<li>
 								<strong className="text-foreground">
-									People and agents, within them.
+									Agents edit the file, not a screenshot.
 								</strong>{" "}
-								Editors and agents send the same actions, and every one is
-								checked before it lands. Each change is logged with who made it
-								and why.
+								An agent connects over MCP, reads the same JSON the editor shows
+								and sends the same changes a person would. Each change records
+								who made it and why, and can be undone.
 							</li>
 							<li>
-								<strong className="text-foreground">Delivery anywhere.</strong>{" "}
+								<strong className="text-foreground">
+									What they make is ready to ship.
+								</strong>{" "}
 								Render a saved design in React with <C>DesignView</C>, or export
-								one HTML page.
+								it as one HTML page.
 							</li>
 						</ul>
 						<P>
-							Here an agent works on a card whose layout is fixed and whose
-							title stays between 16 and 32px. Two of its changes break those
-							rules, so they're refused and nothing changes.
+							Press play to watch an agent fill in a card. The card's layout is
+							locked and its title must stay between 16 and 32px. The agent
+							tries a 48px title and adding a line under it. Both are refused,
+							and the changes that fit the rules go through.
 						</P>
 						<ScriptedAgent />
 						<div className="flex flex-wrap gap-2">
@@ -550,7 +558,7 @@ export const DocsPage = () => (
 								href="/demo/"
 								className="rounded-md bg-foreground px-4 py-2 font-medium text-background text-sm"
 							>
-								Open the editor
+								Try the editor
 							</a>
 							<a
 								href={GITHUB_URL}
@@ -564,9 +572,9 @@ export const DocsPage = () => (
 
 				<Section id="try" title="Try it">
 					<P>
-						The full demo, running live. Switch between Builder and Editor at
-						the top to see the same design with and without its rules, then open
-						Rules on the right to change them.
+						This is the whole editor. Switch to Editor at the top to see what
+						someone working within the rules can change. Switch back to Builder
+						and open Rules on the right to change the limits.
 					</P>
 					<EditorEmbed />
 				</Section>
